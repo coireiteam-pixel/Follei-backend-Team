@@ -11,7 +11,13 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post("/", response_model=UserRead)
 def create_user(payload: UserCreate, db: Session = Depends(get_db)):
-    user = User(id=uuid4(), **payload.dict())
+    existing = db.query(User).filter(User.email == payload.email).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="User email already exists")
+
+    data = payload.model_dump()
+    password = data.pop("password")
+    user = User(id=uuid4(), hashed_password=f"dev:{password}", **data)
     db.add(user)
     db.commit()
     db.refresh(user)

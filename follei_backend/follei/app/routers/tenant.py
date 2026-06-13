@@ -11,7 +11,12 @@ router = APIRouter(prefix="/tenants", tags=["tenants"])
 
 @router.post("/", response_model=TenantRead)
 def create_tenant(payload: TenantCreate, db: Session = Depends(get_db)):
-    tenant = Tenant(id=uuid4(), **payload.dict())
+    if payload.domain:
+        existing = db.query(Tenant).filter(Tenant.domain == payload.domain).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Tenant domain already exists")
+
+    tenant = Tenant(id=uuid4(), **payload.model_dump())
     db.add(tenant)
     db.commit()
     db.refresh(tenant)

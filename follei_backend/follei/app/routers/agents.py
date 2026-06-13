@@ -6,6 +6,7 @@ from typing import List, Any
 from app import schema
 from app.database.session import get_db
 from app.models.agents.agent import Agent
+from app.models.tenancy import Tenant
 
 router = APIRouter(
     prefix="/api/v1/agents",
@@ -17,12 +18,17 @@ def create_agent(agent_in: schema.AgentCreate, db: Session = Depends(get_db)) ->
     """
     Create a new AI worker (e.g., "SDR Agent").
     """
-    # Note: In a real application, tenant_id should be extracted from the 
-    # authenticated user's JWT token. We use a random UUID here as a placeholder.
-    dummy_tenant_id = uuid.uuid4()
+    tenant_id = agent_in.tenant_id
+    if tenant_id is None:
+        tenant = db.query(Tenant).first()
+        if tenant is None:
+            tenant = Tenant(name="Default Tenant", domain=f"default-{uuid.uuid4().hex[:8]}.local")
+            db.add(tenant)
+            db.flush()
+        tenant_id = tenant.id
     
     new_agent = Agent(
-        tenant_id=dummy_tenant_id,
+        tenant_id=tenant_id,
         name=agent_in.name,
         role=agent_in.role,
         system_prompt=agent_in.system_prompt,

@@ -1,22 +1,22 @@
 from pydantic import BaseModel
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
 
 class ConversationBase(BaseModel):
     tenant_id: UUID
-    channel: str
-    status: Optional[str] = "open"
+    agent_id: Optional[UUID] = None
+    title: Optional[str] = None
 
 
 class ConversationCreate(ConversationBase):
-    customer_id: Optional[UUID] = None
+    pass
 
 
 class ConversationRead(ConversationBase):
     id: UUID
-    started_at: Optional[str] = None
-    ended_at: Optional[str] = None
+    created_at: datetime
 
     class Config:
         from_attributes = True

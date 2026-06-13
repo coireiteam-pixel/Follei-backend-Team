@@ -1,13 +1,12 @@
 from pydantic import BaseModel
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
 
 class TenantBase(BaseModel):
     name: str
-    slug: str
-    industry: Optional[str] = None
-    plan: Optional[str] = None
+    domain: Optional[str] = None
 
 
 class TenantCreate(TenantBase):
@@ -16,8 +15,7 @@ class TenantCreate(TenantBase):
 
 class TenantRead(TenantBase):
     id: UUID
-    status: str
-    trial_ends_at: Optional[str] = None
+    created_at: datetime
 
     class Config:
         from_attributes = True

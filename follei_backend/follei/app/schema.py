@@ -64,11 +64,13 @@ class AgentBase(BaseModel):
     system_prompt: str
 
 class AgentCreate(AgentBase):
+    tenant_id: Optional[UUID] = None
     tools: List[str] = []
 
 class Agent(AgentBase):
     id: UUID
     tenant_id: UUID
+    tools: List[str] = []
     created_at: datetime
 
     class Config:

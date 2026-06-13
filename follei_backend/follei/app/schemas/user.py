@@ -1,23 +1,24 @@
-from pydantic import BaseModel
-from typing import Optional
+from datetime import datetime
+from pydantic import BaseModel, EmailStr
 from uuid import UUID
 
 
 class UserBase(BaseModel):
     tenant_id: UUID
-    email: str
-    full_name: Optional[str] = None
-    role: Optional[str] = None
+    email: EmailStr
+    first_name: str
+    last_name: str
+    role: str
 
 
 class UserCreate(UserBase):
-    pass
+    password: str
 
 
 class UserRead(UserBase):
     id: UUID
-    status: str
-    last_login_at: Optional[str] = None
+    is_active: bool
+    created_at: datetime
 
     class Config:
         from_attributes = True

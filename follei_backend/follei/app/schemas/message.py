@@ -1,23 +1,22 @@
+from datetime import datetime
 from pydantic import BaseModel
-from typing import Optional
 from uuid import UUID
 
 
 class MessageBase(BaseModel):
     tenant_id: UUID
     conversation_id: UUID
-    sender_type: str
-    message: str
-    message_type: Optional[str] = "text"
+    role: str
+    content: str
 
 
 class MessageCreate(MessageBase):
-    sender_id: Optional[UUID] = None
+    pass
 
 
 class MessageRead(MessageBase):
     id: UUID
-    created_at: Optional[str] = None
+    created_at: datetime
 
     class Config:
         from_attributes = True
