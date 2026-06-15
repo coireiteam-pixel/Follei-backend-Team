@@ -62,19 +62,12 @@ http://localhost:8000/docs
 
 ## Current API Notes
 
-- `POST /api/v1/auth/login` returns a placeholder token:
-  `{"access_token":"placeholder_token","token_type":"bearer"}`
-- Swagger shows the Authorize button through FastAPI's bearer auth scheme.
-- Use `Bearer placeholder_token` while real JWT auth is pending.
-- `GET /api/v1/auth/me` still returns `501 Not Implemented`.
-- `POST /tenants/` accepts:
-
-```json
-{
-  "name": "Demo Company",
-  "domain": "demo.com"
-}
-```
+- **JWT Authentication is fully implemented:**
+  - Use `POST /api/v1/auth/register` to create a new tenant and an admin user.
+  - Use `POST /api/v1/auth/login` to retrieve your real JWT access token.
+  - Use `GET /api/v1/auth/me` to get the authenticated user's details.
+- Swagger fully supports the "Authorize" button through FastAPI's `HTTPBearer` scheme. Just click Authorize and paste your JWT access token.
+- Secure endpoints (like `/api/v1/agents`) are now successfully extracting your `tenant_id` from your token to safely isolate data.
 
 ### Notes
 

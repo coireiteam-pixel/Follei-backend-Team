@@ -89,3 +89,11 @@ class Agent(AgentBase):
 
     class Config:
         from_attributes = True
+
+
+class AIChatRequest(BaseModel):
+    message: str
+
+
+class AIChatResponse(BaseModel):
+    response: str
