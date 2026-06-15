@@ -1,3 +1,3 @@
-from . import tenant, conversation, message, user
+from . import conversation, customers, leads, message
 
-__all__ = ["tenant", "conversation", "message", "user"]
+__all__ = ["conversation", "customers", "leads", "message"]

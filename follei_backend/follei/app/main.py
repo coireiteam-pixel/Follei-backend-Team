@@ -1,39 +1,46 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from app.database.init_db import init_db
-from app.routers import agents, auth, conversation, message, tenant, user
+from app.routers import conversation, customers, leads, message
 
-API_PREFIX = "/api/v1"
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    init_db()
-    yield
-
+API_PREFIX = "/api"
 
 app = FastAPI(
     title="Follei API",
-    description="Autonomous Business Operating System Core API",
+    description="APIs for Vignesh domains: conversations, messages, leads, revenue, customers, and customer success.",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
-app.include_router(auth.router, prefix=API_PREFIX)
-app.include_router(agents.router, prefix=API_PREFIX)
-app.include_router(tenant.router, prefix=API_PREFIX)
-app.include_router(user.router, prefix=API_PREFIX)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(conversation.router, prefix=API_PREFIX)
 app.include_router(message.router, prefix=API_PREFIX)
+app.include_router(leads.router, prefix=API_PREFIX)
+app.include_router(customers.router, prefix=API_PREFIX)
+app.include_router(leads.frameworks_router, prefix=API_PREFIX)
+app.include_router(leads.opportunities_router, prefix=API_PREFIX)
+app.include_router(leads.meetings_router, prefix=API_PREFIX)
+app.include_router(customers.renewals_router, prefix=API_PREFIX)
 
 
 @app.get("/", tags=["System"])
 def root():
-    return {"message": "Follei API", "docs": "/docs", "health": "/health"}
+    return {
+        "message": "Follei API Running",
+        "docs": "/docs",
+        "health": "/health",
+    }
 
 
 @app.get("/health", tags=["System"])
 def health_check():
-    return {"status": "ok", "message": "Follei backend is running."}
+    return {
+        "status": "ok",
+        "message": "Follei backend is running",
+    }
