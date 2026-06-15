@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 from typing import Any
+from uuid import UUID
 
 from app import schema
 from app.core.security import create_access_token, decode_access_token, hash_password, verify_password
@@ -70,7 +71,7 @@ def get_current_user(
     except ValueError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = db.get(User, payload["sub"])
+    user = db.get(User, UUID(payload["sub"]))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if not user.is_active:

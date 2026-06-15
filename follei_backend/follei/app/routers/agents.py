@@ -6,10 +6,9 @@ from typing import List, Any
 import anthropic
 
 from app import schema
-from app import schema
 from app.database.session import get_db
 from app.models.agents.agent import Agent
-from app.models.tenancy import Tenant, User
+from app.models.tenancy import User
 from app.routers.auth import get_current_user
 
 router = APIRouter(
@@ -42,11 +41,13 @@ def create_agent(
     return new_agent
 
 @router.get("", response_model=List[schema.Agent])
-def list_agents(db: Session = Depends(get_db)) -> Any:
+def list_agents(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Any:
     """
     List active agents.
     """
-    # Corrected: Filter agents by the authenticated user's tenant_id
     agents = db.query(Agent).filter(Agent.tenant_id == current_user.tenant_id).all()
     return agents
 

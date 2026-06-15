@@ -6,6 +6,7 @@ pydantic-settings
 email-validator
 alembic
 pytest
+anthropic
 # AI and Vector Store dependencies
 langchain
 sentence-transformers
