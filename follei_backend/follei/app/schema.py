@@ -37,6 +37,20 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
+class RegisterRequest(TenantCreate):
+    admin_email: EmailStr
+    admin_password: str
+    admin_first_name: str = "Admin"
+    admin_last_name: str = "User"
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
 # --- KNOWLEDGE ---
 
 class DocumentBase(BaseModel):

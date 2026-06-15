@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Any
 
 from app import schema
+from app.core.security import create_access_token, decode_access_token, hash_password, verify_password
 from app.database.session import get_db
 from app.models.tenancy import Tenant, User
 
@@ -14,28 +15,47 @@ router = APIRouter(
     tags=["Identity & Auth"]
 )
 
-@router.post("/register", response_model=schema.Tenant, status_code=status.HTTP_201_CREATED)
-def register_tenant(tenant_in: schema.TenantCreate, db: Session = Depends(get_db)) -> Any:
+@router.post("/register", response_model=schema.Token, status_code=status.HTTP_201_CREATED)
+def register_tenant(payload: schema.RegisterRequest, db: Session = Depends(get_db)) -> Any:
     """
-    Create a new tenant and an initial admin user.
+    Create a new tenant, an initial admin user, and return an access token.
     """
-    existing = db.query(Tenant).filter(Tenant.domain == tenant_in.domain).first()
-    if tenant_in.domain and existing:
+    existing_tenant = db.query(Tenant).filter(Tenant.domain == payload.domain).first()
+    if payload.domain and existing_tenant:
         raise HTTPException(status_code=409, detail="Tenant domain already exists")
 
-    tenant = Tenant(name=tenant_in.name, domain=tenant_in.domain)
-    db.add(tenant)
-    db.commit()
-    db.refresh(tenant)
-    return tenant
+    existing_user = db.query(User).filter(User.email == payload.admin_email).first()
+    if existing_user:
+        raise HTTPException(status_code=409, detail="User email already exists")
 
-@router.post("/login")
-def login(db: Session = Depends(get_db)) -> Any:
+    tenant = Tenant(name=payload.name, domain=payload.domain)
+    db.add(tenant)
+    db.flush()
+
+    user = User(
+        tenant_id=tenant.id,
+        email=payload.admin_email,
+        hashed_password=hash_password(payload.admin_password),
+        first_name=payload.admin_first_name,
+        last_name=payload.admin_last_name,
+        role="admin",
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"access_token": create_access_token(user.id, user.tenant_id), "token_type": "bearer"}
+
+@router.post("/login", response_model=schema.Token)
+def login(payload: schema.LoginRequest, db: Session = Depends(get_db)) -> Any:
     """
     Authenticate a user and return a JWT token.
     """
-    # TODO: Verify credentials against db and return JWT
-    return {"access_token": "placeholder_token", "token_type": "bearer"}
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user or not verify_password(payload.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="User is inactive")
+    return {"access_token": create_access_token(user.id, user.tenant_id), "token_type": "bearer"}
 
 @router.get("/me", response_model=schema.User)
 def get_current_user(
@@ -45,15 +65,14 @@ def get_current_user(
     """
     Get the current authenticated user's profile.
     """
-    # TODO: Create a `get_current_active_user` dependency that extracts the JWT payload
-    # and retrieves the User from the database using db.query(User).filter(...)
-    # The bearer dependency exposes Swagger's Authorize button while JWT validation
-    # is still pending.
-    token = credentials.credentials
-    if token != "placeholder_token":
+    try:
+        payload = decode_access_token(credentials.credentials)
+    except ValueError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = db.query(User).first()
+    user = db.get(User, payload["sub"])
     if not user:
-        raise HTTPException(status_code=404, detail="No users found")
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="User is inactive")
     return user

@@ -26,6 +26,8 @@ def create_agent(agent_in: schema.AgentCreate, db: Session = Depends(get_db)) ->
             db.add(tenant)
             db.flush()
         tenant_id = tenant.id
+    elif db.get(Tenant, tenant_id) is None:
+        raise HTTPException(status_code=404, detail="Tenant not found")
     
     new_agent = Agent(
         tenant_id=tenant_id,
