@@ -11,3 +11,4 @@ anthropic
 langchain
 sentence-transformers
 chromadb
+qdrant-client

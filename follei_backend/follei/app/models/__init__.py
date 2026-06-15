@@ -49,6 +49,7 @@ from .knowledge.document import (
     KnowledgeSource,
     KnowledgeTag,
 )
+from .knowledge.entity import Entity, EntityAlias, EntityAttribute, EntityRelation
 from .leads.lead import Lead
 from .tenancy import Tenant, User
 
@@ -89,6 +90,10 @@ __all__ = [
     "DocumentChunk",
     "DocumentPage",
     "DocumentVersion",
+    "Entity",
+    "EntityAlias",
+    "EntityAttribute",
+    "EntityRelation",
     "Integration",
     "IntegrationConnection",
     "KnowledgeFeedback",

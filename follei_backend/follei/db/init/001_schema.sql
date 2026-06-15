@@ -97,14 +97,21 @@ CREATE TABLE IF NOT EXISTS customer_contacts (
 CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    source_id UUID,
     title VARCHAR(255) NOT NULL,
     source_type VARCHAR(80) NOT NULL,
     source_uri TEXT,
+    mime_type VARCHAR(160),
+    path TEXT,
+    file_size BIGINT,
     status VARCHAR(80) NOT NULL DEFAULT 'pending',
     tags TEXT[] NOT NULL DEFAULT '{}',
+    summary TEXT,
+    keywords TEXT[] NOT NULL DEFAULT '{}',
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    indexed_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS document_chunks (
@@ -118,6 +125,61 @@ CREATE TABLE IF NOT EXISTS document_chunks (
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (document_id, chunk_index)
+);
+
+CREATE TABLE IF NOT EXISTS chunk_embeddings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    chunk_id UUID NOT NULL REFERENCES document_chunks(id) ON DELETE CASCADE,
+    embedding_model VARCHAR(160) NOT NULL,
+    vector_id TEXT NOT NULL,
+    dimensions INTEGER,
+    distance_metric VARCHAR(80),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (chunk_id, embedding_model)
+);
+
+CREATE TABLE IF NOT EXISTS entities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    entity_type VARCHAR(120) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    confidence NUMERIC(5, 4),
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS entity_aliases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    entity_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    alias VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (entity_id, alias)
+);
+
+CREATE TABLE IF NOT EXISTS entity_attributes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    entity_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    key VARCHAR(160) NOT NULL,
+    value JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (entity_id, key)
+);
+
+CREATE TABLE IF NOT EXISTS entity_relations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    source_entity_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    target_entity_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    relation_type VARCHAR(160) NOT NULL,
+    confidence NUMERIC(5, 4),
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS conversations (

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, Uuid
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, Uuid
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
@@ -34,10 +34,19 @@ class Document(Base):
     
     title = Column(String, nullable=False)
     source_type = Column(String, nullable=False) # e.g., 'pdf', 'url', 'notion'
+    source_uri = Column(Text, nullable=True)
+    mime_type = Column(String, nullable=True)
+    path = Column(Text, nullable=True)
+    file_size = Column(BigInteger, nullable=True)
     status = Column(String, default="pending")   # pending, processing, ready, failed
     tags = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list)
+    summary = Column(Text, nullable=True)
+    keywords = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list)
+    metadata_ = Column("metadata", JSON, default=dict, nullable=False)
     
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    indexed_at = Column(DateTime, nullable=True)
 
     tenant = relationship("Tenant", back_populates="documents")
     source = relationship("KnowledgeSource", back_populates="documents")
@@ -123,7 +132,9 @@ class ChunkEmbedding(Base):
     tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     chunk_id = Column(Uuid(as_uuid=True), ForeignKey("document_chunks.id", ondelete="CASCADE"), nullable=False, index=True)
     embedding_model = Column(String, nullable=False)
-    vector_id = Column(Uuid(as_uuid=True), nullable=False)
+    vector_id = Column(String, nullable=False)
+    dimensions = Column(Integer, nullable=True)
+    distance_metric = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     tenant = relationship("Tenant")

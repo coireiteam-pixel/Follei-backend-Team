@@ -217,8 +217,12 @@ ALTER TABLE documents ADD COLUMN IF NOT EXISTS source_id UUID REFERENCES knowled
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS source_uri TEXT;
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS mime_type VARCHAR(160);
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS path TEXT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS file_size BIGINT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS summary TEXT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS keywords TEXT[] NOT NULL DEFAULT '{}';
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS indexed_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS document_versions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -262,10 +266,16 @@ CREATE TABLE IF NOT EXISTS chunk_embeddings (
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     chunk_id UUID NOT NULL REFERENCES document_chunks(id) ON DELETE CASCADE,
     embedding_model VARCHAR(160) NOT NULL,
-    vector_id UUID NOT NULL,
+    vector_id TEXT NOT NULL,
+    dimensions INTEGER,
+    distance_metric VARCHAR(80),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (chunk_id, embedding_model)
 );
+
+ALTER TABLE chunk_embeddings ALTER COLUMN vector_id TYPE TEXT USING vector_id::text;
+ALTER TABLE chunk_embeddings ADD COLUMN IF NOT EXISTS dimensions INTEGER;
+ALTER TABLE chunk_embeddings ADD COLUMN IF NOT EXISTS distance_metric VARCHAR(80);
 
 CREATE TABLE IF NOT EXISTS chunk_citations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

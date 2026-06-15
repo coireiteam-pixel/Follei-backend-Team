@@ -43,6 +43,29 @@ from app.models.conversations.conversation import (  # noqa: F401
     ResponseMetric,
 )
 from app.models.customers.customer import Customer  # noqa: F401
+from app.models.domain import (  # noqa: F401
+    AnalyticsDaily,
+    AnalyticsMonthly,
+    Competitor,
+    CompetitorFeature,
+    Credit,
+    CreditTransaction,
+    EvaluationResult,
+    Event,
+    FAQ,
+    Invoice,
+    ModelUsage,
+    Payment,
+    Plan,
+    Policy,
+    PricingModel,
+    PricingRule,
+    Procedure,
+    Product,
+    RetrievalLog,
+    Service,
+    Subscription,
+)
 from app.models.integrations.integration import Integration, IntegrationConnection  # noqa: F401
 from app.models.knowledge.document import (  # noqa: F401
     ChunkCitation,
@@ -54,6 +77,12 @@ from app.models.knowledge.document import (  # noqa: F401
     KnowledgeFeedback,
     KnowledgeSource,
     KnowledgeTag,
+)
+from app.models.knowledge.entity import (  # noqa: F401
+    Entity,
+    EntityAlias,
+    EntityAttribute,
+    EntityRelation,
 )
 from app.models.leads.lead import Lead  # noqa: F401
 from app.models.tenancy import Tenant, User  # noqa: F401
