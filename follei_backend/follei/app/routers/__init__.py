@@ -1,3 +1,3 @@
-from . import conversation, customers, leads, message
+from . import conversation, customers, integrations, leads, message, tools
 
-__all__ = ["conversation", "customers", "leads", "message"]
+__all__ = ["conversation", "customers", "integrations", "leads", "message", "tools"]

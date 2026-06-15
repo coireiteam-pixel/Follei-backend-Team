@@ -24,12 +24,17 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
         and path.startswith("/api")
     }
 
-    assert len(methods) == 61
+    assert len(methods) == 82
     assert "POST /api/messages/{message_id}/attachments" in methods
     assert "POST /api/conversations/{conversation_id}/buying-signals" in methods
     assert "POST /api/qualification-frameworks" in methods
     assert "POST /api/opportunities/{opportunity_id}/quotes" in methods
     assert "PATCH /api/renewals/{renewal_id}" in methods
+    assert "GET /api/integrations" in methods
+    assert "POST /api/integration-connections/{connection_id}/sync" in methods
+    assert "POST /api/webhooks/receive/{integration_id}" in methods
+    assert "POST /api/tools/{tool_id}/execute" in methods
+    assert "GET /api/connector-logs" in methods
     assert "GET /api/auth/me" not in methods
     assert "GET /api/agents" not in methods
 
@@ -135,6 +140,66 @@ def test_customer_success_p2_p3_flow_does_not_return_422():
         client.post(f"/api/customers/{customer_id}/health-scores", json={"force_recalculate": True}),
         client.post(f"/api/customers/{customer_id}/events", json={"type": "feature_used", "feature": "dashboard"}),
         client.patch(f"/api/renewals/{renewal_id}", json={"status": "closed_won", "actual_value": 26000}),
+    ]
+
+    assert all(response.status_code < 400 for response in responses)
+
+
+def test_integrations_webhooks_and_tools_flow_does_not_return_422():
+    integrations_response = client.get("/api/integrations")
+    assert integrations_response.status_code == 200
+    integration_id = integrations_response.json()["items"][0]["id"]
+
+    connection_response = client.post(
+        "/api/integration-connections",
+        json={
+            "integration_id": integration_id,
+            "tenant_id": TENANT_ID,
+            "auth_type": "oauth2",
+            "credentials": {"access_token": "oauth_token"},
+            "settings": {"sync_frequency": "hourly"},
+        },
+    )
+    assert connection_response.status_code == 201
+    connection_id = connection_response.json()["id"]
+
+    tool_response = client.post(
+        "/api/tools",
+        json={
+            "name": "crm_search_contacts",
+            "display_name": "Search Contacts",
+            "category": "crm",
+            "tenant_id": TENANT_ID,
+            "input_schema": {"type": "object"},
+            "output_schema": {"type": "object"},
+            "auth_required": True,
+            "rate_limit": {"requests_per_minute": 60},
+        },
+    )
+    assert tool_response.status_code == 201
+    tool_id = tool_response.json()["id"]
+
+    responses = [
+        client.patch(f"/api/integration-connections/{connection_id}", json={"settings": {"sync_frequency": "daily"}}),
+        client.post(f"/api/integration-connections/{connection_id}/sync", json={"sync_type": "full", "entities": ["contacts"]}),
+        client.post(
+            f"/api/integration-connections/{connection_id}/webhooks",
+            json={"event_type": "lead.created", "url": "https://api.follei.com/webhooks/salesforce"},
+        ),
+        client.post(
+            f"/api/webhooks/receive/{integration_id}",
+            json={"event_type": "lead.created", "payload": {"email": "lead@company.com"}},
+        ),
+        client.post(
+            f"/api/tools/{tool_id}/execute",
+            json={"agent_id": "22222222-2222-4222-8222-222222222222", "parameters": {"query": "Acme Corp"}},
+        ),
+        client.post(
+            f"/api/tools/{tool_id}/permissions",
+            json={"agent_id": "22222222-2222-4222-8222-222222222222", "permission": "execute"},
+        ),
+        client.get("/api/tool-executions"),
+        client.get("/api/connector-logs"),
     ]
 
     assert all(response.status_code < 400 for response in responses)
