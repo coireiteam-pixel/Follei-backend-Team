@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.init_db import init_db
+<<<<<<< HEAD
 from app.routers import (
     agents,
     auth,
@@ -24,6 +25,9 @@ from app.routers import (
 )
 
 API_PREFIX = "/api"
+=======
+from app.routers import agents, api_v1, auth, conversation, message, tenant, user
+>>>>>>> 2c7d567 (Follei happy)
 
 app = FastAPI(
     title="Follei API",
@@ -40,6 +44,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(api_v1.router)
 app.include_router(agents.router)
 app.include_router(tenant.router)
 app.include_router(user.router)
@@ -98,7 +103,11 @@ def root():
 
 @app.get("/health", tags=["System"])
 def health_check():
+<<<<<<< HEAD
     return {
         "status": "ok",
         "message": "Follei backend is running",
     }
+=======
+    return {"status": "ok", "message": "Follei backend is running."}
+>>>>>>> 2c7d567 (Follei happy)

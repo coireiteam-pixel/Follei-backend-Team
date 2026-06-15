@@ -1,0 +1,1197 @@
+table_name,column_name,ordinal_position,data_type,udt_name,is_nullable,column_default
+agent_actions,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_actions,tenant_id,2,uuid,uuid,NO,
+agent_actions,agent_id,3,uuid,uuid,YES,
+agent_actions,session_id,4,uuid,uuid,YES,
+agent_actions,task_id,5,uuid,uuid,YES,
+agent_actions,action_type,6,character varying,varchar,NO,
+agent_actions,payload,7,jsonb,jsonb,NO,'{}'::jsonb
+agent_actions,result,8,jsonb,jsonb,YES,
+agent_actions,status,9,character varying,varchar,NO,'completed'::character varying
+agent_actions,created_at,10,timestamp with time zone,timestamptz,NO,now()
+agent_analytics,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_analytics,tenant_id,2,uuid,uuid,NO,
+agent_analytics,agent_id,3,uuid,uuid,YES,
+agent_analytics,metrics,4,jsonb,jsonb,NO,'{}'::jsonb
+agent_analytics,measured_at,5,timestamp with time zone,timestamptz,NO,now()
+agent_analytics,created_at,6,timestamp with time zone,timestamptz,NO,now()
+agent_confidence_scores,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_confidence_scores,tenant_id,2,uuid,uuid,NO,
+agent_confidence_scores,agent_id,3,uuid,uuid,NO,
+agent_confidence_scores,message_id,4,uuid,uuid,YES,
+agent_confidence_scores,score,5,numeric,numeric,NO,
+agent_confidence_scores,reasoning,6,text,text,YES,
+agent_confidence_scores,created_at,7,timestamp with time zone,timestamptz,NO,now()
+agent_errors,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_errors,tenant_id,2,uuid,uuid,NO,
+agent_errors,agent_id,3,uuid,uuid,YES,
+agent_errors,error_type,4,character varying,varchar,YES,
+agent_errors,message,5,text,text,NO,
+agent_errors,stack_trace,6,text,text,YES,
+agent_errors,context,7,jsonb,jsonb,NO,'{}'::jsonb
+agent_errors,created_at,8,timestamp with time zone,timestamptz,NO,now()
+agent_feedback,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_feedback,tenant_id,2,uuid,uuid,NO,
+agent_feedback,agent_id,3,uuid,uuid,NO,
+agent_feedback,message_id,4,uuid,uuid,YES,
+agent_feedback,rating,5,integer,int4,YES,
+agent_feedback,feedback,6,text,text,YES,
+agent_feedback,created_by,7,uuid,uuid,YES,
+agent_feedback,created_at,8,timestamp with time zone,timestamptz,NO,now()
+agent_learning_events,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_learning_events,tenant_id,2,uuid,uuid,NO,
+agent_learning_events,agent_id,3,uuid,uuid,YES,
+agent_learning_events,event_type,4,character varying,varchar,NO,
+agent_learning_events,payload,5,jsonb,jsonb,NO,'{}'::jsonb
+agent_learning_events,created_at,6,timestamp with time zone,timestamptz,NO,now()
+agent_memories,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_memories,tenant_id,2,uuid,uuid,NO,
+agent_memories,agent_id,3,uuid,uuid,NO,
+agent_memories,customer_id,4,uuid,uuid,YES,
+agent_memories,memory_type,5,character varying,varchar,NO,
+agent_memories,content,6,text,text,NO,
+agent_memories,vector_id,7,uuid,uuid,YES,
+agent_memories,metadata,8,jsonb,jsonb,NO,'{}'::jsonb
+agent_memories,expires_at,9,timestamp with time zone,timestamptz,YES,
+agent_memories,created_at,10,timestamp with time zone,timestamptz,NO,now()
+agent_memories,updated_at,11,timestamp with time zone,timestamptz,NO,now()
+agent_plans,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_plans,tenant_id,2,uuid,uuid,NO,
+agent_plans,agent_id,3,uuid,uuid,NO,
+agent_plans,task_id,4,uuid,uuid,YES,
+agent_plans,plan,5,jsonb,jsonb,NO,'{}'::jsonb
+agent_plans,status,6,character varying,varchar,NO,'draft'::character varying
+agent_plans,created_at,7,timestamp with time zone,timestamptz,NO,now()
+agent_plans,updated_at,8,timestamp with time zone,timestamptz,NO,now()
+agent_prompt_versions,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_prompt_versions,tenant_id,2,uuid,uuid,NO,
+agent_prompt_versions,agent_id,3,uuid,uuid,NO,
+agent_prompt_versions,version,4,integer,int4,NO,
+agent_prompt_versions,system_prompt,5,text,text,NO,
+agent_prompt_versions,created_by,6,uuid,uuid,YES,
+agent_prompt_versions,created_at,7,timestamp with time zone,timestamptz,NO,now()
+agent_sessions,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_sessions,tenant_id,2,uuid,uuid,NO,
+agent_sessions,agent_id,3,uuid,uuid,NO,
+agent_sessions,conversation_id,4,uuid,uuid,YES,
+agent_sessions,status,5,character varying,varchar,NO,'active'::character varying
+agent_sessions,started_at,6,timestamp with time zone,timestamptz,NO,now()
+agent_sessions,ended_at,7,timestamp with time zone,timestamptz,YES,
+agent_sessions,metadata,8,jsonb,jsonb,NO,'{}'::jsonb
+agent_tasks,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_tasks,tenant_id,2,uuid,uuid,NO,
+agent_tasks,agent_id,3,uuid,uuid,YES,
+agent_tasks,assigned_by,4,uuid,uuid,YES,
+agent_tasks,task_type,5,character varying,varchar,NO,
+agent_tasks,title,6,character varying,varchar,NO,
+agent_tasks,payload,7,jsonb,jsonb,NO,'{}'::jsonb
+agent_tasks,status,8,character varying,varchar,NO,'queued'::character varying
+agent_tasks,due_at,9,timestamp with time zone,timestamptz,YES,
+agent_tasks,created_at,10,timestamp with time zone,timestamptz,NO,now()
+agent_tasks,updated_at,11,timestamp with time zone,timestamptz,NO,now()
+agent_tool_calls,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_tool_calls,tenant_id,2,uuid,uuid,NO,
+agent_tool_calls,agent_id,3,uuid,uuid,YES,
+agent_tool_calls,tool_name,4,character varying,varchar,NO,
+agent_tool_calls,request,5,jsonb,jsonb,NO,'{}'::jsonb
+agent_tool_calls,response,6,jsonb,jsonb,YES,
+agent_tool_calls,status,7,character varying,varchar,NO,'queued'::character varying
+agent_tool_calls,error,8,text,text,YES,
+agent_tool_calls,started_at,9,timestamp with time zone,timestamptz,YES,
+agent_tool_calls,finished_at,10,timestamp with time zone,timestamptz,YES,
+agent_tool_calls,created_at,11,timestamp with time zone,timestamptz,NO,now()
+agent_versions,id,1,uuid,uuid,NO,gen_random_uuid()
+agent_versions,tenant_id,2,uuid,uuid,NO,
+agent_versions,agent_id,3,uuid,uuid,NO,
+agent_versions,version,4,integer,int4,NO,
+agent_versions,model,5,character varying,varchar,YES,
+agent_versions,system_prompt,6,text,text,NO,
+agent_versions,config,7,jsonb,jsonb,NO,'{}'::jsonb
+agent_versions,created_by,8,uuid,uuid,YES,
+agent_versions,created_at,9,timestamp with time zone,timestamptz,NO,now()
+agents,id,1,uuid,uuid,NO,
+agents,tenant_id,2,uuid,uuid,NO,
+agents,name,3,character varying,varchar,NO,
+agents,role,4,character varying,varchar,NO,
+agents,system_prompt,5,character varying,varchar,NO,
+agents,tools,6,ARRAY,_varchar,YES,
+agents,created_at,7,timestamp without time zone,timestamp,YES,
+agents,agent_type,8,character varying,varchar,YES,
+agents,model,9,character varying,varchar,YES,
+agents,is_active,10,boolean,bool,NO,true
+agents,updated_at,11,timestamp with time zone,timestamptz,NO,now()
+analytics_daily,id,1,uuid,uuid,NO,gen_random_uuid()
+analytics_daily,tenant_id,2,uuid,uuid,NO,
+analytics_daily,metric_date,3,date,date,NO,
+analytics_daily,metric_name,4,character varying,varchar,NO,
+analytics_daily,metric_value,5,numeric,numeric,NO,0
+analytics_daily,dimensions,6,jsonb,jsonb,NO,'{}'::jsonb
+analytics_daily,created_at,7,timestamp with time zone,timestamptz,NO,now()
+analytics_monthly,id,1,uuid,uuid,NO,gen_random_uuid()
+analytics_monthly,tenant_id,2,uuid,uuid,NO,
+analytics_monthly,metric_month,3,date,date,NO,
+analytics_monthly,metric_name,4,character varying,varchar,NO,
+analytics_monthly,metric_value,5,numeric,numeric,NO,0
+analytics_monthly,dimensions,6,jsonb,jsonb,NO,'{}'::jsonb
+analytics_monthly,created_at,7,timestamp with time zone,timestamptz,NO,now()
+api_request_logs,id,1,uuid,uuid,NO,gen_random_uuid()
+api_request_logs,tenant_id,2,uuid,uuid,YES,
+api_request_logs,user_id,3,uuid,uuid,YES,
+api_request_logs,method,4,character varying,varchar,NO,
+api_request_logs,path,5,text,text,NO,
+api_request_logs,status_code,6,integer,int4,YES,
+api_request_logs,request_body,7,jsonb,jsonb,YES,
+api_request_logs,response_body,8,jsonb,jsonb,YES,
+api_request_logs,ip_address,9,inet,inet,YES,
+api_request_logs,user_agent,10,text,text,YES,
+api_request_logs,duration_ms,11,integer,int4,YES,
+api_request_logs,created_at,12,timestamp with time zone,timestamptz,NO,now()
+audit_logs,id,1,uuid,uuid,NO,gen_random_uuid()
+audit_logs,tenant_id,2,uuid,uuid,YES,
+audit_logs,user_id,3,uuid,uuid,YES,
+audit_logs,action,4,character varying,varchar,NO,
+audit_logs,entity_type,5,character varying,varchar,YES,
+audit_logs,entity_id,6,uuid,uuid,YES,
+audit_logs,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+audit_logs,created_at,8,timestamp with time zone,timestamptz,NO,now()
+audit_logs,resource_type,9,character varying,varchar,YES,
+audit_logs,resource_id,10,uuid,uuid,YES,
+audit_logs,payload,11,jsonb,jsonb,NO,'{}'::jsonb
+background_jobs,id,1,uuid,uuid,NO,gen_random_uuid()
+background_jobs,tenant_id,2,uuid,uuid,YES,
+background_jobs,job_type,3,character varying,varchar,NO,
+background_jobs,status,4,character varying,varchar,NO,'queued'::character varying
+background_jobs,payload,5,jsonb,jsonb,NO,'{}'::jsonb
+background_jobs,retries,6,integer,int4,NO,0
+background_jobs,error,7,text,text,YES,
+background_jobs,scheduled_at,8,timestamp with time zone,timestamptz,YES,
+background_jobs,started_at,9,timestamp with time zone,timestamptz,YES,
+background_jobs,finished_at,10,timestamp with time zone,timestamptz,YES,
+background_jobs,created_at,11,timestamp with time zone,timestamptz,NO,now()
+background_jobs,updated_at,12,timestamp with time zone,timestamptz,NO,now()
+billing_events,id,1,uuid,uuid,NO,gen_random_uuid()
+billing_events,tenant_id,2,uuid,uuid,NO,
+billing_events,event_type,3,character varying,varchar,NO,
+billing_events,payload,4,jsonb,jsonb,NO,'{}'::jsonb
+billing_events,created_at,5,timestamp with time zone,timestamptz,NO,now()
+chunk_citations,id,1,uuid,uuid,NO,gen_random_uuid()
+chunk_citations,tenant_id,2,uuid,uuid,NO,
+chunk_citations,chunk_id,3,uuid,uuid,NO,
+chunk_citations,message_id,4,uuid,uuid,YES,
+chunk_citations,response_id,5,uuid,uuid,YES,
+chunk_citations,quote,6,text,text,YES,
+chunk_citations,confidence,7,numeric,numeric,YES,
+chunk_citations,created_at,8,timestamp with time zone,timestamptz,NO,now()
+chunk_embeddings,id,1,uuid,uuid,NO,gen_random_uuid()
+chunk_embeddings,tenant_id,2,uuid,uuid,NO,
+chunk_embeddings,chunk_id,3,uuid,uuid,NO,
+chunk_embeddings,embedding_model,4,character varying,varchar,NO,
+chunk_embeddings,vector_id,5,uuid,uuid,NO,
+chunk_embeddings,created_at,6,timestamp with time zone,timestamptz,NO,now()
+competitor_features,id,1,uuid,uuid,NO,gen_random_uuid()
+competitor_features,tenant_id,2,uuid,uuid,NO,
+competitor_features,competitor_id,3,uuid,uuid,NO,
+competitor_features,feature_name,4,character varying,varchar,NO,
+competitor_features,comparison,5,text,text,YES,
+competitor_features,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+competitor_features,created_at,7,timestamp with time zone,timestamptz,NO,now()
+competitors,id,1,uuid,uuid,NO,gen_random_uuid()
+competitors,tenant_id,2,uuid,uuid,NO,
+competitors,name,3,character varying,varchar,NO,
+competitors,website,4,text,text,YES,
+competitors,summary,5,text,text,YES,
+competitors,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+competitors,created_at,7,timestamp with time zone,timestamptz,NO,now()
+competitors,updated_at,8,timestamp with time zone,timestamptz,NO,now()
+connector_logs,id,1,uuid,uuid,NO,gen_random_uuid()
+connector_logs,tenant_id,2,uuid,uuid,NO,
+connector_logs,integration_connection_id,3,uuid,uuid,YES,
+connector_logs,level,4,character varying,varchar,NO,'info'::character varying
+connector_logs,message,5,text,text,NO,
+connector_logs,context,6,jsonb,jsonb,NO,'{}'::jsonb
+connector_logs,created_at,7,timestamp with time zone,timestamptz,NO,now()
+conversation_actions,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_actions,tenant_id,2,uuid,uuid,NO,
+conversation_actions,conversation_id,3,uuid,uuid,NO,
+conversation_actions,agent_id,4,uuid,uuid,YES,
+conversation_actions,action_type,5,character varying,varchar,NO,
+conversation_actions,payload,6,jsonb,jsonb,NO,'{}'::jsonb
+conversation_actions,status,7,character varying,varchar,NO,'completed'::character varying
+conversation_actions,created_at,8,timestamp with time zone,timestamptz,NO,now()
+conversation_analytics,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_analytics,tenant_id,2,uuid,uuid,NO,
+conversation_analytics,conversation_id,3,uuid,uuid,YES,
+conversation_analytics,metrics,4,jsonb,jsonb,NO,'{}'::jsonb
+conversation_analytics,measured_at,5,timestamp with time zone,timestamptz,NO,now()
+conversation_analytics,created_at,6,timestamp with time zone,timestamptz,NO,now()
+conversation_buying_signals,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_buying_signals,tenant_id,2,uuid,uuid,NO,
+conversation_buying_signals,conversation_id,3,uuid,uuid,NO,
+conversation_buying_signals,signal_type,4,character varying,varchar,NO,
+conversation_buying_signals,evidence,5,text,text,YES,
+conversation_buying_signals,confidence,6,numeric,numeric,YES,
+conversation_buying_signals,detected_at,7,timestamp with time zone,timestamptz,NO,now()
+conversation_buying_signals,created_at,8,timestamp with time zone,timestamptz,NO,now()
+conversation_citations,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_citations,tenant_id,2,uuid,uuid,NO,
+conversation_citations,message_id,3,uuid,uuid,NO,
+conversation_citations,document_id,4,uuid,uuid,YES,
+conversation_citations,chunk_id,5,uuid,uuid,YES,
+conversation_citations,quote,6,text,text,YES,
+conversation_citations,confidence,7,numeric,numeric,YES,
+conversation_citations,created_at,8,timestamp with time zone,timestamptz,NO,now()
+conversation_emotions,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_emotions,tenant_id,2,uuid,uuid,NO,
+conversation_emotions,conversation_id,3,uuid,uuid,NO,
+conversation_emotions,message_id,4,uuid,uuid,YES,
+conversation_emotions,emotion,5,character varying,varchar,NO,
+conversation_emotions,score,6,numeric,numeric,YES,
+conversation_emotions,detected_at,7,timestamp with time zone,timestamptz,NO,now()
+conversation_emotions,created_at,8,timestamp with time zone,timestamptz,NO,now()
+conversation_entities,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_entities,tenant_id,2,uuid,uuid,NO,
+conversation_entities,conversation_id,3,uuid,uuid,NO,
+conversation_entities,entity_id,4,uuid,uuid,YES,
+conversation_entities,entity_text,5,character varying,varchar,YES,
+conversation_entities,entity_type,6,character varying,varchar,YES,
+conversation_entities,confidence,7,numeric,numeric,YES,
+conversation_entities,created_at,8,timestamp with time zone,timestamptz,NO,now()
+conversation_feedback,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_feedback,tenant_id,2,uuid,uuid,NO,
+conversation_feedback,conversation_id,3,uuid,uuid,NO,
+conversation_feedback,message_id,4,uuid,uuid,YES,
+conversation_feedback,rating,5,integer,int4,YES,
+conversation_feedback,feedback,6,text,text,YES,
+conversation_feedback,feedback_type,7,character varying,varchar,YES,
+conversation_feedback,created_at,8,timestamp with time zone,timestamptz,NO,now()
+conversation_intents,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_intents,tenant_id,2,uuid,uuid,NO,
+conversation_intents,conversation_id,3,uuid,uuid,NO,
+conversation_intents,intent,4,character varying,varchar,NO,
+conversation_intents,confidence,5,numeric,numeric,YES,
+conversation_intents,evidence,6,text,text,YES,
+conversation_intents,detected_at,7,timestamp with time zone,timestamptz,NO,now()
+conversation_intents,created_at,8,timestamp with time zone,timestamptz,NO,now()
+conversation_messages,id,1,uuid,uuid,NO,
+conversation_messages,tenant_id,2,uuid,uuid,NO,
+conversation_messages,conversation_id,3,uuid,uuid,NO,
+conversation_messages,role,4,character varying,varchar,NO,
+conversation_messages,content,5,text,text,NO,
+conversation_messages,created_at,6,timestamp without time zone,timestamp,YES,
+conversation_messages,sender_type,7,character varying,varchar,YES,
+conversation_messages,sender_id,8,uuid,uuid,YES,
+conversation_messages,message,9,text,text,YES,
+conversation_messages,message_type,10,character varying,varchar,NO,'text'::character varying
+conversation_messages,metadata,11,jsonb,jsonb,NO,'{}'::jsonb
+conversation_metrics,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_metrics,tenant_id,2,uuid,uuid,NO,
+conversation_metrics,conversation_id,3,uuid,uuid,NO,
+conversation_metrics,response_time_seconds,4,numeric,numeric,YES,
+conversation_metrics,resolution_time_seconds,5,numeric,numeric,YES,
+conversation_metrics,message_count,6,integer,int4,NO,0
+conversation_metrics,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+conversation_metrics,created_at,8,timestamp with time zone,timestamptz,NO,now()
+conversation_objections,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_objections,tenant_id,2,uuid,uuid,NO,
+conversation_objections,conversation_id,3,uuid,uuid,NO,
+conversation_objections,objection_type,4,character varying,varchar,NO,
+conversation_objections,evidence,5,text,text,YES,
+conversation_objections,confidence,6,numeric,numeric,YES,
+conversation_objections,detected_at,7,timestamp with time zone,timestamptz,NO,now()
+conversation_objections,created_at,8,timestamp with time zone,timestamptz,NO,now()
+conversation_participants,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_participants,tenant_id,2,uuid,uuid,NO,
+conversation_participants,conversation_id,3,uuid,uuid,NO,
+conversation_participants,participant_type,4,character varying,varchar,NO,
+conversation_participants,participant_id,5,uuid,uuid,YES,
+conversation_participants,display_name,6,character varying,varchar,YES,
+conversation_participants,joined_at,7,timestamp with time zone,timestamptz,NO,now()
+conversation_participants,left_at,8,timestamp with time zone,timestamptz,YES,
+conversation_sentiments,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_sentiments,tenant_id,2,uuid,uuid,NO,
+conversation_sentiments,conversation_id,3,uuid,uuid,NO,
+conversation_sentiments,message_id,4,uuid,uuid,YES,
+conversation_sentiments,sentiment,5,character varying,varchar,NO,
+conversation_sentiments,score,6,numeric,numeric,YES,
+conversation_sentiments,detected_at,7,timestamp with time zone,timestamptz,NO,now()
+conversation_sentiments,created_at,8,timestamp with time zone,timestamptz,NO,now()
+conversation_summaries,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_summaries,tenant_id,2,uuid,uuid,NO,
+conversation_summaries,conversation_id,3,uuid,uuid,NO,
+conversation_summaries,summary_type,4,character varying,varchar,NO,'ai'::character varying
+conversation_summaries,summary,5,text,text,NO,
+conversation_summaries,created_by,6,uuid,uuid,YES,
+conversation_summaries,created_at,7,timestamp with time zone,timestamptz,NO,now()
+conversation_transcripts,id,1,uuid,uuid,NO,gen_random_uuid()
+conversation_transcripts,tenant_id,2,uuid,uuid,NO,
+conversation_transcripts,conversation_id,3,uuid,uuid,NO,
+conversation_transcripts,transcript,4,text,text,NO,
+conversation_transcripts,provider,5,character varying,varchar,YES,
+conversation_transcripts,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+conversation_transcripts,created_at,7,timestamp with time zone,timestamptz,NO,now()
+conversations,id,1,uuid,uuid,NO,
+conversations,tenant_id,2,uuid,uuid,NO,
+conversations,agent_id,3,uuid,uuid,YES,
+conversations,title,4,character varying,varchar,YES,
+conversations,created_at,5,timestamp without time zone,timestamp,YES,
+conversations,customer_id,6,uuid,uuid,YES,
+conversations,lead_id,7,uuid,uuid,YES,
+conversations,channel,8,character varying,varchar,YES,
+conversations,status,9,character varying,varchar,NO,'open'::character varying
+conversations,started_at,10,timestamp with time zone,timestamptz,YES,
+conversations,ended_at,11,timestamp with time zone,timestamptz,YES,
+conversations,updated_at,12,timestamp with time zone,timestamptz,NO,now()
+cost_tracking,id,1,uuid,uuid,NO,gen_random_uuid()
+cost_tracking,tenant_id,2,uuid,uuid,NO,
+cost_tracking,model,3,character varying,varchar,YES,
+cost_tracking,provider,4,character varying,varchar,YES,
+cost_tracking,cost,5,numeric,numeric,NO,0
+cost_tracking,currency,6,character varying,varchar,NO,'USD'::character varying
+cost_tracking,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+cost_tracking,created_at,8,timestamp with time zone,timestamptz,NO,now()
+credit_transactions,id,1,uuid,uuid,NO,gen_random_uuid()
+credit_transactions,tenant_id,2,uuid,uuid,NO,
+credit_transactions,credit_id,3,uuid,uuid,YES,
+credit_transactions,transaction_type,4,character varying,varchar,NO,
+credit_transactions,amount,5,numeric,numeric,NO,
+credit_transactions,balance_after,6,numeric,numeric,YES,
+credit_transactions,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+credit_transactions,created_at,8,timestamp with time zone,timestamptz,NO,now()
+credits,id,1,uuid,uuid,NO,gen_random_uuid()
+credits,tenant_id,2,uuid,uuid,NO,
+credits,balance,3,numeric,numeric,NO,0
+credits,currency,4,character varying,varchar,NO,'USD'::character varying
+credits,updated_at,5,timestamp with time zone,timestamptz,NO,now()
+credits,created_at,6,timestamp with time zone,timestamptz,NO,now()
+customer_accounts,id,1,uuid,uuid,NO,gen_random_uuid()
+customer_accounts,tenant_id,2,uuid,uuid,NO,
+customer_accounts,parent_account_id,3,uuid,uuid,YES,
+customer_accounts,name,4,character varying,varchar,NO,
+customer_accounts,account_type,5,character varying,varchar,YES,
+customer_accounts,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+customer_accounts,created_at,7,timestamp with time zone,timestamptz,NO,now()
+customer_accounts,updated_at,8,timestamp with time zone,timestamptz,NO,now()
+customer_analytics,id,1,uuid,uuid,NO,gen_random_uuid()
+customer_analytics,tenant_id,2,uuid,uuid,NO,
+customer_analytics,customer_id,3,uuid,uuid,YES,
+customer_analytics,metrics,4,jsonb,jsonb,NO,'{}'::jsonb
+customer_analytics,measured_at,5,timestamp with time zone,timestamptz,NO,now()
+customer_analytics,created_at,6,timestamp with time zone,timestamptz,NO,now()
+customer_churn_scores,id,1,uuid,uuid,NO,gen_random_uuid()
+customer_churn_scores,tenant_id,2,uuid,uuid,NO,
+customer_churn_scores,customer_id,3,uuid,uuid,NO,
+customer_churn_scores,probability,4,numeric,numeric,NO,
+customer_churn_scores,risk_level,5,character varying,varchar,YES,
+customer_churn_scores,factors,6,jsonb,jsonb,NO,'{}'::jsonb
+customer_churn_scores,measured_at,7,timestamp with time zone,timestamptz,NO,now()
+customer_churn_scores,created_at,8,timestamp with time zone,timestamptz,NO,now()
+customer_contacts,id,1,uuid,uuid,NO,gen_random_uuid()
+customer_contacts,tenant_id,2,uuid,uuid,NO,
+customer_contacts,customer_id,3,uuid,uuid,NO,
+customer_contacts,email,4,character varying,varchar,YES,
+customer_contacts,first_name,5,character varying,varchar,YES,
+customer_contacts,last_name,6,character varying,varchar,YES,
+customer_contacts,title,7,character varying,varchar,YES,
+customer_contacts,phone,8,character varying,varchar,YES,
+customer_contacts,is_primary,9,boolean,bool,NO,false
+customer_contacts,created_at,10,timestamp with time zone,timestamptz,NO,now()
+customer_events,id,1,uuid,uuid,NO,gen_random_uuid()
+customer_events,tenant_id,2,uuid,uuid,NO,
+customer_events,customer_id,3,uuid,uuid,NO,
+customer_events,event_type,4,character varying,varchar,NO,
+customer_events,payload,5,jsonb,jsonb,NO,'{}'::jsonb
+customer_events,occurred_at,6,timestamp with time zone,timestamptz,NO,now()
+customer_events,created_at,7,timestamp with time zone,timestamptz,NO,now()
+customer_expansion_scores,id,1,uuid,uuid,NO,gen_random_uuid()
+customer_expansion_scores,tenant_id,2,uuid,uuid,NO,
+customer_expansion_scores,customer_id,3,uuid,uuid,NO,
+customer_expansion_scores,score,4,integer,int4,NO,
+customer_expansion_scores,opportunity_amount,5,numeric,numeric,YES,
+customer_expansion_scores,factors,6,jsonb,jsonb,NO,'{}'::jsonb
+customer_expansion_scores,measured_at,7,timestamp with time zone,timestamptz,NO,now()
+customer_expansion_scores,created_at,8,timestamp with time zone,timestamptz,NO,now()
+customer_health_scores,id,1,uuid,uuid,NO,gen_random_uuid()
+customer_health_scores,tenant_id,2,uuid,uuid,NO,
+customer_health_scores,customer_id,3,uuid,uuid,NO,
+customer_health_scores,score,4,integer,int4,NO,
+customer_health_scores,factors,5,jsonb,jsonb,NO,'{}'::jsonb
+customer_health_scores,measured_at,6,timestamp with time zone,timestamptz,NO,now()
+customer_health_scores,created_at,7,timestamp with time zone,timestamptz,NO,now()
+customer_segments,id,1,uuid,uuid,NO,gen_random_uuid()
+customer_segments,tenant_id,2,uuid,uuid,NO,
+customer_segments,name,3,character varying,varchar,NO,
+customer_segments,criteria,4,jsonb,jsonb,NO,'{}'::jsonb
+customer_segments,created_at,5,timestamp with time zone,timestamptz,NO,now()
+customer_segments,updated_at,6,timestamp with time zone,timestamptz,NO,now()
+customer_usage_metrics,id,1,uuid,uuid,NO,gen_random_uuid()
+customer_usage_metrics,tenant_id,2,uuid,uuid,NO,
+customer_usage_metrics,customer_id,3,uuid,uuid,NO,
+customer_usage_metrics,metric_name,4,character varying,varchar,NO,
+customer_usage_metrics,metric_value,5,numeric,numeric,NO,0
+customer_usage_metrics,measured_at,6,timestamp with time zone,timestamptz,NO,now()
+customer_usage_metrics,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+customer_usage_metrics,created_at,8,timestamp with time zone,timestamptz,NO,now()
+customers,id,1,uuid,uuid,NO,
+customers,tenant_id,2,uuid,uuid,NO,
+customers,name,3,character varying,varchar,NO,
+customers,health_score,4,integer,int4,YES,
+customers,churn_risk,5,character varying,varchar,YES,
+customers,created_at,6,timestamp without time zone,timestamp,YES,
+customers,lead_id,7,uuid,uuid,YES,
+customers,metadata,8,jsonb,jsonb,NO,'{}'::jsonb
+customers,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+document_chunks,id,1,uuid,uuid,NO,gen_random_uuid()
+document_chunks,tenant_id,2,uuid,uuid,NO,
+document_chunks,document_id,3,uuid,uuid,NO,
+document_chunks,chunk_index,4,integer,int4,NO,
+document_chunks,content,5,text,text,NO,
+document_chunks,token_count,6,integer,int4,YES,
+document_chunks,weaviate_object_id,7,uuid,uuid,YES,
+document_chunks,metadata,8,jsonb,jsonb,NO,'{}'::jsonb
+document_chunks,created_at,9,timestamp with time zone,timestamptz,NO,now()
+document_pages,id,1,uuid,uuid,NO,gen_random_uuid()
+document_pages,tenant_id,2,uuid,uuid,NO,
+document_pages,document_id,3,uuid,uuid,NO,
+document_pages,page_number,4,integer,int4,NO,
+document_pages,text,5,text,text,YES,
+document_pages,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+document_pages,created_at,7,timestamp with time zone,timestamptz,NO,now()
+document_versions,id,1,uuid,uuid,NO,gen_random_uuid()
+document_versions,tenant_id,2,uuid,uuid,NO,
+document_versions,document_id,3,uuid,uuid,NO,
+document_versions,version,4,integer,int4,NO,
+document_versions,title,5,character varying,varchar,YES,
+document_versions,content_hash,6,text,text,YES,
+document_versions,path,7,text,text,YES,
+document_versions,metadata,8,jsonb,jsonb,NO,'{}'::jsonb
+document_versions,created_at,9,timestamp with time zone,timestamptz,NO,now()
+documents,id,1,uuid,uuid,NO,
+documents,tenant_id,2,uuid,uuid,NO,
+documents,title,3,character varying,varchar,NO,
+documents,source_type,4,character varying,varchar,NO,
+documents,status,5,character varying,varchar,YES,
+documents,tags,6,ARRAY,_varchar,YES,
+documents,created_at,7,timestamp without time zone,timestamp,YES,
+documents,source_id,8,uuid,uuid,YES,
+documents,source_uri,9,text,text,YES,
+documents,mime_type,10,character varying,varchar,YES,
+documents,path,11,text,text,YES,
+documents,metadata,12,jsonb,jsonb,NO,'{}'::jsonb
+documents,updated_at,13,timestamp with time zone,timestamptz,NO,now()
+entities,id,1,uuid,uuid,NO,gen_random_uuid()
+entities,tenant_id,2,uuid,uuid,NO,
+entities,entity_type,3,character varying,varchar,NO,
+entities,name,4,character varying,varchar,NO,
+entities,description,5,text,text,YES,
+entities,confidence,6,numeric,numeric,YES,
+entities,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+entities,created_at,8,timestamp with time zone,timestamptz,NO,now()
+entities,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+entity_aliases,id,1,uuid,uuid,NO,gen_random_uuid()
+entity_aliases,tenant_id,2,uuid,uuid,NO,
+entity_aliases,entity_id,3,uuid,uuid,NO,
+entity_aliases,alias,4,character varying,varchar,NO,
+entity_aliases,created_at,5,timestamp with time zone,timestamptz,NO,now()
+entity_attributes,id,1,uuid,uuid,NO,gen_random_uuid()
+entity_attributes,tenant_id,2,uuid,uuid,NO,
+entity_attributes,entity_id,3,uuid,uuid,NO,
+entity_attributes,key,4,character varying,varchar,NO,
+entity_attributes,value,5,jsonb,jsonb,NO,'{}'::jsonb
+entity_attributes,created_at,6,timestamp with time zone,timestamptz,NO,now()
+entity_attributes,updated_at,7,timestamp with time zone,timestamptz,NO,now()
+entity_relations,id,1,uuid,uuid,NO,gen_random_uuid()
+entity_relations,tenant_id,2,uuid,uuid,NO,
+entity_relations,source_entity_id,3,uuid,uuid,NO,
+entity_relations,target_entity_id,4,uuid,uuid,NO,
+entity_relations,relation_type,5,character varying,varchar,NO,
+entity_relations,confidence,6,numeric,numeric,YES,
+entity_relations,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+entity_relations,created_at,8,timestamp with time zone,timestamptz,NO,now()
+evaluation_results,id,1,uuid,uuid,NO,gen_random_uuid()
+evaluation_results,tenant_id,2,uuid,uuid,NO,
+evaluation_results,subject_type,3,character varying,varchar,NO,
+evaluation_results,subject_id,4,uuid,uuid,YES,
+evaluation_results,evaluator,5,character varying,varchar,YES,
+evaluation_results,score,6,numeric,numeric,YES,
+evaluation_results,result,7,jsonb,jsonb,NO,'{}'::jsonb
+evaluation_results,created_at,8,timestamp with time zone,timestamptz,NO,now()
+events,id,1,uuid,uuid,NO,gen_random_uuid()
+events,tenant_id,2,uuid,uuid,NO,
+events,event_type,3,character varying,varchar,NO,
+events,payload,4,jsonb,jsonb,NO,'{}'::jsonb
+events,created_at,5,timestamp with time zone,timestamptz,NO,now()
+faqs,id,1,uuid,uuid,NO,gen_random_uuid()
+faqs,tenant_id,2,uuid,uuid,NO,
+faqs,question,3,text,text,NO,
+faqs,answer,4,text,text,NO,
+faqs,embedding_vector_id,5,uuid,uuid,YES,
+faqs,tags,6,ARRAY,_text,NO,'{}'::text[]
+faqs,is_active,7,boolean,bool,NO,true
+faqs,created_at,8,timestamp with time zone,timestamptz,NO,now()
+faqs,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+feature_flags,id,1,uuid,uuid,NO,gen_random_uuid()
+feature_flags,tenant_id,2,uuid,uuid,YES,
+feature_flags,flag_key,3,character varying,varchar,NO,
+feature_flags,is_enabled,4,boolean,bool,NO,false
+feature_flags,config,5,jsonb,jsonb,NO,'{}'::jsonb
+feature_flags,created_at,6,timestamp with time zone,timestamptz,NO,now()
+feature_flags,updated_at,7,timestamp with time zone,timestamptz,NO,now()
+forecasts,id,1,uuid,uuid,NO,gen_random_uuid()
+forecasts,tenant_id,2,uuid,uuid,NO,
+forecasts,period_start,3,date,date,NO,
+forecasts,period_end,4,date,date,NO,
+forecasts,forecast_amount,5,numeric,numeric,NO,0
+forecasts,committed_amount,6,numeric,numeric,NO,0
+forecasts,best_case_amount,7,numeric,numeric,NO,0
+forecasts,metadata,8,jsonb,jsonb,NO,'{}'::jsonb
+forecasts,created_at,9,timestamp with time zone,timestamptz,NO,now()
+forecasts,updated_at,10,timestamp with time zone,timestamptz,NO,now()
+hallucination_checks,id,1,uuid,uuid,NO,gen_random_uuid()
+hallucination_checks,tenant_id,2,uuid,uuid,NO,
+hallucination_checks,message_id,3,uuid,uuid,YES,
+hallucination_checks,status,4,character varying,varchar,NO,
+hallucination_checks,findings,5,jsonb,jsonb,NO,'{}'::jsonb
+hallucination_checks,created_at,6,timestamp with time zone,timestamptz,NO,now()
+integration_connections,id,1,uuid,uuid,NO,
+integration_connections,tenant_id,2,uuid,uuid,NO,
+integration_connections,integration_id,3,uuid,uuid,NO,
+integration_connections,status,4,character varying,varchar,YES,
+integration_connections,created_at,5,timestamp without time zone,timestamp,YES,
+integration_connections,oauth_token,6,jsonb,jsonb,NO,'{}'::jsonb
+integration_sync_jobs,id,1,uuid,uuid,NO,gen_random_uuid()
+integration_sync_jobs,tenant_id,2,uuid,uuid,NO,
+integration_sync_jobs,integration_connection_id,3,uuid,uuid,NO,
+integration_sync_jobs,status,4,character varying,varchar,NO,'queued'::character varying
+integration_sync_jobs,started_at,5,timestamp with time zone,timestamptz,YES,
+integration_sync_jobs,finished_at,6,timestamp with time zone,timestamptz,YES,
+integration_sync_jobs,error,7,text,text,YES,
+integration_sync_jobs,stats,8,jsonb,jsonb,NO,'{}'::jsonb
+integration_sync_jobs,created_at,9,timestamp with time zone,timestamptz,NO,now()
+integration_webhooks,id,1,uuid,uuid,NO,gen_random_uuid()
+integration_webhooks,tenant_id,2,uuid,uuid,NO,
+integration_webhooks,integration_connection_id,3,uuid,uuid,YES,
+integration_webhooks,url,4,text,text,NO,
+integration_webhooks,events,5,ARRAY,_text,NO,'{}'::text[]
+integration_webhooks,secret_hash,6,text,text,YES,
+integration_webhooks,is_active,7,boolean,bool,NO,true
+integration_webhooks,created_at,8,timestamp with time zone,timestamptz,NO,now()
+integration_webhooks,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+integrations,id,1,uuid,uuid,NO,
+integrations,name,2,character varying,varchar,NO,
+integrations,description,3,character varying,varchar,YES,
+integrations,is_active,4,boolean,bool,YES,
+invoices,id,1,uuid,uuid,NO,gen_random_uuid()
+invoices,tenant_id,2,uuid,uuid,NO,
+invoices,subscription_id,3,uuid,uuid,YES,
+invoices,customer_id,4,uuid,uuid,YES,
+invoices,invoice_number,5,character varying,varchar,YES,
+invoices,amount,6,numeric,numeric,NO,0
+invoices,currency,7,character varying,varchar,NO,'USD'::character varying
+invoices,status,8,character varying,varchar,NO,'draft'::character varying
+invoices,due_date,9,date,date,YES,
+invoices,paid_at,10,timestamp with time zone,timestamptz,YES,
+invoices,metadata,11,jsonb,jsonb,NO,'{}'::jsonb
+invoices,created_at,12,timestamp with time zone,timestamptz,NO,now()
+invoices,updated_at,13,timestamp with time zone,timestamptz,NO,now()
+knowledge_feedback,id,1,uuid,uuid,NO,gen_random_uuid()
+knowledge_feedback,tenant_id,2,uuid,uuid,NO,
+knowledge_feedback,user_id,3,uuid,uuid,YES,
+knowledge_feedback,query,4,text,text,YES,
+knowledge_feedback,result_type,5,character varying,varchar,YES,
+knowledge_feedback,result_id,6,uuid,uuid,YES,
+knowledge_feedback,rating,7,integer,int4,YES,
+knowledge_feedback,feedback,8,text,text,YES,
+knowledge_feedback,metadata,9,jsonb,jsonb,NO,'{}'::jsonb
+knowledge_feedback,created_at,10,timestamp with time zone,timestamptz,NO,now()
+knowledge_sources,id,1,uuid,uuid,NO,gen_random_uuid()
+knowledge_sources,tenant_id,2,uuid,uuid,NO,
+knowledge_sources,name,3,character varying,varchar,NO,
+knowledge_sources,source_type,4,character varying,varchar,NO,
+knowledge_sources,config,5,jsonb,jsonb,NO,'{}'::jsonb
+knowledge_sources,is_active,6,boolean,bool,NO,true
+knowledge_sources,created_at,7,timestamp with time zone,timestamptz,NO,now()
+knowledge_sources,updated_at,8,timestamp with time zone,timestamptz,NO,now()
+knowledge_tags,id,1,uuid,uuid,NO,gen_random_uuid()
+knowledge_tags,tenant_id,2,uuid,uuid,NO,
+knowledge_tags,name,3,character varying,varchar,NO,
+knowledge_tags,description,4,text,text,YES,
+knowledge_tags,created_at,5,timestamp with time zone,timestamptz,NO,now()
+latency_metrics,id,1,uuid,uuid,NO,gen_random_uuid()
+latency_metrics,tenant_id,2,uuid,uuid,NO,
+latency_metrics,component,3,character varying,varchar,NO,
+latency_metrics,latency_ms,4,integer,int4,NO,
+latency_metrics,metadata,5,jsonb,jsonb,NO,'{}'::jsonb
+latency_metrics,created_at,6,timestamp with time zone,timestamptz,NO,now()
+lead_activities,id,1,uuid,uuid,NO,gen_random_uuid()
+lead_activities,tenant_id,2,uuid,uuid,NO,
+lead_activities,lead_id,3,uuid,uuid,NO,
+lead_activities,activity_type,4,character varying,varchar,NO,
+lead_activities,subject,5,character varying,varchar,YES,
+lead_activities,description,6,text,text,YES,
+lead_activities,occurred_at,7,timestamp with time zone,timestamptz,NO,now()
+lead_activities,metadata,8,jsonb,jsonb,NO,'{}'::jsonb
+lead_activities,created_at,9,timestamp with time zone,timestamptz,NO,now()
+lead_analytics,id,1,uuid,uuid,NO,gen_random_uuid()
+lead_analytics,tenant_id,2,uuid,uuid,NO,
+lead_analytics,lead_id,3,uuid,uuid,YES,
+lead_analytics,metrics,4,jsonb,jsonb,NO,'{}'::jsonb
+lead_analytics,measured_at,5,timestamp with time zone,timestamptz,NO,now()
+lead_analytics,created_at,6,timestamp with time zone,timestamptz,NO,now()
+lead_intents,id,1,uuid,uuid,NO,gen_random_uuid()
+lead_intents,tenant_id,2,uuid,uuid,NO,
+lead_intents,lead_id,3,uuid,uuid,NO,
+lead_intents,intent,4,character varying,varchar,NO,
+lead_intents,confidence,5,numeric,numeric,YES,
+lead_intents,evidence,6,text,text,YES,
+lead_intents,detected_at,7,timestamp with time zone,timestamptz,NO,now()
+lead_intents,created_at,8,timestamp with time zone,timestamptz,NO,now()
+lead_qualifications,id,1,uuid,uuid,NO,gen_random_uuid()
+lead_qualifications,tenant_id,2,uuid,uuid,NO,
+lead_qualifications,lead_id,3,uuid,uuid,NO,
+lead_qualifications,framework_id,4,uuid,uuid,NO,
+lead_qualifications,score,5,numeric,numeric,YES,
+lead_qualifications,status,6,character varying,varchar,YES,
+lead_qualifications,reasoning,7,text,text,YES,
+lead_qualifications,created_at,8,timestamp with time zone,timestamptz,NO,now()
+lead_qualifications,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+lead_scores,id,1,uuid,uuid,NO,gen_random_uuid()
+lead_scores,tenant_id,2,uuid,uuid,NO,
+lead_scores,lead_id,3,uuid,uuid,NO,
+lead_scores,icp_score,4,integer,int4,NO,0
+lead_scores,intent_score,5,integer,int4,NO,0
+lead_scores,engagement_score,6,integer,int4,NO,0
+lead_scores,buying_score,7,integer,int4,NO,0
+lead_scores,relationship_score,8,integer,int4,NO,0
+lead_scores,revenue_score,9,integer,int4,NO,0
+lead_scores,metadata,10,jsonb,jsonb,NO,'{}'::jsonb
+lead_scores,created_at,11,timestamp with time zone,timestamptz,NO,now()
+lead_sources,id,1,uuid,uuid,NO,gen_random_uuid()
+lead_sources,tenant_id,2,uuid,uuid,NO,
+lead_sources,name,3,character varying,varchar,NO,
+lead_sources,channel,4,character varying,varchar,YES,
+lead_sources,campaign,5,character varying,varchar,YES,
+lead_sources,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+lead_sources,created_at,7,timestamp with time zone,timestamptz,NO,now()
+lead_sources,updated_at,8,timestamp with time zone,timestamptz,NO,now()
+leads,id,1,uuid,uuid,NO,
+leads,tenant_id,2,uuid,uuid,NO,
+leads,email,3,character varying,varchar,NO,
+leads,first_name,4,character varying,varchar,YES,
+leads,last_name,5,character varying,varchar,YES,
+leads,company,6,character varying,varchar,YES,
+leads,status,7,character varying,varchar,YES,
+leads,revenue_score,8,integer,int4,YES,
+leads,created_at,9,timestamp without time zone,timestamp,YES,
+leads,name,10,character varying,varchar,YES,
+leads,phone,11,character varying,varchar,YES,
+leads,source,12,character varying,varchar,YES,
+leads,metadata,13,jsonb,jsonb,NO,'{}'::jsonb
+leads,updated_at,14,timestamp with time zone,timestamptz,NO,now()
+llm_requests,id,1,uuid,uuid,NO,gen_random_uuid()
+llm_requests,tenant_id,2,uuid,uuid,NO,
+llm_requests,agent_id,3,uuid,uuid,YES,
+llm_requests,model,4,character varying,varchar,NO,
+llm_requests,prompt,5,jsonb,jsonb,NO,'{}'::jsonb
+llm_requests,parameters,6,jsonb,jsonb,NO,'{}'::jsonb
+llm_requests,created_at,7,timestamp with time zone,timestamptz,NO,now()
+llm_responses,id,1,uuid,uuid,NO,gen_random_uuid()
+llm_responses,tenant_id,2,uuid,uuid,NO,
+llm_responses,request_id,3,uuid,uuid,YES,
+llm_responses,response,4,jsonb,jsonb,NO,'{}'::jsonb
+llm_responses,finish_reason,5,character varying,varchar,YES,
+llm_responses,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+llm_responses,created_at,7,timestamp with time zone,timestamptz,NO,now()
+meeting_notes,id,1,uuid,uuid,NO,gen_random_uuid()
+meeting_notes,tenant_id,2,uuid,uuid,NO,
+meeting_notes,meeting_id,3,uuid,uuid,NO,
+meeting_notes,note_type,4,character varying,varchar,NO,'human'::character varying
+meeting_notes,content,5,text,text,NO,
+meeting_notes,created_by,6,uuid,uuid,YES,
+meeting_notes,created_at,7,timestamp with time zone,timestamptz,NO,now()
+meetings,id,1,uuid,uuid,NO,gen_random_uuid()
+meetings,tenant_id,2,uuid,uuid,NO,
+meetings,lead_id,3,uuid,uuid,YES,
+meetings,customer_id,4,uuid,uuid,YES,
+meetings,opportunity_id,5,uuid,uuid,YES,
+meetings,title,6,character varying,varchar,NO,
+meetings,scheduled_at,7,timestamp with time zone,timestamptz,YES,
+meetings,completed_at,8,timestamp with time zone,timestamptz,YES,
+meetings,status,9,character varying,varchar,NO,'scheduled'::character varying
+meetings,metadata,10,jsonb,jsonb,NO,'{}'::jsonb
+meetings,created_at,11,timestamp with time zone,timestamptz,NO,now()
+meetings,updated_at,12,timestamp with time zone,timestamptz,NO,now()
+message_attachments,id,1,uuid,uuid,NO,gen_random_uuid()
+message_attachments,tenant_id,2,uuid,uuid,NO,
+message_attachments,message_id,3,uuid,uuid,NO,
+message_attachments,file_name,4,character varying,varchar,YES,
+message_attachments,file_type,5,character varying,varchar,YES,
+message_attachments,file_url,6,text,text,YES,
+message_attachments,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+message_attachments,created_at,8,timestamp with time zone,timestamptz,NO,now()
+message_delivery_status,id,1,uuid,uuid,NO,gen_random_uuid()
+message_delivery_status,tenant_id,2,uuid,uuid,NO,
+message_delivery_status,message_id,3,uuid,uuid,NO,
+message_delivery_status,channel,4,character varying,varchar,NO,
+message_delivery_status,status,5,character varying,varchar,NO,
+message_delivery_status,provider_message_id,6,text,text,YES,
+message_delivery_status,delivered_at,7,timestamp with time zone,timestamptz,YES,
+message_delivery_status,read_at,8,timestamp with time zone,timestamptz,YES,
+message_delivery_status,metadata,9,jsonb,jsonb,NO,'{}'::jsonb
+message_delivery_status,created_at,10,timestamp with time zone,timestamptz,NO,now()
+message_reactions,id,1,uuid,uuid,NO,gen_random_uuid()
+message_reactions,tenant_id,2,uuid,uuid,NO,
+message_reactions,message_id,3,uuid,uuid,NO,
+message_reactions,user_id,4,uuid,uuid,YES,
+message_reactions,reaction,5,character varying,varchar,NO,
+message_reactions,created_at,6,timestamp with time zone,timestamptz,NO,now()
+migrations_log,id,1,uuid,uuid,NO,gen_random_uuid()
+migrations_log,migration_name,2,character varying,varchar,NO,
+migrations_log,applied_at,3,timestamp with time zone,timestamptz,NO,now()
+migrations_log,metadata,4,jsonb,jsonb,NO,'{}'::jsonb
+model_usage,id,1,uuid,uuid,NO,gen_random_uuid()
+model_usage,tenant_id,2,uuid,uuid,NO,
+model_usage,model,3,character varying,varchar,NO,
+model_usage,provider,4,character varying,varchar,YES,
+model_usage,prompt_tokens,5,integer,int4,NO,0
+model_usage,completion_tokens,6,integer,int4,NO,0
+model_usage,total_tokens,7,integer,int4,NO,0
+model_usage,cost,8,numeric,numeric,NO,0
+model_usage,latency_ms,9,integer,int4,YES,
+model_usage,metadata,10,jsonb,jsonb,NO,'{}'::jsonb
+model_usage,created_at,11,timestamp with time zone,timestamptz,NO,now()
+notification_templates,id,1,uuid,uuid,NO,gen_random_uuid()
+notification_templates,tenant_id,2,uuid,uuid,YES,
+notification_templates,name,3,character varying,varchar,NO,
+notification_templates,channel,4,character varying,varchar,NO,
+notification_templates,subject_template,5,text,text,YES,
+notification_templates,body_template,6,text,text,NO,
+notification_templates,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+notification_templates,created_at,8,timestamp with time zone,timestamptz,NO,now()
+notification_templates,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+notifications,id,1,uuid,uuid,NO,gen_random_uuid()
+notifications,tenant_id,2,uuid,uuid,NO,
+notifications,user_id,3,uuid,uuid,YES,
+notifications,notification_type,4,character varying,varchar,NO,
+notifications,title,5,character varying,varchar,NO,
+notifications,body,6,text,text,YES,
+notifications,payload,7,jsonb,jsonb,NO,'{}'::jsonb
+notifications,read_at,8,timestamp with time zone,timestamptz,YES,
+notifications,created_at,9,timestamp with time zone,timestamptz,NO,now()
+opportunities,id,1,uuid,uuid,NO,gen_random_uuid()
+opportunities,tenant_id,2,uuid,uuid,NO,
+opportunities,lead_id,3,uuid,uuid,YES,
+opportunities,name,4,character varying,varchar,NO,
+opportunities,stage,5,character varying,varchar,YES,
+opportunities,amount,6,numeric,numeric,YES,
+opportunities,probability,7,numeric,numeric,YES,
+opportunities,close_date,8,date,date,YES,
+opportunities,status,9,character varying,varchar,NO,'open'::character varying
+opportunities,metadata,10,jsonb,jsonb,NO,'{}'::jsonb
+opportunities,created_at,11,timestamp with time zone,timestamptz,NO,now()
+opportunities,updated_at,12,timestamp with time zone,timestamptz,NO,now()
+opportunity_stages,id,1,uuid,uuid,NO,gen_random_uuid()
+opportunity_stages,tenant_id,2,uuid,uuid,NO,
+opportunity_stages,name,3,character varying,varchar,NO,
+opportunity_stages,stage_order,4,integer,int4,NO,0
+opportunity_stages,probability,5,numeric,numeric,YES,
+opportunity_stages,is_closed,6,boolean,bool,NO,false
+opportunity_stages,is_won,7,boolean,bool,NO,false
+opportunity_stages,created_at,8,timestamp with time zone,timestamptz,NO,now()
+opportunity_stages,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+payment_attempts,id,1,uuid,uuid,NO,gen_random_uuid()
+payment_attempts,tenant_id,2,uuid,uuid,NO,
+payment_attempts,payment_id,3,uuid,uuid,YES,
+payment_attempts,invoice_id,4,uuid,uuid,YES,
+payment_attempts,status,5,character varying,varchar,NO,'failed'::character varying
+payment_attempts,error,6,text,text,YES,
+payment_attempts,attempted_at,7,timestamp with time zone,timestamptz,NO,now()
+payment_attempts,metadata,8,jsonb,jsonb,NO,'{}'::jsonb
+payment_attempts,created_at,9,timestamp with time zone,timestamptz,NO,now()
+payment_methods,id,1,uuid,uuid,NO,gen_random_uuid()
+payment_methods,tenant_id,2,uuid,uuid,NO,
+payment_methods,customer_id,3,uuid,uuid,YES,
+payment_methods,provider,4,character varying,varchar,NO,
+payment_methods,token,5,text,text,NO,
+payment_methods,brand,6,character varying,varchar,YES,
+payment_methods,last4,7,character varying,varchar,YES,
+payment_methods,expires_month,8,integer,int4,YES,
+payment_methods,expires_year,9,integer,int4,YES,
+payment_methods,is_default,10,boolean,bool,NO,false
+payment_methods,created_at,11,timestamp with time zone,timestamptz,NO,now()
+payment_methods,updated_at,12,timestamp with time zone,timestamptz,NO,now()
+payments,id,1,uuid,uuid,NO,gen_random_uuid()
+payments,tenant_id,2,uuid,uuid,NO,
+payments,invoice_id,3,uuid,uuid,YES,
+payments,customer_id,4,uuid,uuid,YES,
+payments,amount,5,numeric,numeric,NO,0
+payments,currency,6,character varying,varchar,NO,'USD'::character varying
+payments,status,7,character varying,varchar,NO,'pending'::character varying
+payments,provider,8,character varying,varchar,YES,
+payments,provider_payment_id,9,text,text,YES,
+payments,paid_at,10,timestamp with time zone,timestamptz,YES,
+payments,metadata,11,jsonb,jsonb,NO,'{}'::jsonb
+payments,created_at,12,timestamp with time zone,timestamptz,NO,now()
+payments,updated_at,13,timestamp with time zone,timestamptz,NO,now()
+permissions,id,1,uuid,uuid,NO,gen_random_uuid()
+permissions,resource,2,character varying,varchar,NO,
+permissions,action,3,character varying,varchar,NO,
+permissions,description,4,text,text,YES,
+permissions,created_at,5,timestamp with time zone,timestamptz,NO,now()
+plans,id,1,uuid,uuid,NO,gen_random_uuid()
+plans,name,2,character varying,varchar,NO,
+plans,description,3,text,text,YES,
+plans,price,4,numeric,numeric,NO,0
+plans,currency,5,character varying,varchar,NO,'USD'::character varying
+plans,billing_interval,6,character varying,varchar,NO,'month'::character varying
+plans,feature_limits,7,jsonb,jsonb,NO,'{}'::jsonb
+plans,is_active,8,boolean,bool,NO,true
+plans,created_at,9,timestamp with time zone,timestamptz,NO,now()
+plans,updated_at,10,timestamp with time zone,timestamptz,NO,now()
+policies,id,1,uuid,uuid,NO,gen_random_uuid()
+policies,tenant_id,2,uuid,uuid,NO,
+policies,title,3,character varying,varchar,NO,
+policies,body,4,text,text,YES,
+policies,policy_type,5,character varying,varchar,YES,
+policies,status,6,character varying,varchar,NO,'active'::character varying
+policies,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+policies,created_at,8,timestamp with time zone,timestamptz,NO,now()
+policies,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+pricing_models,id,1,uuid,uuid,NO,gen_random_uuid()
+pricing_models,tenant_id,2,uuid,uuid,NO,
+pricing_models,name,3,character varying,varchar,NO,
+pricing_models,model_type,4,character varying,varchar,NO,
+pricing_models,tiers,5,jsonb,jsonb,NO,'[]'::jsonb
+pricing_models,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+pricing_models,created_at,7,timestamp with time zone,timestamptz,NO,now()
+pricing_models,updated_at,8,timestamp with time zone,timestamptz,NO,now()
+pricing_rules,id,1,uuid,uuid,NO,gen_random_uuid()
+pricing_rules,tenant_id,2,uuid,uuid,NO,
+pricing_rules,pricing_model_id,3,uuid,uuid,YES,
+pricing_rules,name,4,character varying,varchar,NO,
+pricing_rules,conditions,5,jsonb,jsonb,NO,'{}'::jsonb
+pricing_rules,actions,6,jsonb,jsonb,NO,'{}'::jsonb
+pricing_rules,priority,7,integer,int4,NO,0
+pricing_rules,is_active,8,boolean,bool,NO,true
+pricing_rules,created_at,9,timestamp with time zone,timestamptz,NO,now()
+pricing_rules,updated_at,10,timestamp with time zone,timestamptz,NO,now()
+procedures,id,1,uuid,uuid,NO,gen_random_uuid()
+procedures,tenant_id,2,uuid,uuid,NO,
+procedures,title,3,character varying,varchar,NO,
+procedures,steps,4,jsonb,jsonb,NO,'[]'::jsonb
+procedures,status,5,character varying,varchar,NO,'active'::character varying
+procedures,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+procedures,created_at,7,timestamp with time zone,timestamptz,NO,now()
+procedures,updated_at,8,timestamp with time zone,timestamptz,NO,now()
+products,id,1,uuid,uuid,NO,gen_random_uuid()
+products,tenant_id,2,uuid,uuid,NO,
+products,name,3,character varying,varchar,NO,
+products,sku,4,character varying,varchar,YES,
+products,description,5,text,text,YES,
+products,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+products,is_active,7,boolean,bool,NO,true
+products,created_at,8,timestamp with time zone,timestamptz,NO,now()
+products,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+prompt_experiments,id,1,uuid,uuid,NO,gen_random_uuid()
+prompt_experiments,tenant_id,2,uuid,uuid,NO,
+prompt_experiments,name,3,character varying,varchar,NO,
+prompt_experiments,variants,4,jsonb,jsonb,NO,'[]'::jsonb
+prompt_experiments,metrics,5,jsonb,jsonb,NO,'{}'::jsonb
+prompt_experiments,status,6,character varying,varchar,NO,'draft'::character varying
+prompt_experiments,started_at,7,timestamp with time zone,timestamptz,YES,
+prompt_experiments,ended_at,8,timestamp with time zone,timestamptz,YES,
+prompt_experiments,created_at,9,timestamp with time zone,timestamptz,NO,now()
+prompt_experiments,updated_at,10,timestamp with time zone,timestamptz,NO,now()
+prompt_versions,id,1,uuid,uuid,NO,gen_random_uuid()
+prompt_versions,tenant_id,2,uuid,uuid,NO,
+prompt_versions,name,3,character varying,varchar,NO,
+prompt_versions,version,4,integer,int4,NO,
+prompt_versions,prompt,5,text,text,NO,
+prompt_versions,metadata,6,jsonb,jsonb,NO,'{}'::jsonb
+prompt_versions,created_by,7,uuid,uuid,YES,
+prompt_versions,created_at,8,timestamp with time zone,timestamptz,NO,now()
+proposals,id,1,uuid,uuid,NO,gen_random_uuid()
+proposals,tenant_id,2,uuid,uuid,NO,
+proposals,opportunity_id,3,uuid,uuid,YES,
+proposals,title,4,character varying,varchar,NO,
+proposals,version,5,integer,int4,NO,1
+proposals,status,6,character varying,varchar,NO,'draft'::character varying
+proposals,document_id,7,uuid,uuid,YES,
+proposals,metadata,8,jsonb,jsonb,NO,'{}'::jsonb
+proposals,created_at,9,timestamp with time zone,timestamptz,NO,now()
+proposals,updated_at,10,timestamp with time zone,timestamptz,NO,now()
+qualification_answers,id,1,uuid,uuid,NO,gen_random_uuid()
+qualification_answers,tenant_id,2,uuid,uuid,NO,
+qualification_answers,qualification_id,3,uuid,uuid,NO,
+qualification_answers,question,4,text,text,NO,
+qualification_answers,answer,5,text,text,YES,
+qualification_answers,score,6,numeric,numeric,YES,
+qualification_answers,evidence,7,text,text,YES,
+qualification_answers,created_at,8,timestamp with time zone,timestamptz,NO,now()
+qualification_frameworks,id,1,uuid,uuid,NO,gen_random_uuid()
+qualification_frameworks,tenant_id,2,uuid,uuid,NO,
+qualification_frameworks,name,3,character varying,varchar,NO,
+qualification_frameworks,description,4,text,text,YES,
+qualification_frameworks,criteria,5,jsonb,jsonb,NO,'{}'::jsonb
+qualification_frameworks,is_active,6,boolean,bool,NO,true
+qualification_frameworks,created_at,7,timestamp with time zone,timestamptz,NO,now()
+qualification_frameworks,updated_at,8,timestamp with time zone,timestamptz,NO,now()
+quotes,id,1,uuid,uuid,NO,gen_random_uuid()
+quotes,tenant_id,2,uuid,uuid,NO,
+quotes,proposal_id,3,uuid,uuid,YES,
+quotes,opportunity_id,4,uuid,uuid,YES,
+quotes,total_amount,5,numeric,numeric,NO,0
+quotes,currency,6,character varying,varchar,NO,'USD'::character varying
+quotes,status,7,character varying,varchar,NO,'draft'::character varying
+quotes,line_items,8,jsonb,jsonb,NO,'[]'::jsonb
+quotes,valid_until,9,date,date,YES,
+quotes,created_at,10,timestamp with time zone,timestamptz,NO,now()
+quotes,updated_at,11,timestamp with time zone,timestamptz,NO,now()
+rate_limits,id,1,uuid,uuid,NO,gen_random_uuid()
+rate_limits,tenant_id,2,uuid,uuid,YES,
+rate_limits,key,3,character varying,varchar,NO,
+rate_limits,window_start,4,timestamp with time zone,timestamptz,NO,
+rate_limits,request_count,5,integer,int4,NO,0
+rate_limits,limit_count,6,integer,int4,NO,
+rate_limits,expires_at,7,timestamp with time zone,timestamptz,NO,
+rate_limits,created_at,8,timestamp with time zone,timestamptz,NO,now()
+rate_limits,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+refresh_tokens,id,1,uuid,uuid,NO,gen_random_uuid()
+refresh_tokens,tenant_id,2,uuid,uuid,NO,
+refresh_tokens,user_id,3,uuid,uuid,NO,
+refresh_tokens,token_hash,4,text,text,NO,
+refresh_tokens,revoked_at,5,timestamp with time zone,timestamptz,YES,
+refresh_tokens,expires_at,6,timestamp with time zone,timestamptz,NO,
+refresh_tokens,created_at,7,timestamp with time zone,timestamptz,NO,now()
+renewals,id,1,uuid,uuid,NO,gen_random_uuid()
+renewals,tenant_id,2,uuid,uuid,NO,
+renewals,customer_id,3,uuid,uuid,NO,
+renewals,renewal_date,4,date,date,NO,
+renewals,amount,5,numeric,numeric,YES,
+renewals,status,6,character varying,varchar,NO,'pending'::character varying
+renewals,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+renewals,created_at,8,timestamp with time zone,timestamptz,NO,now()
+renewals,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+reranking_logs,id,1,uuid,uuid,NO,gen_random_uuid()
+reranking_logs,tenant_id,2,uuid,uuid,NO,
+reranking_logs,query,3,text,text,NO,
+reranking_logs,input_results,4,jsonb,jsonb,NO,'[]'::jsonb
+reranking_logs,reranked_results,5,jsonb,jsonb,NO,'[]'::jsonb
+reranking_logs,model,6,character varying,varchar,YES,
+reranking_logs,latency_ms,7,integer,int4,YES,
+reranking_logs,created_at,8,timestamp with time zone,timestamptz,NO,now()
+response_metrics,id,1,uuid,uuid,NO,gen_random_uuid()
+response_metrics,tenant_id,2,uuid,uuid,NO,
+response_metrics,message_id,3,uuid,uuid,YES,
+response_metrics,quality_score,4,numeric,numeric,YES,
+response_metrics,metrics,5,jsonb,jsonb,NO,'{}'::jsonb
+response_metrics,created_at,6,timestamp with time zone,timestamptz,NO,now()
+retrieval_logs,id,1,uuid,uuid,NO,gen_random_uuid()
+retrieval_logs,tenant_id,2,uuid,uuid,NO,
+retrieval_logs,query,3,text,text,NO,
+retrieval_logs,results,4,jsonb,jsonb,NO,'[]'::jsonb
+retrieval_logs,scores,5,jsonb,jsonb,NO,'[]'::jsonb
+retrieval_logs,latency_ms,6,integer,int4,YES,
+retrieval_logs,created_at,7,timestamp with time zone,timestamptz,NO,now()
+role_permissions,role_id,1,uuid,uuid,NO,
+role_permissions,permission_id,2,uuid,uuid,NO,
+role_permissions,created_at,3,timestamp with time zone,timestamptz,NO,now()
+roles,id,1,uuid,uuid,NO,gen_random_uuid()
+roles,tenant_id,2,uuid,uuid,NO,
+roles,name,3,character varying,varchar,NO,
+roles,description,4,text,text,YES,
+roles,created_at,5,timestamp with time zone,timestamptz,NO,now()
+roles,updated_at,6,timestamp with time zone,timestamptz,NO,now()
+scheduled_tasks,id,1,uuid,uuid,NO,gen_random_uuid()
+scheduled_tasks,tenant_id,2,uuid,uuid,YES,
+scheduled_tasks,name,3,character varying,varchar,NO,
+scheduled_tasks,cron_expression,4,character varying,varchar,NO,
+scheduled_tasks,task_type,5,character varying,varchar,NO,
+scheduled_tasks,payload,6,jsonb,jsonb,NO,'{}'::jsonb
+scheduled_tasks,is_active,7,boolean,bool,NO,true
+scheduled_tasks,created_at,8,timestamp with time zone,timestamptz,NO,now()
+scheduled_tasks,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+services,id,1,uuid,uuid,NO,gen_random_uuid()
+services,tenant_id,2,uuid,uuid,NO,
+services,name,3,character varying,varchar,NO,
+services,description,4,text,text,YES,
+services,metadata,5,jsonb,jsonb,NO,'{}'::jsonb
+services,is_active,6,boolean,bool,NO,true
+services,created_at,7,timestamp with time zone,timestamptz,NO,now()
+services,updated_at,8,timestamp with time zone,timestamptz,NO,now()
+source_connections,id,1,uuid,uuid,NO,gen_random_uuid()
+source_connections,tenant_id,2,uuid,uuid,NO,
+source_connections,source_id,3,uuid,uuid,YES,
+source_connections,provider,4,character varying,varchar,NO,
+source_connections,status,5,character varying,varchar,NO,'active'::character varying
+source_connections,oauth_token,6,jsonb,jsonb,NO,'{}'::jsonb
+source_connections,config,7,jsonb,jsonb,NO,'{}'::jsonb
+source_connections,last_synced_at,8,timestamp with time zone,timestamptz,YES,
+source_connections,created_at,9,timestamp with time zone,timestamptz,NO,now()
+source_connections,updated_at,10,timestamp with time zone,timestamptz,NO,now()
+source_sync_jobs,id,1,uuid,uuid,NO,gen_random_uuid()
+source_sync_jobs,tenant_id,2,uuid,uuid,NO,
+source_sync_jobs,connection_id,3,uuid,uuid,NO,
+source_sync_jobs,status,4,character varying,varchar,NO,'queued'::character varying
+source_sync_jobs,started_at,5,timestamp with time zone,timestamptz,YES,
+source_sync_jobs,finished_at,6,timestamp with time zone,timestamptz,YES,
+source_sync_jobs,error,7,text,text,YES,
+source_sync_jobs,stats,8,jsonb,jsonb,NO,'{}'::jsonb
+source_sync_jobs,created_at,9,timestamp with time zone,timestamptz,NO,now()
+subscription_items,id,1,uuid,uuid,NO,gen_random_uuid()
+subscription_items,tenant_id,2,uuid,uuid,NO,
+subscription_items,subscription_id,3,uuid,uuid,NO,
+subscription_items,item_type,4,character varying,varchar,NO,
+subscription_items,quantity,5,integer,int4,NO,1
+subscription_items,unit_price,6,numeric,numeric,NO,0
+subscription_items,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+subscription_items,created_at,8,timestamp with time zone,timestamptz,NO,now()
+subscription_items,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+subscriptions,id,1,uuid,uuid,NO,gen_random_uuid()
+subscriptions,tenant_id,2,uuid,uuid,NO,
+subscriptions,plan_name,3,character varying,varchar,NO,
+subscriptions,status,4,character varying,varchar,NO,'active'::character varying
+subscriptions,current_period_start,5,timestamp with time zone,timestamptz,YES,
+subscriptions,current_period_end,6,timestamp with time zone,timestamptz,YES,
+subscriptions,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+subscriptions,created_at,8,timestamp with time zone,timestamptz,NO,now()
+subscriptions,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+subscriptions,plan_id,10,uuid,uuid,YES,
+subscriptions,customer_id,11,uuid,uuid,YES,
+system_settings,id,1,uuid,uuid,NO,gen_random_uuid()
+system_settings,key,2,character varying,varchar,NO,
+system_settings,value,3,jsonb,jsonb,NO,'{}'::jsonb
+system_settings,created_at,4,timestamp with time zone,timestamptz,NO,now()
+system_settings,updated_at,5,timestamp with time zone,timestamptz,NO,now()
+tenant_api_keys,id,1,uuid,uuid,NO,gen_random_uuid()
+tenant_api_keys,tenant_id,2,uuid,uuid,NO,
+tenant_api_keys,name,3,character varying,varchar,NO,
+tenant_api_keys,key_hash,4,text,text,NO,
+tenant_api_keys,scopes,5,ARRAY,_text,NO,'{}'::text[]
+tenant_api_keys,last_used_at,6,timestamp with time zone,timestamptz,YES,
+tenant_api_keys,expires_at,7,timestamp with time zone,timestamptz,YES,
+tenant_api_keys,is_active,8,boolean,bool,NO,true
+tenant_api_keys,created_at,9,timestamp with time zone,timestamptz,NO,now()
+tenant_api_keys,updated_at,10,timestamp with time zone,timestamptz,NO,now()
+tenant_settings,id,1,uuid,uuid,NO,gen_random_uuid()
+tenant_settings,tenant_id,2,uuid,uuid,NO,
+tenant_settings,default_llm,3,character varying,varchar,YES,
+tenant_settings,embedding_model,4,character varying,varchar,YES,
+tenant_settings,retention_days,5,integer,int4,YES,
+tenant_settings,settings,6,jsonb,jsonb,NO,'{}'::jsonb
+tenant_settings,created_at,7,timestamp with time zone,timestamptz,NO,now()
+tenant_settings,updated_at,8,timestamp with time zone,timestamptz,NO,now()
+tenant_usage,id,1,uuid,uuid,NO,gen_random_uuid()
+tenant_usage,tenant_id,2,uuid,uuid,NO,
+tenant_usage,usage_month,3,date,date,NO,
+tenant_usage,messages,4,integer,int4,NO,0
+tenant_usage,tokens,5,bigint,int8,NO,0
+tenant_usage,storage_bytes,6,bigint,int8,NO,0
+tenant_usage,voice_minutes,7,numeric,numeric,NO,0
+tenant_usage,metadata,8,jsonb,jsonb,NO,'{}'::jsonb
+tenant_usage,created_at,9,timestamp with time zone,timestamptz,NO,now()
+tenant_usage,updated_at,10,timestamp with time zone,timestamptz,NO,now()
+tenants,id,1,uuid,uuid,NO,
+tenants,name,2,character varying,varchar,NO,
+tenants,domain,3,character varying,varchar,YES,
+tenants,created_at,4,timestamp without time zone,timestamp,YES,
+tenants,slug,5,character varying,varchar,YES,
+tenants,industry,6,character varying,varchar,YES,
+tenants,plan,7,character varying,varchar,YES,
+tenants,status,8,character varying,varchar,NO,'active'::character varying
+tenants,trial_ends_at,9,timestamp with time zone,timestamptz,YES,
+tenants,is_active,10,boolean,bool,NO,true
+tenants,updated_at,11,timestamp with time zone,timestamptz,NO,now()
+token_usage,id,1,uuid,uuid,NO,gen_random_uuid()
+token_usage,tenant_id,2,uuid,uuid,NO,
+token_usage,user_id,3,uuid,uuid,YES,
+token_usage,agent_id,4,uuid,uuid,YES,
+token_usage,model,5,character varying,varchar,YES,
+token_usage,token_type,6,character varying,varchar,YES,
+token_usage,quantity,7,integer,int4,NO,0
+token_usage,created_at,8,timestamp with time zone,timestamptz,NO,now()
+tool_executions,id,1,uuid,uuid,NO,gen_random_uuid()
+tool_executions,tenant_id,2,uuid,uuid,NO,
+tool_executions,agent_id,3,uuid,uuid,YES,
+tool_executions,integration_connection_id,4,uuid,uuid,YES,
+tool_executions,tool_name,5,character varying,varchar,NO,
+tool_executions,status,6,character varying,varchar,NO,'queued'::character varying
+tool_executions,request,7,jsonb,jsonb,NO,'{}'::jsonb
+tool_executions,response,8,jsonb,jsonb,YES,
+tool_executions,error,9,text,text,YES,
+tool_executions,started_at,10,timestamp with time zone,timestamptz,YES,
+tool_executions,finished_at,11,timestamp with time zone,timestamptz,YES,
+tool_executions,created_at,12,timestamp with time zone,timestamptz,NO,now()
+tool_permissions,id,1,uuid,uuid,NO,gen_random_uuid()
+tool_permissions,tenant_id,2,uuid,uuid,NO,
+tool_permissions,tool_id,3,uuid,uuid,NO,
+tool_permissions,agent_role,4,character varying,varchar,YES,
+tool_permissions,agent_id,5,uuid,uuid,YES,
+tool_permissions,is_allowed,6,boolean,bool,NO,true
+tool_permissions,created_at,7,timestamp with time zone,timestamptz,NO,now()
+tool_registry,id,1,uuid,uuid,NO,gen_random_uuid()
+tool_registry,name,2,character varying,varchar,NO,
+tool_registry,description,3,text,text,YES,
+tool_registry,schema,4,jsonb,jsonb,NO,'{}'::jsonb
+tool_registry,is_active,5,boolean,bool,NO,true
+tool_registry,created_at,6,timestamp with time zone,timestamptz,NO,now()
+tool_registry,updated_at,7,timestamp with time zone,timestamptz,NO,now()
+usage_events,id,1,uuid,uuid,NO,gen_random_uuid()
+usage_events,tenant_id,2,uuid,uuid,NO,
+usage_events,user_id,3,uuid,uuid,YES,
+usage_events,agent_id,4,uuid,uuid,YES,
+usage_events,event_name,5,character varying,varchar,NO,
+usage_events,quantity,6,integer,int4,NO,1
+usage_events,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+usage_events,created_at,8,timestamp with time zone,timestamptz,NO,now()
+usage_records,id,1,uuid,uuid,NO,gen_random_uuid()
+usage_records,tenant_id,2,uuid,uuid,NO,
+usage_records,subscription_id,3,uuid,uuid,YES,
+usage_records,metric_name,4,character varying,varchar,NO,
+usage_records,quantity,5,numeric,numeric,NO,0
+usage_records,recorded_at,6,timestamp with time zone,timestamptz,NO,now()
+usage_records,metadata,7,jsonb,jsonb,NO,'{}'::jsonb
+usage_records,created_at,8,timestamp with time zone,timestamptz,NO,now()
+user_auth,id,1,uuid,uuid,NO,gen_random_uuid()
+user_auth,tenant_id,2,uuid,uuid,NO,
+user_auth,user_id,3,uuid,uuid,NO,
+user_auth,password_hash,4,text,text,NO,
+user_auth,totp_secret,5,text,text,YES,
+user_auth,failed_attempts,6,integer,int4,NO,0
+user_auth,locked_until,7,timestamp with time zone,timestamptz,YES,
+user_auth,created_at,8,timestamp with time zone,timestamptz,NO,now()
+user_auth,updated_at,9,timestamp with time zone,timestamptz,NO,now()
+user_roles,user_id,1,uuid,uuid,NO,
+user_roles,role_id,2,uuid,uuid,NO,
+user_roles,created_at,3,timestamp with time zone,timestamptz,NO,now()
+user_sessions,id,1,uuid,uuid,NO,gen_random_uuid()
+user_sessions,tenant_id,2,uuid,uuid,NO,
+user_sessions,user_id,3,uuid,uuid,NO,
+user_sessions,device,4,character varying,varchar,YES,
+user_sessions,browser,5,character varying,varchar,YES,
+user_sessions,ip_address,6,inet,inet,YES,
+user_sessions,user_agent,7,text,text,YES,
+user_sessions,expires_at,8,timestamp with time zone,timestamptz,NO,
+user_sessions,created_at,9,timestamp with time zone,timestamptz,NO,now()
+user_sessions,updated_at,10,timestamp with time zone,timestamptz,NO,now()
+users,id,1,uuid,uuid,NO,
+users,tenant_id,2,uuid,uuid,NO,
+users,email,3,character varying,varchar,NO,
+users,hashed_password,4,character varying,varchar,NO,
+users,first_name,5,character varying,varchar,NO,
+users,last_name,6,character varying,varchar,NO,
+users,role,7,character varying,varchar,NO,
+users,is_active,8,boolean,bool,YES,
+users,created_at,9,timestamp without time zone,timestamp,YES,
+users,full_name,10,character varying,varchar,YES,
+users,status,11,character varying,varchar,NO,'active'::character varying
+users,last_login_at,12,timestamp with time zone,timestamptz,YES,
+users,updated_at,13,timestamp with time zone,timestamptz,NO,now()
+webhook_events,id,1,uuid,uuid,NO,gen_random_uuid()
+webhook_events,tenant_id,2,uuid,uuid,NO,
+webhook_events,integration_id,3,uuid,uuid,YES,
+webhook_events,event_type,4,character varying,varchar,NO,
+webhook_events,payload,5,jsonb,jsonb,NO,'{}'::jsonb
+webhook_events,status,6,character varying,varchar,NO,'received'::character varying
+webhook_events,received_at,7,timestamp with time zone,timestamptz,NO,now()
+webhook_events,processed_at,8,timestamp with time zone,timestamptz,YES,
+webhook_events,created_at,9,timestamp with time zone,timestamptz,NO,now()
