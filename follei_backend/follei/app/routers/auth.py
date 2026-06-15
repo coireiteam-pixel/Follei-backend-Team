@@ -11,7 +11,7 @@ from app.models.tenancy import Tenant, User
 bearer_scheme = HTTPBearer()
 
 router = APIRouter(
-    prefix="/api/v1/auth",
+    prefix="/auth",
     tags=["Identity & Auth"]
 )
 

@@ -9,7 +9,7 @@ from app.models.agents.agent import Agent
 from app.models.tenancy import Tenant
 
 router = APIRouter(
-    prefix="/api/v1/agents",
+    prefix="/agents",
     tags=["AI Agents"]
 )
 
