@@ -3,9 +3,12 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Any
-import anthropic
 
-from app import schema
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
+
 from app import schema
 from app.database.session import get_db
 from app.models.agents.agent import Agent
@@ -18,7 +21,12 @@ router = APIRouter(
 )
 
 # Initialize the Anthropic client (using ANTHROPIC_API_KEY from environment)
-anthropic_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+anthropic_client = (
+    anthropic.Anthropic(api_key=anthropic_api_key)
+    if anthropic is not None and anthropic_api_key
+    else None
+)
 
 @router.post("", response_model=schema.Agent, status_code=status.HTTP_201_CREATED)
 def create_agent(
@@ -42,7 +50,10 @@ def create_agent(
     return new_agent
 
 @router.get("", response_model=List[schema.Agent])
-def list_agents(db: Session = Depends(get_db)) -> Any:
+def list_agents(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Any:
     """
     List active agents.
     """
@@ -68,8 +79,11 @@ def chat_with_agent(
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found or unauthorized")
     
-    if not anthropic_client.api_key:
-        raise HTTPException(status_code=500, detail="Anthropic API key not configured.")
+    if anthropic is None:
+        raise HTTPException(status_code=503, detail="Anthropic package is not installed.")
+
+    if anthropic_client is None:
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY is not configured.")
 
     try:
         # Use the agent's system prompt and the user's message to interact with Claude

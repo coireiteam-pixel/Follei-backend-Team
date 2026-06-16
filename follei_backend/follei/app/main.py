@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.database.init_db import init_db
-from app.routers import agents, auth, conversation, message, tenant, user
+from app.routers import agents, auth, conversation, database_crud, message, tenant, user
 
 app = FastAPI(
     title="Follei API",
@@ -15,6 +15,7 @@ app.include_router(tenant.router)
 app.include_router(user.router)
 app.include_router(conversation.router)
 app.include_router(message.router)
+app.include_router(database_crud.router)
 
 
 @app.on_event("startup")

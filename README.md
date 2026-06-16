@@ -74,6 +74,6 @@ http://localhost:8000/docs
 - The backend connects to PostgreSQL using:
   `postgresql://admin:secret@postgres:5432/follei_db`
 - Local Python runs connect to:
-  `postgresql://admin:secret@127.0.0.1:55432/follei_db`
+  `postgresql://admin:secret@127.0.0.1:55589/follei_db`
 - PostgreSQL data is stored in the `postgres-data` Docker volume.
 - If you want, add more services later for Redis, Kafka, or Weaviate.
