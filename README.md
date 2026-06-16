@@ -82,6 +82,8 @@ http://localhost:8000/docs
   `sqlite:///./follei.db`
 - Docker backend connects to PostgreSQL using:
   `postgresql://postgres:Vignesh%40123@postgres:5432/follei_db`
+- Local PostgreSQL is exposed on:
+  `postgresql://postgres:Vignesh%40123@127.0.0.1:55589/follei_db`
 - PostgreSQL data is stored in the `postgres-data` Docker volume.
 - If you want, add more services later for Redis, Kafka, or Weaviate.
 
