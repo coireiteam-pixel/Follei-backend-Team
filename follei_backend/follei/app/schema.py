@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import List, Optional
 from datetime import datetime
 from uuid import UUID
@@ -13,11 +13,10 @@ class TenantCreate(TenantBase):
     pass
 
 class Tenant(TenantBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -29,13 +28,12 @@ class UserCreate(UserBase):
     password: str
 
 class User(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     tenant_id: UUID
     is_active: bool
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 class RegisterRequest(TenantCreate):
     admin_email: EmailStr
@@ -62,13 +60,12 @@ class DocumentCreate(DocumentBase):
     pass
 
 class Document(DocumentBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     tenant_id: UUID
     status: str
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 # --- AGENTS ---
 
@@ -82,13 +79,12 @@ class AgentCreate(AgentBase):
     tools: List[str] = []
 
 class Agent(AgentBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     tenant_id: UUID
     tools: List[str] = []
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class AIChatRequest(BaseModel):

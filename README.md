@@ -1,18 +1,46 @@
 # Follei-Team
-Implement the API endpoints.
+
+Backend API for the Follei autonomous business operating system.
 
 ## Requirements
 
 - Python 3.12
-- Docker Desktop
-- PostgreSQL is started by Docker Compose
+- Docker Desktop, optional for PostgreSQL/Docker development
+
+## Local Development With Python
+
+The local Python setup uses SQLite by default, so it can run without Docker or PostgreSQL.
+
+1. Open a terminal and go to the backend folder:
+
+```powershell
+cd C:\Users\User\Desktop\Follei15pc\Follei-backend-Team\follei_backend\follei
+```
+
+2. Run the backend:
+
+```powershell
+python -m uvicorn app.main:app --reload
+```
+
+3. Open Swagger docs:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+4. Verify health:
+
+```text
+http://127.0.0.1:8000/health
+```
 
 ## Local Development with Docker
 
 1. Open a terminal and go to the backend folder:
 
-```bash
-cd /b/follei_backend/follei_backend/follei
+```powershell
+cd C:\Users\User\Desktop\Follei15pc\Follei-backend-Team\follei_backend\follei
 ```
 
 2. Start the backend and database:
@@ -39,41 +67,26 @@ Open Swagger docs:
 http://localhost:8000/docs
 ```
 
-## Local Development with Python
-
-Start PostgreSQL first:
-
-```bash
-cd /b/follei_backend/follei_backend/follei
-docker compose up -d postgres
-```
-
-Run the backend:
-
-```bash
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-Use `localhost` in the browser, not `0.0.0.0`:
-
-```text
-http://localhost:8000/docs
-```
-
 ## Current API Notes
 
 - **JWT Authentication is fully implemented:**
-  - Use `POST /api/v1/auth/register` to create a new tenant and an admin user.
-  - Use `POST /api/v1/auth/login` to retrieve your real JWT access token.
-  - Use `GET /api/v1/auth/me` to get the authenticated user's details.
+  - Use `POST /api/auth/register` to create a new tenant and an admin user.
+  - Use `POST /api/auth/login` to retrieve your real JWT access token.
+  - Use `GET /api/auth/me` to get the authenticated user's details.
 - Swagger fully supports the "Authorize" button through FastAPI's `HTTPBearer` scheme. Just click Authorize and paste your JWT access token.
-- Secure endpoints (like `/api/v1/agents`) are now successfully extracting your `tenant_id` from your token to safely isolate data.
+- Secure endpoints (like `/api/agents`) are now successfully extracting your `tenant_id` from your token to safely isolate data.
 
 ### Notes
 
-- The backend connects to PostgreSQL using:
-  `postgresql://admin:secret@postgres:5432/follei_db`
-- Local Python runs connect to:
-  `postgresql://admin:secret@127.0.0.1:55589/follei_db`
+- Local Python currently uses SQLite:
+  `sqlite:///./follei.db`
+- Docker backend connects to PostgreSQL using:
+  `postgresql://postgres:Vignesh%40123@postgres:5432/follei_db`
+- Local PostgreSQL is exposed on:
+  `postgresql://postgres:Vignesh%40123@127.0.0.1:55589/follei_db`
 - PostgreSQL data is stored in the `postgres-data` Docker volume.
 - If you want, add more services later for Redis, Kafka, or Weaviate.
+
+## Work History
+
+See [docs/WORK_DONE.md](docs/WORK_DONE.md) for a summary of the backend fixes, model work, relationships, and verification done so far.

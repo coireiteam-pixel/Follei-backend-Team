@@ -12,7 +12,7 @@ except ImportError:
 from app import schema
 from app.database.session import get_db
 from app.models.agents.agent import Agent
-from app.models.tenancy import Tenant, User
+from app.models.tenancy import User
 from app.routers.auth import get_current_user
 
 router = APIRouter(
@@ -57,7 +57,6 @@ def list_agents(
     """
     List active agents.
     """
-    # Corrected: Filter agents by the authenticated user's tenant_id
     agents = db.query(Agent).filter(Agent.tenant_id == current_user.tenant_id).all()
     return agents
 
