@@ -24,7 +24,7 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
         and path.startswith("/api")
     }
 
-    assert len(methods) == 82
+    assert len(methods) == 209
     assert "POST /api/messages/{message_id}/attachments" in methods
     assert "POST /api/conversations/{conversation_id}/buying-signals" in methods
     assert "POST /api/qualification-frameworks" in methods
@@ -35,7 +35,12 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
     assert "POST /api/webhooks/receive/{integration_id}" in methods
     assert "POST /api/tools/{tool_id}/execute" in methods
     assert "GET /api/connector-logs" in methods
-    assert "GET /api/auth/me" not in methods
+    assert "POST /api/v1/auth/register" in methods
+    assert "GET /api/documents" in methods
+    assert "POST /api/knowledge/search" in methods
+    assert "GET /api/products" in methods
+    assert "GET /api/plans" in methods
+    assert "GET /api/events" in methods
     assert "GET /api/agents" not in methods
 
 
