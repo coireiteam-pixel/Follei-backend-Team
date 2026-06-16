@@ -1,0 +1,1 @@
+"""Follei backend application package."""

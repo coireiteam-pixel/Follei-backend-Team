@@ -1,0 +1,270 @@
+table_name,column_name,references_table,references_column,update_rule,delete_rule,constraint_name
+agent_actions,agent_id,agents,id,NO ACTION,SET NULL,agent_actions_agent_id_fkey
+agent_actions,session_id,agent_sessions,id,NO ACTION,SET NULL,agent_actions_session_id_fkey
+agent_actions,task_id,agent_tasks,id,NO ACTION,SET NULL,agent_actions_task_id_fkey
+agent_actions,tenant_id,tenants,id,NO ACTION,CASCADE,agent_actions_tenant_id_fkey
+agent_analytics,agent_id,agents,id,NO ACTION,CASCADE,agent_analytics_agent_id_fkey
+agent_analytics,tenant_id,tenants,id,NO ACTION,CASCADE,agent_analytics_tenant_id_fkey
+agent_confidence_scores,agent_id,agents,id,NO ACTION,CASCADE,agent_confidence_scores_agent_id_fkey
+agent_confidence_scores,message_id,conversation_messages,id,NO ACTION,SET NULL,agent_confidence_scores_message_id_fkey
+agent_confidence_scores,tenant_id,tenants,id,NO ACTION,CASCADE,agent_confidence_scores_tenant_id_fkey
+agent_errors,agent_id,agents,id,NO ACTION,SET NULL,agent_errors_agent_id_fkey
+agent_errors,tenant_id,tenants,id,NO ACTION,CASCADE,agent_errors_tenant_id_fkey
+agent_feedback,agent_id,agents,id,NO ACTION,CASCADE,agent_feedback_agent_id_fkey
+agent_feedback,created_by,users,id,NO ACTION,SET NULL,agent_feedback_created_by_fkey
+agent_feedback,message_id,conversation_messages,id,NO ACTION,SET NULL,agent_feedback_message_id_fkey
+agent_feedback,tenant_id,tenants,id,NO ACTION,CASCADE,agent_feedback_tenant_id_fkey
+agent_learning_events,agent_id,agents,id,NO ACTION,SET NULL,agent_learning_events_agent_id_fkey
+agent_learning_events,tenant_id,tenants,id,NO ACTION,CASCADE,agent_learning_events_tenant_id_fkey
+agent_memories,agent_id,agents,id,NO ACTION,CASCADE,agent_memories_agent_id_fkey
+agent_memories,customer_id,customers,id,NO ACTION,SET NULL,agent_memories_customer_id_fkey
+agent_memories,tenant_id,tenants,id,NO ACTION,CASCADE,agent_memories_tenant_id_fkey
+agent_plans,agent_id,agents,id,NO ACTION,CASCADE,agent_plans_agent_id_fkey
+agent_plans,task_id,agent_tasks,id,NO ACTION,SET NULL,agent_plans_task_id_fkey
+agent_plans,tenant_id,tenants,id,NO ACTION,CASCADE,agent_plans_tenant_id_fkey
+agent_prompt_versions,agent_id,agents,id,NO ACTION,CASCADE,agent_prompt_versions_agent_id_fkey
+agent_prompt_versions,created_by,users,id,NO ACTION,SET NULL,agent_prompt_versions_created_by_fkey
+agent_prompt_versions,tenant_id,tenants,id,NO ACTION,CASCADE,agent_prompt_versions_tenant_id_fkey
+agent_sessions,agent_id,agents,id,NO ACTION,CASCADE,agent_sessions_agent_id_fkey
+agent_sessions,conversation_id,conversations,id,NO ACTION,SET NULL,agent_sessions_conversation_id_fkey
+agent_sessions,tenant_id,tenants,id,NO ACTION,CASCADE,agent_sessions_tenant_id_fkey
+agent_tasks,agent_id,agents,id,NO ACTION,SET NULL,agent_tasks_agent_id_fkey
+agent_tasks,assigned_by,users,id,NO ACTION,SET NULL,agent_tasks_assigned_by_fkey
+agent_tasks,tenant_id,tenants,id,NO ACTION,CASCADE,agent_tasks_tenant_id_fkey
+agent_tool_calls,agent_id,agents,id,NO ACTION,SET NULL,agent_tool_calls_agent_id_fkey
+agent_tool_calls,tenant_id,tenants,id,NO ACTION,CASCADE,agent_tool_calls_tenant_id_fkey
+agent_versions,agent_id,agents,id,NO ACTION,CASCADE,agent_versions_agent_id_fkey
+agent_versions,created_by,users,id,NO ACTION,SET NULL,agent_versions_created_by_fkey
+agent_versions,tenant_id,tenants,id,NO ACTION,CASCADE,agent_versions_tenant_id_fkey
+agents,tenant_id,tenants,id,NO ACTION,CASCADE,agents_tenant_id_fkey
+analytics_daily,tenant_id,tenants,id,NO ACTION,CASCADE,analytics_daily_tenant_id_fkey
+analytics_monthly,tenant_id,tenants,id,NO ACTION,CASCADE,analytics_monthly_tenant_id_fkey
+api_request_logs,tenant_id,tenants,id,NO ACTION,CASCADE,api_request_logs_tenant_id_fkey
+api_request_logs,user_id,users,id,NO ACTION,SET NULL,api_request_logs_user_id_fkey
+audit_logs,tenant_id,tenants,id,NO ACTION,CASCADE,audit_logs_tenant_id_fkey
+audit_logs,user_id,users,id,NO ACTION,SET NULL,audit_logs_user_id_fkey
+background_jobs,tenant_id,tenants,id,NO ACTION,CASCADE,background_jobs_tenant_id_fkey
+billing_events,tenant_id,tenants,id,NO ACTION,CASCADE,billing_events_tenant_id_fkey
+chunk_citations,chunk_id,document_chunks,id,NO ACTION,CASCADE,chunk_citations_chunk_id_fkey
+chunk_citations,tenant_id,tenants,id,NO ACTION,CASCADE,chunk_citations_tenant_id_fkey
+chunk_embeddings,chunk_id,document_chunks,id,NO ACTION,CASCADE,chunk_embeddings_chunk_id_fkey
+chunk_embeddings,tenant_id,tenants,id,NO ACTION,CASCADE,chunk_embeddings_tenant_id_fkey
+competitor_features,competitor_id,competitors,id,NO ACTION,CASCADE,competitor_features_competitor_id_fkey
+competitor_features,tenant_id,tenants,id,NO ACTION,CASCADE,competitor_features_tenant_id_fkey
+competitors,tenant_id,tenants,id,NO ACTION,CASCADE,competitors_tenant_id_fkey
+connector_logs,integration_connection_id,integration_connections,id,NO ACTION,SET NULL,connector_logs_integration_connection_id_fkey
+connector_logs,tenant_id,tenants,id,NO ACTION,CASCADE,connector_logs_tenant_id_fkey
+conversation_actions,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_actions_conversation_id_fkey
+conversation_actions,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_actions_tenant_id_fkey
+conversation_analytics,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_analytics_conversation_id_fkey
+conversation_analytics,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_analytics_tenant_id_fkey
+conversation_buying_signals,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_buying_signals_conversation_id_fkey
+conversation_buying_signals,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_buying_signals_tenant_id_fkey
+conversation_citations,chunk_id,document_chunks,id,NO ACTION,SET NULL,conversation_citations_chunk_id_fkey
+conversation_citations,document_id,documents,id,NO ACTION,SET NULL,conversation_citations_document_id_fkey
+conversation_citations,message_id,conversation_messages,id,NO ACTION,CASCADE,conversation_citations_message_id_fkey
+conversation_citations,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_citations_tenant_id_fkey
+conversation_emotions,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_emotions_conversation_id_fkey
+conversation_emotions,message_id,conversation_messages,id,NO ACTION,CASCADE,conversation_emotions_message_id_fkey
+conversation_emotions,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_emotions_tenant_id_fkey
+conversation_entities,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_entities_conversation_id_fkey
+conversation_entities,entity_id,entities,id,NO ACTION,SET NULL,conversation_entities_entity_id_fkey
+conversation_entities,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_entities_tenant_id_fkey
+conversation_feedback,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_feedback_conversation_id_fkey
+conversation_feedback,message_id,conversation_messages,id,NO ACTION,SET NULL,conversation_feedback_message_id_fkey
+conversation_feedback,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_feedback_tenant_id_fkey
+conversation_intents,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_intents_conversation_id_fkey
+conversation_intents,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_intents_tenant_id_fkey
+conversation_messages,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_messages_conversation_id_fkey
+conversation_messages,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_messages_tenant_id_fkey
+conversation_metrics,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_metrics_conversation_id_fkey
+conversation_metrics,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_metrics_tenant_id_fkey
+conversation_objections,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_objections_conversation_id_fkey
+conversation_objections,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_objections_tenant_id_fkey
+conversation_participants,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_participants_conversation_id_fkey
+conversation_participants,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_participants_tenant_id_fkey
+conversation_sentiments,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_sentiments_conversation_id_fkey
+conversation_sentiments,message_id,conversation_messages,id,NO ACTION,CASCADE,conversation_sentiments_message_id_fkey
+conversation_sentiments,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_sentiments_tenant_id_fkey
+conversation_summaries,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_summaries_conversation_id_fkey
+conversation_summaries,created_by,users,id,NO ACTION,SET NULL,conversation_summaries_created_by_fkey
+conversation_summaries,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_summaries_tenant_id_fkey
+conversation_transcripts,conversation_id,conversations,id,NO ACTION,CASCADE,conversation_transcripts_conversation_id_fkey
+conversation_transcripts,tenant_id,tenants,id,NO ACTION,CASCADE,conversation_transcripts_tenant_id_fkey
+conversations,agent_id,agents,id,NO ACTION,SET NULL,conversations_agent_id_fkey
+conversations,customer_id,customers,id,NO ACTION,SET NULL,conversations_customer_id_fkey
+conversations,lead_id,leads,id,NO ACTION,SET NULL,conversations_lead_id_fkey
+conversations,tenant_id,tenants,id,NO ACTION,CASCADE,conversations_tenant_id_fkey
+cost_tracking,tenant_id,tenants,id,NO ACTION,CASCADE,cost_tracking_tenant_id_fkey
+credit_transactions,credit_id,credits,id,NO ACTION,SET NULL,credit_transactions_credit_id_fkey
+credit_transactions,tenant_id,tenants,id,NO ACTION,CASCADE,credit_transactions_tenant_id_fkey
+credits,tenant_id,tenants,id,NO ACTION,CASCADE,credits_tenant_id_fkey
+customer_accounts,parent_account_id,customer_accounts,id,NO ACTION,SET NULL,customer_accounts_parent_account_id_fkey
+customer_accounts,tenant_id,tenants,id,NO ACTION,CASCADE,customer_accounts_tenant_id_fkey
+customer_analytics,customer_id,customers,id,NO ACTION,CASCADE,customer_analytics_customer_id_fkey
+customer_analytics,tenant_id,tenants,id,NO ACTION,CASCADE,customer_analytics_tenant_id_fkey
+customer_churn_scores,customer_id,customers,id,NO ACTION,CASCADE,customer_churn_scores_customer_id_fkey
+customer_churn_scores,tenant_id,tenants,id,NO ACTION,CASCADE,customer_churn_scores_tenant_id_fkey
+customer_contacts,customer_id,customers,id,NO ACTION,CASCADE,customer_contacts_customer_id_fkey
+customer_contacts,tenant_id,tenants,id,NO ACTION,CASCADE,customer_contacts_tenant_id_fkey
+customer_events,customer_id,customers,id,NO ACTION,CASCADE,customer_events_customer_id_fkey
+customer_events,tenant_id,tenants,id,NO ACTION,CASCADE,customer_events_tenant_id_fkey
+customer_expansion_scores,customer_id,customers,id,NO ACTION,CASCADE,customer_expansion_scores_customer_id_fkey
+customer_expansion_scores,tenant_id,tenants,id,NO ACTION,CASCADE,customer_expansion_scores_tenant_id_fkey
+customer_health_scores,customer_id,customers,id,NO ACTION,CASCADE,customer_health_scores_customer_id_fkey
+customer_health_scores,tenant_id,tenants,id,NO ACTION,CASCADE,customer_health_scores_tenant_id_fkey
+customer_segments,tenant_id,tenants,id,NO ACTION,CASCADE,customer_segments_tenant_id_fkey
+customer_usage_metrics,customer_id,customers,id,NO ACTION,CASCADE,customer_usage_metrics_customer_id_fkey
+customer_usage_metrics,tenant_id,tenants,id,NO ACTION,CASCADE,customer_usage_metrics_tenant_id_fkey
+customers,lead_id,leads,id,NO ACTION,SET NULL,customers_lead_id_fkey
+customers,tenant_id,tenants,id,NO ACTION,CASCADE,customers_tenant_id_fkey
+document_chunks,document_id,documents,id,NO ACTION,CASCADE,document_chunks_document_id_fkey
+document_chunks,tenant_id,tenants,id,NO ACTION,CASCADE,document_chunks_tenant_id_fkey
+document_pages,document_id,documents,id,NO ACTION,CASCADE,document_pages_document_id_fkey
+document_pages,tenant_id,tenants,id,NO ACTION,CASCADE,document_pages_tenant_id_fkey
+document_versions,document_id,documents,id,NO ACTION,CASCADE,document_versions_document_id_fkey
+document_versions,tenant_id,tenants,id,NO ACTION,CASCADE,document_versions_tenant_id_fkey
+documents,source_id,knowledge_sources,id,NO ACTION,SET NULL,documents_source_id_fkey
+documents,tenant_id,tenants,id,NO ACTION,CASCADE,documents_tenant_id_fkey
+entities,tenant_id,tenants,id,NO ACTION,CASCADE,entities_tenant_id_fkey
+entity_aliases,entity_id,entities,id,NO ACTION,CASCADE,entity_aliases_entity_id_fkey
+entity_aliases,tenant_id,tenants,id,NO ACTION,CASCADE,entity_aliases_tenant_id_fkey
+entity_attributes,entity_id,entities,id,NO ACTION,CASCADE,entity_attributes_entity_id_fkey
+entity_attributes,tenant_id,tenants,id,NO ACTION,CASCADE,entity_attributes_tenant_id_fkey
+entity_relations,source_entity_id,entities,id,NO ACTION,CASCADE,entity_relations_source_entity_id_fkey
+entity_relations,target_entity_id,entities,id,NO ACTION,CASCADE,entity_relations_target_entity_id_fkey
+entity_relations,tenant_id,tenants,id,NO ACTION,CASCADE,entity_relations_tenant_id_fkey
+evaluation_results,tenant_id,tenants,id,NO ACTION,CASCADE,evaluation_results_tenant_id_fkey
+events,tenant_id,tenants,id,NO ACTION,CASCADE,events_tenant_id_fkey
+faqs,tenant_id,tenants,id,NO ACTION,CASCADE,faqs_tenant_id_fkey
+feature_flags,tenant_id,tenants,id,NO ACTION,CASCADE,feature_flags_tenant_id_fkey
+forecasts,tenant_id,tenants,id,NO ACTION,CASCADE,forecasts_tenant_id_fkey
+hallucination_checks,message_id,conversation_messages,id,NO ACTION,SET NULL,hallucination_checks_message_id_fkey
+hallucination_checks,tenant_id,tenants,id,NO ACTION,CASCADE,hallucination_checks_tenant_id_fkey
+integration_connections,integration_id,integrations,id,NO ACTION,CASCADE,integration_connections_integration_id_fkey
+integration_connections,tenant_id,tenants,id,NO ACTION,CASCADE,integration_connections_tenant_id_fkey
+integration_sync_jobs,integration_connection_id,integration_connections,id,NO ACTION,CASCADE,integration_sync_jobs_integration_connection_id_fkey
+integration_sync_jobs,tenant_id,tenants,id,NO ACTION,CASCADE,integration_sync_jobs_tenant_id_fkey
+integration_webhooks,integration_connection_id,integration_connections,id,NO ACTION,CASCADE,integration_webhooks_integration_connection_id_fkey
+integration_webhooks,tenant_id,tenants,id,NO ACTION,CASCADE,integration_webhooks_tenant_id_fkey
+invoices,customer_id,customers,id,NO ACTION,SET NULL,invoices_customer_id_fkey
+invoices,subscription_id,subscriptions,id,NO ACTION,SET NULL,invoices_subscription_id_fkey
+invoices,tenant_id,tenants,id,NO ACTION,CASCADE,invoices_tenant_id_fkey
+knowledge_feedback,tenant_id,tenants,id,NO ACTION,CASCADE,knowledge_feedback_tenant_id_fkey
+knowledge_feedback,user_id,users,id,NO ACTION,SET NULL,knowledge_feedback_user_id_fkey
+knowledge_sources,tenant_id,tenants,id,NO ACTION,CASCADE,knowledge_sources_tenant_id_fkey
+knowledge_tags,tenant_id,tenants,id,NO ACTION,CASCADE,knowledge_tags_tenant_id_fkey
+latency_metrics,tenant_id,tenants,id,NO ACTION,CASCADE,latency_metrics_tenant_id_fkey
+lead_activities,lead_id,leads,id,NO ACTION,CASCADE,lead_activities_lead_id_fkey
+lead_activities,tenant_id,tenants,id,NO ACTION,CASCADE,lead_activities_tenant_id_fkey
+lead_analytics,lead_id,leads,id,NO ACTION,CASCADE,lead_analytics_lead_id_fkey
+lead_analytics,tenant_id,tenants,id,NO ACTION,CASCADE,lead_analytics_tenant_id_fkey
+lead_intents,lead_id,leads,id,NO ACTION,CASCADE,lead_intents_lead_id_fkey
+lead_intents,tenant_id,tenants,id,NO ACTION,CASCADE,lead_intents_tenant_id_fkey
+lead_qualifications,framework_id,qualification_frameworks,id,NO ACTION,CASCADE,lead_qualifications_framework_id_fkey
+lead_qualifications,lead_id,leads,id,NO ACTION,CASCADE,lead_qualifications_lead_id_fkey
+lead_qualifications,tenant_id,tenants,id,NO ACTION,CASCADE,lead_qualifications_tenant_id_fkey
+lead_scores,lead_id,leads,id,NO ACTION,CASCADE,lead_scores_lead_id_fkey
+lead_scores,tenant_id,tenants,id,NO ACTION,CASCADE,lead_scores_tenant_id_fkey
+lead_sources,tenant_id,tenants,id,NO ACTION,CASCADE,lead_sources_tenant_id_fkey
+leads,tenant_id,tenants,id,NO ACTION,CASCADE,leads_tenant_id_fkey
+llm_requests,agent_id,agents,id,NO ACTION,SET NULL,llm_requests_agent_id_fkey
+llm_requests,tenant_id,tenants,id,NO ACTION,CASCADE,llm_requests_tenant_id_fkey
+llm_responses,request_id,llm_requests,id,NO ACTION,CASCADE,llm_responses_request_id_fkey
+llm_responses,tenant_id,tenants,id,NO ACTION,CASCADE,llm_responses_tenant_id_fkey
+meeting_notes,created_by,users,id,NO ACTION,SET NULL,meeting_notes_created_by_fkey
+meeting_notes,meeting_id,meetings,id,NO ACTION,CASCADE,meeting_notes_meeting_id_fkey
+meeting_notes,tenant_id,tenants,id,NO ACTION,CASCADE,meeting_notes_tenant_id_fkey
+meetings,customer_id,customers,id,NO ACTION,SET NULL,meetings_customer_id_fkey
+meetings,lead_id,leads,id,NO ACTION,SET NULL,meetings_lead_id_fkey
+meetings,opportunity_id,opportunities,id,NO ACTION,SET NULL,meetings_opportunity_id_fkey
+meetings,tenant_id,tenants,id,NO ACTION,CASCADE,meetings_tenant_id_fkey
+message_attachments,message_id,conversation_messages,id,NO ACTION,CASCADE,message_attachments_message_id_fkey
+message_attachments,tenant_id,tenants,id,NO ACTION,CASCADE,message_attachments_tenant_id_fkey
+message_delivery_status,message_id,conversation_messages,id,NO ACTION,CASCADE,message_delivery_status_message_id_fkey
+message_delivery_status,tenant_id,tenants,id,NO ACTION,CASCADE,message_delivery_status_tenant_id_fkey
+message_reactions,message_id,conversation_messages,id,NO ACTION,CASCADE,message_reactions_message_id_fkey
+message_reactions,tenant_id,tenants,id,NO ACTION,CASCADE,message_reactions_tenant_id_fkey
+message_reactions,user_id,users,id,NO ACTION,SET NULL,message_reactions_user_id_fkey
+model_usage,tenant_id,tenants,id,NO ACTION,CASCADE,model_usage_tenant_id_fkey
+notification_templates,tenant_id,tenants,id,NO ACTION,CASCADE,notification_templates_tenant_id_fkey
+notifications,tenant_id,tenants,id,NO ACTION,CASCADE,notifications_tenant_id_fkey
+notifications,user_id,users,id,NO ACTION,SET NULL,notifications_user_id_fkey
+opportunities,lead_id,leads,id,NO ACTION,SET NULL,opportunities_lead_id_fkey
+opportunities,tenant_id,tenants,id,NO ACTION,CASCADE,opportunities_tenant_id_fkey
+opportunity_stages,tenant_id,tenants,id,NO ACTION,CASCADE,opportunity_stages_tenant_id_fkey
+payment_attempts,invoice_id,invoices,id,NO ACTION,SET NULL,payment_attempts_invoice_id_fkey
+payment_attempts,payment_id,payments,id,NO ACTION,CASCADE,payment_attempts_payment_id_fkey
+payment_attempts,tenant_id,tenants,id,NO ACTION,CASCADE,payment_attempts_tenant_id_fkey
+payment_methods,customer_id,customers,id,NO ACTION,SET NULL,payment_methods_customer_id_fkey
+payment_methods,tenant_id,tenants,id,NO ACTION,CASCADE,payment_methods_tenant_id_fkey
+payments,customer_id,customers,id,NO ACTION,SET NULL,payments_customer_id_fkey
+payments,invoice_id,invoices,id,NO ACTION,SET NULL,payments_invoice_id_fkey
+payments,tenant_id,tenants,id,NO ACTION,CASCADE,payments_tenant_id_fkey
+policies,tenant_id,tenants,id,NO ACTION,CASCADE,policies_tenant_id_fkey
+pricing_models,tenant_id,tenants,id,NO ACTION,CASCADE,pricing_models_tenant_id_fkey
+pricing_rules,pricing_model_id,pricing_models,id,NO ACTION,CASCADE,pricing_rules_pricing_model_id_fkey
+pricing_rules,tenant_id,tenants,id,NO ACTION,CASCADE,pricing_rules_tenant_id_fkey
+procedures,tenant_id,tenants,id,NO ACTION,CASCADE,procedures_tenant_id_fkey
+products,tenant_id,tenants,id,NO ACTION,CASCADE,products_tenant_id_fkey
+prompt_experiments,tenant_id,tenants,id,NO ACTION,CASCADE,prompt_experiments_tenant_id_fkey
+prompt_versions,created_by,users,id,NO ACTION,SET NULL,prompt_versions_created_by_fkey
+prompt_versions,tenant_id,tenants,id,NO ACTION,CASCADE,prompt_versions_tenant_id_fkey
+proposals,document_id,documents,id,NO ACTION,SET NULL,proposals_document_id_fkey
+proposals,opportunity_id,opportunities,id,NO ACTION,SET NULL,proposals_opportunity_id_fkey
+proposals,tenant_id,tenants,id,NO ACTION,CASCADE,proposals_tenant_id_fkey
+qualification_answers,qualification_id,lead_qualifications,id,NO ACTION,CASCADE,qualification_answers_qualification_id_fkey
+qualification_answers,tenant_id,tenants,id,NO ACTION,CASCADE,qualification_answers_tenant_id_fkey
+qualification_frameworks,tenant_id,tenants,id,NO ACTION,CASCADE,qualification_frameworks_tenant_id_fkey
+quotes,opportunity_id,opportunities,id,NO ACTION,SET NULL,quotes_opportunity_id_fkey
+quotes,proposal_id,proposals,id,NO ACTION,SET NULL,quotes_proposal_id_fkey
+quotes,tenant_id,tenants,id,NO ACTION,CASCADE,quotes_tenant_id_fkey
+rate_limits,tenant_id,tenants,id,NO ACTION,CASCADE,rate_limits_tenant_id_fkey
+refresh_tokens,tenant_id,tenants,id,NO ACTION,CASCADE,refresh_tokens_tenant_id_fkey
+refresh_tokens,user_id,users,id,NO ACTION,CASCADE,refresh_tokens_user_id_fkey
+renewals,customer_id,customers,id,NO ACTION,CASCADE,renewals_customer_id_fkey
+renewals,tenant_id,tenants,id,NO ACTION,CASCADE,renewals_tenant_id_fkey
+reranking_logs,tenant_id,tenants,id,NO ACTION,CASCADE,reranking_logs_tenant_id_fkey
+response_metrics,message_id,conversation_messages,id,NO ACTION,SET NULL,response_metrics_message_id_fkey
+response_metrics,tenant_id,tenants,id,NO ACTION,CASCADE,response_metrics_tenant_id_fkey
+retrieval_logs,tenant_id,tenants,id,NO ACTION,CASCADE,retrieval_logs_tenant_id_fkey
+role_permissions,permission_id,permissions,id,NO ACTION,CASCADE,role_permissions_permission_id_fkey
+role_permissions,role_id,roles,id,NO ACTION,CASCADE,role_permissions_role_id_fkey
+roles,tenant_id,tenants,id,NO ACTION,CASCADE,roles_tenant_id_fkey
+scheduled_tasks,tenant_id,tenants,id,NO ACTION,CASCADE,scheduled_tasks_tenant_id_fkey
+services,tenant_id,tenants,id,NO ACTION,CASCADE,services_tenant_id_fkey
+source_connections,source_id,knowledge_sources,id,NO ACTION,SET NULL,source_connections_source_id_fkey
+source_connections,tenant_id,tenants,id,NO ACTION,CASCADE,source_connections_tenant_id_fkey
+source_sync_jobs,connection_id,source_connections,id,NO ACTION,CASCADE,source_sync_jobs_connection_id_fkey
+source_sync_jobs,tenant_id,tenants,id,NO ACTION,CASCADE,source_sync_jobs_tenant_id_fkey
+subscription_items,subscription_id,subscriptions,id,NO ACTION,CASCADE,subscription_items_subscription_id_fkey
+subscription_items,tenant_id,tenants,id,NO ACTION,CASCADE,subscription_items_tenant_id_fkey
+subscriptions,customer_id,customers,id,NO ACTION,SET NULL,subscriptions_customer_id_fkey
+subscriptions,plan_id,plans,id,NO ACTION,SET NULL,subscriptions_plan_id_fkey
+subscriptions,tenant_id,tenants,id,NO ACTION,CASCADE,subscriptions_tenant_id_fkey
+tenant_api_keys,tenant_id,tenants,id,NO ACTION,CASCADE,tenant_api_keys_tenant_id_fkey
+tenant_settings,tenant_id,tenants,id,NO ACTION,CASCADE,tenant_settings_tenant_id_fkey
+tenant_usage,tenant_id,tenants,id,NO ACTION,CASCADE,tenant_usage_tenant_id_fkey
+token_usage,agent_id,agents,id,NO ACTION,SET NULL,token_usage_agent_id_fkey
+token_usage,tenant_id,tenants,id,NO ACTION,CASCADE,token_usage_tenant_id_fkey
+token_usage,user_id,users,id,NO ACTION,SET NULL,token_usage_user_id_fkey
+tool_executions,agent_id,agents,id,NO ACTION,SET NULL,tool_executions_agent_id_fkey
+tool_executions,integration_connection_id,integration_connections,id,NO ACTION,SET NULL,tool_executions_integration_connection_id_fkey
+tool_executions,tenant_id,tenants,id,NO ACTION,CASCADE,tool_executions_tenant_id_fkey
+tool_permissions,agent_id,agents,id,NO ACTION,CASCADE,tool_permissions_agent_id_fkey
+tool_permissions,tenant_id,tenants,id,NO ACTION,CASCADE,tool_permissions_tenant_id_fkey
+tool_permissions,tool_id,tool_registry,id,NO ACTION,CASCADE,tool_permissions_tool_id_fkey
+usage_events,agent_id,agents,id,NO ACTION,SET NULL,usage_events_agent_id_fkey
+usage_events,tenant_id,tenants,id,NO ACTION,CASCADE,usage_events_tenant_id_fkey
+usage_events,user_id,users,id,NO ACTION,SET NULL,usage_events_user_id_fkey
+usage_records,subscription_id,subscriptions,id,NO ACTION,SET NULL,usage_records_subscription_id_fkey
+usage_records,tenant_id,tenants,id,NO ACTION,CASCADE,usage_records_tenant_id_fkey
+user_auth,tenant_id,tenants,id,NO ACTION,CASCADE,user_auth_tenant_id_fkey
+user_auth,user_id,users,id,NO ACTION,CASCADE,user_auth_user_id_fkey
+user_roles,role_id,roles,id,NO ACTION,CASCADE,user_roles_role_id_fkey
+user_roles,user_id,users,id,NO ACTION,CASCADE,user_roles_user_id_fkey
+user_sessions,tenant_id,tenants,id,NO ACTION,CASCADE,user_sessions_tenant_id_fkey
+user_sessions,user_id,users,id,NO ACTION,CASCADE,user_sessions_user_id_fkey
+users,tenant_id,tenants,id,NO ACTION,CASCADE,users_tenant_id_fkey
+webhook_events,integration_id,integrations,id,NO ACTION,SET NULL,webhook_events_integration_id_fkey
+webhook_events,tenant_id,tenants,id,NO ACTION,CASCADE,webhook_events_tenant_id_fkey
