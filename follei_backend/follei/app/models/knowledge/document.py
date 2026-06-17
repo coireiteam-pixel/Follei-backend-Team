@@ -39,9 +39,9 @@ class Document(Base):
     path = Column(Text, nullable=True)
     file_size = Column(BigInteger, nullable=True)
     status = Column(String, default="pending")   # pending, processing, ready, failed
-    tags = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list)
+    tags = Column(ARRAY(String), default=list)
     summary = Column(Text, nullable=True)
-    keywords = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list)
+    keywords = Column(ARRAY(String), default=list)
     metadata_ = Column("metadata", JSON, default=dict, nullable=False)
     
     created_at = Column(DateTime, default=datetime.utcnow)
