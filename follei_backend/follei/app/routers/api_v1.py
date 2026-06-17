@@ -236,6 +236,14 @@ def _pg_json(value: Any) -> Json:
     return Json(value)
 
 
+def _db_uuid(value: Any) -> str | None:
+    return str(value) if value else None
+
+
+def _db_json(value: Any) -> Json:
+    return Json(value)
+
+
 def _token_pair(user_id: UUID, tenant_id: UUID) -> dict[str, Any]:
     access_token = create_access_token(user_id, tenant_id)
     refresh_token = create_access_token(user_id, tenant_id)
@@ -662,7 +670,7 @@ def revoke_api_key(key_id: UUID, db: Session = Depends(get_db)) -> Response:
 def create_agent(payload: AgentCreateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent_id = uuid4()
     system_prompt = payload.config.get("system_prompt") or payload.description or "You are a helpful AI assistant."
-    db.execute(text("INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, agent_type, model, is_active, created_at, updated_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :agent_type, :model, :is_active, :now, :now)"), {"id": _db_uuid(agent_id), "tenant_id": _db_uuid(payload.tenant_id), "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": _db_json(payload.config.get("tools", [])), "agent_type": payload.type, "model": payload.config.get("model"), "is_active": payload.status == "active", "now": _now()})
+    db.execute(text("INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, agent_type, model, is_active, created_at, updated_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :agent_type, :model, :is_active, :now, :now)"), {"id": _db_uuid(agent_id), "tenant_id": _db_uuid(payload.tenant_id), "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": payload.config.get("tools", []), "agent_type": payload.type, "model": payload.config.get("model"), "is_active": payload.status == "active", "now": _now()})
     db.execute(text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, model, system_prompt, config, created_at) VALUES (:id, :tenant_id, :agent_id, 1, :model, :system_prompt, :config, :now)"), {"id": _db_uuid(uuid4()), "tenant_id": _db_uuid(payload.tenant_id), "agent_id": _db_uuid(agent_id), "model": payload.config.get("model"), "system_prompt": system_prompt, "config": _db_json(payload.config), "now": _now()})
     db.commit()
     return {"id": str(agent_id), "name": payload.name, "type": payload.type, "tenant_id": str(payload.tenant_id), "config": payload.config, "status": payload.status, "created_at": _now(), "version": 1}
@@ -689,8 +697,8 @@ def list_agents(tenant_id: UUID | None = None, type: str | None = None, status: 
 
 @router.get("/agents/{agent_id}", tags=["Domain 3 - Agents & AI Workforce"])
 def get_agent(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    agent = _row(db.execute(text("SELECT * FROM agents WHERE id = :id"), {"id": _db_uuid(agent_id)}).first())
-    if not agent:
+    agent_row = _row(db.execute(text("SELECT * FROM agents WHERE id = :id"), {"id": _db_uuid(agent_id)}).first())
+    if not agent_row:
         raise HTTPException(status_code=404, detail="Agent not found")
 
     # Fetch the latest agent version to get the full config and version number
@@ -703,9 +711,9 @@ def get_agent(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
     current_version = latest_version_data["version"] if latest_version_data else 1 # Default to 1 if no versions found
 
     stats = {
-        "conversations": db.execute(text("SELECT count(*) FROM conversations WHERE agent_id = :id"), {"id": agent_id}).scalar_one(),
-        "messages": db.execute(text("SELECT count(*) FROM conversation_messages cm JOIN conversations c ON c.id = cm.conversation_id WHERE c.agent_id = :id"), {"id": agent_id}).scalar_one(),
-        "avg_confidence": float(db.execute(text("SELECT COALESCE(avg(score), 0) FROM agent_confidence_scores WHERE agent_id = :id"), {"id": agent_id}).scalar_one()),
+        "conversations": db.execute(text("SELECT count(*) FROM conversations WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one(),
+        "messages": db.execute(text("SELECT count(*) FROM conversation_messages cm JOIN conversations c ON c.id = cm.conversation_id WHERE c.agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one(),
+        "avg_confidence": float(db.execute(text("SELECT COALESCE(avg(score), 0) FROM agent_confidence_scores WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one()),
         "avg_response_time_ms": 0,
     }
     
