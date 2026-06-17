@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.init_db import init_db
@@ -25,6 +25,7 @@ from app.routers import (
 )
 
 API_PREFIX = "/api"
+FAVICON_SVG = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#111827"/><path d="M18 47V17h29v8H28v6h16v8H28v8z" fill="#22c55e"/></svg>"""
 
 app = FastAPI(
     title="Follei API",
@@ -96,6 +97,11 @@ def root():
         "docs": "/docs",
         "health": "/health",
     }
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(content=FAVICON_SVG, media_type="image/svg+xml")
 
 
 @app.get("/health", tags=["System"])
