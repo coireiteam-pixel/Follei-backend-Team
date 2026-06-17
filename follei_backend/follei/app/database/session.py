@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:Vignesh%40123@127.0.0.1:5432/follei_db",
+    "postgresql://admin:secret@127.0.0.1:55589/follei_db",
 )
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
