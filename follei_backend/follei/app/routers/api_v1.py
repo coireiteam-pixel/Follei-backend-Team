@@ -263,7 +263,7 @@ def _current_user(
     except ValueError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = _row(db.execute(text("SELECT * FROM users WHERE id = :id"), {"id": payload["sub"]}).first())
+    user = _row(db.execute(text("SELECT * FROM users WHERE id = :id"), {"id": _db_uuid(payload["sub"])}).first())
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -366,7 +366,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> dict[str, Any
         raise HTTPException(status_code=401, detail="Invalid email or password")
     if user.get("is_active") is False or user.get("status") == "inactive":
         raise HTTPException(status_code=403, detail="User is inactive")
-    db.execute(text("UPDATE users SET last_login_at = :now WHERE id = :id"), {"now": _now(), "id": user["id"]})
+    db.execute(text("UPDATE users SET last_login_at = :now WHERE id = :id"), {"now": _now(), "id": _db_uuid(user["id"])})
     db.commit()
     tokens = _token_pair(user["id"], user["tenant_id"])
     return {
@@ -400,7 +400,7 @@ def logout(payload: LogoutRequest) -> dict[str, str]:
 
 @router.get("/auth/me", tags=["Domain 1 - Auth"])
 def me(current_user: dict[str, Any] = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, Any]:
-    tenant = _row(db.execute(text("SELECT name FROM tenants WHERE id = :id"), {"id": current_user["tenant_id"]}).first())
+    tenant = _row(db.execute(text("SELECT name FROM tenants WHERE id = :id"), {"id": _db_uuid(current_user["tenant_id"])}).first())
     return {
         "id": str(current_user["id"]),
         "email": current_user["email"],
@@ -420,17 +420,17 @@ def update_me(payload: ProfileUpdateRequest, current_user: dict[str, Any] = Depe
         first_name, last_name = _full_name_parts(payload.full_name)
         db.execute(
             text("UPDATE users SET full_name = :full_name, first_name = :first_name, last_name = :last_name, updated_at = :now WHERE id = :id"),
-            {"full_name": payload.full_name, "first_name": first_name, "last_name": last_name, "now": _now(), "id": current_user["id"]},
+            {"full_name": payload.full_name, "first_name": first_name, "last_name": last_name, "now": _now(), "id": _db_uuid(current_user["id"])},
         )
         db.commit()
-    return me(_row(db.execute(text("SELECT * FROM users WHERE id = :id"), {"id": current_user["id"]}).first()), db)
+    return me(_row(db.execute(text("SELECT * FROM users WHERE id = :id"), {"id": _db_uuid(current_user["id"])}).first()), db)
 
 
 @router.post("/auth/password/change", tags=["Domain 1 - Auth"])
 def change_password(payload: PasswordChangeRequest, current_user: dict[str, Any] = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, str]:
     if not verify_password(payload.current_password, current_user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
-    db.execute(text("UPDATE users SET hashed_password = :hash, updated_at = :now WHERE id = :id"), {"hash": hash_password(payload.new_password), "now": _now(), "id": current_user["id"]})
+    db.execute(text("UPDATE users SET hashed_password = :hash, updated_at = :now WHERE id = :id"), {"hash": hash_password(payload.new_password), "now": _now(), "id": _db_uuid(current_user["id"])})
     db.commit()
     return {"message": "Password changed successfully"}
 
@@ -450,11 +450,11 @@ def create_tenant(payload: TenantCreateRequest, db: Session = Depends(get_db)) -
     tenant_id = uuid4()
     db.execute(
         text("INSERT INTO tenants (id, name, slug, status, created_at, updated_at) VALUES (:id, :name, :slug, 'active', :now, :now)"),
-        {"id": tenant_id, "name": payload.name, "slug": payload.slug, "now": _now()},
+        {"id": _db_uuid(tenant_id), "name": payload.name, "slug": payload.slug, "now": _now()},
     )
     db.execute(
         text("INSERT INTO tenant_settings (id, tenant_id, settings, created_at, updated_at) VALUES (:id, :tenant_id, :settings, :now, :now) ON CONFLICT (tenant_id) DO NOTHING"),
-        {"id": uuid4(), "tenant_id": tenant_id, "settings": payload.settings, "now": _now()},
+        {"id": _db_uuid(uuid4()), "tenant_id": _db_uuid(tenant_id), "settings": _db_json(payload.settings), "now": _now()},
     )
     db.commit()
     return {"id": str(tenant_id), "name": payload.name, "slug": payload.slug, "status": "active", "created_at": _now()}
@@ -470,14 +470,14 @@ def list_tenants(page: int = 1, page_size: int = 20, db: Session = Depends(get_d
 
 @router.get("/tenants/{tenant_id}", tags=["Domain 2 - Tenants & Users"])
 def get_tenant(tenant_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    tenant = _row(db.execute(text("SELECT * FROM tenants WHERE id = :id"), {"id": tenant_id}).first())
+    tenant = _row(db.execute(text("SELECT * FROM tenants WHERE id = :id"), {"id": _db_uuid(tenant_id)}).first())
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    settings = _row(db.execute(text("SELECT settings FROM tenant_settings WHERE tenant_id = :id"), {"id": tenant_id}).first())
+    settings = _row(db.execute(text("SELECT settings FROM tenant_settings WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).first())
     usage = {
-        "users": db.execute(text("SELECT count(*) FROM users WHERE tenant_id = :id"), {"id": tenant_id}).scalar_one(),
-        "documents": db.execute(text("SELECT count(*) FROM documents WHERE tenant_id = :id"), {"id": tenant_id}).scalar_one(),
-        "api_calls": db.execute(text("SELECT count(*) FROM api_request_logs WHERE tenant_id = :id"), {"id": tenant_id}).scalar_one(),
+        "users": db.execute(text("SELECT count(*) FROM users WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).scalar_one(),
+        "documents": db.execute(text("SELECT count(*) FROM documents WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).scalar_one(),
+        "api_calls": db.execute(text("SELECT count(*) FROM api_request_logs WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).scalar_one(),
     }
     return {**tenant, "settings": settings["settings"] if settings else {}, "usage": usage}
 
@@ -487,24 +487,24 @@ def update_tenant(tenant_id: UUID, payload: TenantUpdateRequest, db: Session = D
     tenant = get_tenant(tenant_id, db)
     db.execute(
         text("UPDATE tenants SET name = COALESCE(:name, name), status = COALESCE(:status, status), updated_at = :now WHERE id = :id"),
-        {"name": payload.name, "status": payload.status, "now": _now(), "id": tenant_id},
+        {"name": payload.name, "status": payload.status, "now": _now(), "id": _db_uuid(tenant_id)},
     )
     if payload.settings is not None:
-        db.execute(text("UPDATE tenant_settings SET settings = :settings, updated_at = :now WHERE tenant_id = :id"), {"settings": payload.settings, "now": _now(), "id": tenant_id})
+        db.execute(text("UPDATE tenant_settings SET settings = :settings, updated_at = :now WHERE tenant_id = :id"), {"settings": _db_json(payload.settings), "now": _now(), "id": _db_uuid(tenant_id)})
     db.commit()
     return get_tenant(tenant_id, db)
 
 
 @router.delete("/tenants/{tenant_id}", tags=["Domain 2 - Tenants & Users"], status_code=status.HTTP_204_NO_CONTENT)
 def delete_tenant(tenant_id: UUID, db: Session = Depends(get_db)) -> Response:
-    db.execute(text("DELETE FROM tenants WHERE id = :id"), {"id": tenant_id})
+    db.execute(text("DELETE FROM tenants WHERE id = :id"), {"id": _db_uuid(tenant_id)})
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/tenants/{tenant_id}/settings", tags=["Domain 2 - Tenants & Users"])
 def get_tenant_settings(tenant_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    settings = _row(db.execute(text("SELECT settings FROM tenant_settings WHERE tenant_id = :tenant_id"), {"tenant_id": tenant_id}).first())
+    settings = _row(db.execute(text("SELECT settings FROM tenant_settings WHERE tenant_id = :tenant_id"), {"tenant_id": _db_uuid(tenant_id)}).first())
     return {"tenant_id": str(tenant_id), **(settings["settings"] if settings else {})}
 
 
@@ -513,7 +513,7 @@ def update_tenant_settings(tenant_id: UUID, payload: TenantSettingsUpdateRequest
     settings = payload.model_dump(exclude_none=True)
     db.execute(
         text("INSERT INTO tenant_settings (id, tenant_id, settings, created_at, updated_at) VALUES (:id, :tenant_id, :settings, :now, :now) ON CONFLICT (tenant_id) DO UPDATE SET settings = :settings, updated_at = :now"),
-        {"id": uuid4(), "tenant_id": tenant_id, "settings": settings, "now": _now()},
+        {"id": _db_uuid(uuid4()), "tenant_id": _db_uuid(tenant_id), "settings": _db_json(settings), "now": _now()},
     )
     db.commit()
     return {"tenant_id": str(tenant_id), **settings}
@@ -524,13 +524,13 @@ def tenant_usage(tenant_id: UUID, db: Session = Depends(get_db)) -> dict[str, An
     return {
         "tenant_id": str(tenant_id),
         "period": _now().strftime("%Y-%m"),
-        "users": db.execute(text("SELECT count(*) FROM users WHERE tenant_id = :id"), {"id": tenant_id}).scalar_one(),
-        "conversations": db.execute(text("SELECT count(*) FROM conversations WHERE tenant_id = :id"), {"id": tenant_id}).scalar_one(),
-        "messages": db.execute(text("SELECT count(*) FROM conversation_messages WHERE tenant_id = :id"), {"id": tenant_id}).scalar_one(),
-        "documents": db.execute(text("SELECT count(*) FROM documents WHERE tenant_id = :id"), {"id": tenant_id}).scalar_one(),
-        "api_calls": db.execute(text("SELECT count(*) FROM api_request_logs WHERE tenant_id = :id"), {"id": tenant_id}).scalar_one(),
-        "tokens_used": db.execute(text("SELECT COALESCE(sum(quantity), 0) FROM token_usage WHERE tenant_id = :id"), {"id": tenant_id}).scalar_one(),
-        "cost_usd": float(db.execute(text("SELECT COALESCE(sum(cost), 0) FROM cost_tracking WHERE tenant_id = :id"), {"id": tenant_id}).scalar_one()),
+        "users": db.execute(text("SELECT count(*) FROM users WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).scalar_one(),
+        "conversations": db.execute(text("SELECT count(*) FROM conversations WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).scalar_one(),
+        "messages": db.execute(text("SELECT count(*) FROM conversation_messages WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).scalar_one(),
+        "documents": db.execute(text("SELECT count(*) FROM documents WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).scalar_one(),
+        "api_calls": db.execute(text("SELECT count(*) FROM api_request_logs WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).scalar_one(),
+        "tokens_used": db.execute(text("SELECT COALESCE(sum(quantity), 0) FROM token_usage WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).scalar_one(),
+        "cost_usd": float(db.execute(text("SELECT COALESCE(sum(cost), 0) FROM cost_tracking WHERE tenant_id = :id"), {"id": _db_uuid(tenant_id)}).scalar_one()),
     }
 
 
@@ -545,10 +545,10 @@ def create_user(payload: UserCreateRequest, db: Session = Depends(get_db)) -> di
             VALUES (:id, :tenant_id, :email, :hashed_password, :first_name, :last_name, :full_name, 'member', 'active', true, :now, :now)
             """
         ),
-        {"id": user_id, "tenant_id": payload.tenant_id, "email": payload.email, "hashed_password": hash_password(payload.password), "first_name": first_name, "last_name": last_name, "full_name": payload.full_name, "now": _now()},
+        {"id": _db_uuid(user_id), "tenant_id": _db_uuid(payload.tenant_id), "email": payload.email, "hashed_password": hash_password(payload.password), "first_name": first_name, "last_name": last_name, "full_name": payload.full_name, "now": _now()},
     )
     for role_id in payload.role_ids:
-        db.execute(text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id) ON CONFLICT DO NOTHING"), {"user_id": user_id, "role_id": role_id})
+        db.execute(text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id) ON CONFLICT DO NOTHING"), {"user_id": _db_uuid(user_id), "role_id": _db_uuid(role_id)})
     db.commit()
     return get_user(user_id, db)
 
@@ -576,7 +576,7 @@ def list_users(tenant_id: UUID | None = None, role: str | None = None, status: s
 
 @router.get("/users/{user_id}", tags=["Domain 2 - Tenants & Users"])
 def get_user(user_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    user = _row(db.execute(text("SELECT * FROM users WHERE id = :id"), {"id": user_id}).first())
+    user = _row(db.execute(text("SELECT * FROM users WHERE id = :id"), {"id": _db_uuid(user_id)}).first())
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     user["roles"] = _roles_for_user(db, user_id, user.get("role"))
@@ -588,34 +588,34 @@ def get_user(user_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
 def update_user(user_id: UUID, payload: UserUpdateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     if payload.full_name:
         first_name, last_name = _full_name_parts(payload.full_name)
-        db.execute(text("UPDATE users SET full_name = :full_name, first_name = :first_name, last_name = :last_name, updated_at = :now WHERE id = :id"), {"full_name": payload.full_name, "first_name": first_name, "last_name": last_name, "now": _now(), "id": user_id})
+        db.execute(text("UPDATE users SET full_name = :full_name, first_name = :first_name, last_name = :last_name, updated_at = :now WHERE id = :id"), {"full_name": payload.full_name, "first_name": first_name, "last_name": last_name, "now": _now(), "id": _db_uuid(user_id)})
     if payload.status:
-        db.execute(text("UPDATE users SET status = :status, is_active = :is_active, updated_at = :now WHERE id = :id"), {"status": payload.status, "is_active": payload.status == "active", "now": _now(), "id": user_id})
+        db.execute(text("UPDATE users SET status = :status, is_active = :is_active, updated_at = :now WHERE id = :id"), {"status": payload.status, "is_active": payload.status == "active", "now": _now(), "id": _db_uuid(user_id)})
     if payload.role_ids is not None:
-        db.execute(text("DELETE FROM user_roles WHERE user_id = :user_id"), {"user_id": user_id})
+        db.execute(text("DELETE FROM user_roles WHERE user_id = :user_id"), {"user_id": _db_uuid(user_id)})
         for role_id in payload.role_ids:
-            db.execute(text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id) ON CONFLICT DO NOTHING"), {"user_id": user_id, "role_id": role_id})
+            db.execute(text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id) ON CONFLICT DO NOTHING"), {"user_id": _db_uuid(user_id), "role_id": _db_uuid(role_id)})
     db.commit()
     return get_user(user_id, db)
 
 
 @router.delete("/users/{user_id}", tags=["Domain 2 - Tenants & Users"], status_code=status.HTTP_204_NO_CONTENT)
 def deactivate_user(user_id: UUID, db: Session = Depends(get_db)) -> Response:
-    db.execute(text("UPDATE users SET status = 'inactive', is_active = false, updated_at = :now WHERE id = :id"), {"now": _now(), "id": user_id})
+    db.execute(text("UPDATE users SET status = 'inactive', is_active = false, updated_at = :now WHERE id = :id"), {"now": _now(), "id": _db_uuid(user_id)})
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/users/{user_id}/roles", tags=["Domain 2 - Tenants & Users"])
 def assign_role(user_id: UUID, payload: AssignRoleRequest, db: Session = Depends(get_db)) -> dict[str, str]:
-    db.execute(text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id) ON CONFLICT DO NOTHING"), {"user_id": user_id, "role_id": payload.role_id})
+    db.execute(text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id) ON CONFLICT DO NOTHING"), {"user_id": _db_uuid(user_id), "role_id": _db_uuid(payload.role_id)})
     db.commit()
     return {"message": "Role assigned"}
 
 
 @router.delete("/users/{user_id}/roles/{role_id}", tags=["Domain 2 - Tenants & Users"], status_code=status.HTTP_204_NO_CONTENT)
 def remove_role(user_id: UUID, role_id: UUID, db: Session = Depends(get_db)) -> Response:
-    db.execute(text("DELETE FROM user_roles WHERE user_id = :user_id AND role_id = :role_id"), {"user_id": user_id, "role_id": role_id})
+    db.execute(text("DELETE FROM user_roles WHERE user_id = :user_id AND role_id = :role_id"), {"user_id": _db_uuid(user_id), "role_id": _db_uuid(role_id)})
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -626,14 +626,14 @@ def create_role(payload: RoleCreateRequest, db: Session = Depends(get_db)) -> di
     tenant_id = payload.tenant_id or db.execute(text("SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1")).scalar()
     if not tenant_id:
         raise HTTPException(status_code=400, detail="tenant_id is required when no tenant exists")
-    db.execute(text("INSERT INTO roles (id, tenant_id, name, description, created_at, updated_at) VALUES (:id, :tenant_id, :name, :description, :now, :now)"), {"id": role_id, "tenant_id": tenant_id, "name": payload.name, "description": payload.display_name, "now": _now()})
+    db.execute(text("INSERT INTO roles (id, tenant_id, name, description, created_at, updated_at) VALUES (:id, :tenant_id, :name, :description, :now, :now)"), {"id": _db_uuid(role_id), "tenant_id": _db_uuid(tenant_id), "name": payload.name, "description": payload.display_name, "now": _now()})
     for permission_name in payload.permissions:
         resource, _, action = permission_name.partition(".")
         permission_id = db.execute(text("SELECT id FROM permissions WHERE resource = :resource AND action = :action"), {"resource": resource, "action": action or "read"}).scalar()
         if not permission_id:
             permission_id = uuid4()
-            db.execute(text("INSERT INTO permissions (id, resource, action, created_at) VALUES (:id, :resource, :action, :now)"), {"id": permission_id, "resource": resource, "action": action or "read", "now": _now()})
-        db.execute(text("INSERT INTO role_permissions (role_id, permission_id) VALUES (:role_id, :permission_id) ON CONFLICT DO NOTHING"), {"role_id": role_id, "permission_id": permission_id})
+            db.execute(text("INSERT INTO permissions (id, resource, action, created_at) VALUES (:id, :resource, :action, :now)"), {"id": _db_uuid(permission_id), "resource": resource, "action": action or "read", "now": _now()})
+        db.execute(text("INSERT INTO role_permissions (role_id, permission_id) VALUES (:role_id, :permission_id) ON CONFLICT DO NOTHING"), {"role_id": _db_uuid(role_id), "permission_id": _db_uuid(permission_id)})
     db.commit()
     return {"id": str(role_id), "name": payload.name, "permissions": payload.permissions}
 
@@ -657,14 +657,14 @@ def list_api_keys(db: Session = Depends(get_db)) -> dict[str, Any]:
 def create_api_key(payload: ApiKeyCreateRequest, current_user: dict[str, Any] = Depends(_current_user), db: Session = Depends(get_db)) -> dict[str, Any]:
     key = f"fl_live_{uuid4().hex}{uuid4().hex}"
     key_id = uuid4()
-    db.execute(text("INSERT INTO tenant_api_keys (id, tenant_id, name, key_hash, scopes, created_at, updated_at) VALUES (:id, :tenant_id, :name, :key_hash, :scopes, :now, :now)"), {"id": key_id, "tenant_id": current_user["tenant_id"], "name": payload.name, "key_hash": hash_password(key), "scopes": payload.permissions, "now": _now()})
+    db.execute(text("INSERT INTO tenant_api_keys (id, tenant_id, name, key_hash, scopes, created_at, updated_at) VALUES (:id, :tenant_id, :name, :key_hash, :scopes, :now, :now)"), {"id": _db_uuid(key_id), "tenant_id": _db_uuid(current_user["tenant_id"]), "name": payload.name, "key_hash": hash_password(key), "scopes": payload.permissions, "now": _now()})
     db.commit()
     return {"id": str(key_id), "key": key, "name": payload.name}
 
 
 @router.delete("/tenant-api-keys/{key_id}", tags=["Domain 2 - Tenants & Users"], status_code=status.HTTP_204_NO_CONTENT)
 def revoke_api_key(key_id: UUID, db: Session = Depends(get_db)) -> Response:
-    db.execute(text("UPDATE tenant_api_keys SET is_active = false, updated_at = :now WHERE id = :id"), {"now": _now(), "id": key_id})
+    db.execute(text("UPDATE tenant_api_keys SET is_active = false, updated_at = :now WHERE id = :id"), {"now": _now(), "id": _db_uuid(key_id)})
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -673,8 +673,13 @@ def revoke_api_key(key_id: UUID, db: Session = Depends(get_db)) -> Response:
 def create_agent(payload: AgentCreateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent_id = uuid4()
     system_prompt = payload.config.get("system_prompt") or payload.description or "You are a helpful AI assistant."
-    db.execute(text("INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, agent_type, model, is_active, created_at, updated_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :agent_type, :model, :is_active, :now, :now)"), {"id": agent_id, "tenant_id": payload.tenant_id, "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": payload.config.get("tools", []), "agent_type": payload.type, "model": payload.config.get("model"), "is_active": payload.status == "active", "now": _now()})
-    db.execute(text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, model, system_prompt, config, created_at) VALUES (:id, :tenant_id, :agent_id, 1, :model, :system_prompt, :config, :now)"), {"id": uuid4(), "tenant_id": payload.tenant_id, "agent_id": agent_id, "model": payload.config.get("model"), "system_prompt": system_prompt, "config": payload.config, "now": _now()})
+    tools_param = payload.config.get("tools", []) # Pass as list, not JSON string
+    config_json = _db_json(payload.config)
+    model_param = payload.config.get("model")
+    is_active_param = (payload.status == "active")
+    
+    db.execute(text("INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, model, is_active, created_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :model, :is_active, :now)"), {"id": _db_uuid(agent_id), "tenant_id": _db_uuid(payload.tenant_id), "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": tools_param, "model": model_param, "is_active": is_active_param, "now": _now()})
+    db.execute(text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, system_prompt, config, model, created_at) VALUES (:id, :tenant_id, :agent_id, 1, :system_prompt, :config, :model, :now)"), {"id": _db_uuid(uuid4()), "tenant_id": _db_uuid(payload.tenant_id), "agent_id": _db_uuid(agent_id), "system_prompt": system_prompt, "config": config_json, "model": model_param, "now": _now()})
     db.commit()
     return {"id": str(agent_id), "name": payload.name, "type": payload.type, "tenant_id": str(payload.tenant_id), "config": payload.config, "status": payload.status, "created_at": _now(), "version": 1}
 
@@ -700,28 +705,113 @@ def list_agents(tenant_id: UUID | None = None, type: str | None = None, status: 
 
 @router.get("/agents/{agent_id}", tags=["Domain 3 - Agents & AI Workforce"])
 def get_agent(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    agent = _row(db.execute(text("SELECT * FROM agents WHERE id = :id"), {"id": _db_uuid(agent_id)}).first())
-    if not agent:
+    agent_row = _row(db.execute(text("SELECT * FROM agents WHERE id = :id"), {"id": _db_uuid(agent_id)}).first())
+    if not agent_row:
         raise HTTPException(status_code=404, detail="Agent not found")
+
+    # Fetch the latest agent version to get the full config and version number
+    latest_version_data = _row(db.execute(
+        text("SELECT version, config FROM agent_versions WHERE agent_id = :agent_id ORDER BY version DESC LIMIT 1"),
+        {"agent_id": _db_uuid(agent_id)}
+    ).first())
+    
+    full_config = latest_version_data["config"] if latest_version_data and latest_version_data["config"] else {}
+    current_version = latest_version_data["version"] if latest_version_data else 1 # Default to 1 if no versions found
+
     stats = {
         "conversations": db.execute(text("SELECT count(*) FROM conversations WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one(),
         "messages": db.execute(text("SELECT count(*) FROM conversation_messages cm JOIN conversations c ON c.id = cm.conversation_id WHERE c.agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one(),
         "avg_confidence": float(db.execute(text("SELECT COALESCE(avg(score), 0) FROM agent_confidence_scores WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one()),
         "avg_response_time_ms": 0,
     }
-    return {**agent, "type": agent.get("role"), "config": {"tools": json.loads(agent.get("tools") or "[]"), "model": agent.get("model")}, "status": "active", "stats": stats}
+    
+    # Construct the response config, ensuring 'tools' and 'model' are included as expected
+    response_config = full_config.copy()
+    response_config["tools"] = agent_row.get("tools", []) # 'tools' is from the agents table
+    response_config["model"] = agent_row.get("model") # 'model' is from the agents table
+
+    return {
+        "id": str(agent_row["id"]),
+        "name": agent_row["name"],
+        "type": agent_row.get("role"), # Map 'role' to 'type'
+        "description": agent_row.get("system_prompt"), # Map 'system_prompt' to 'description'
+        "tenant_id": str(agent_row["tenant_id"]),
+        "config": response_config,
+        "status": "active" if agent_row.get("is_active") else "inactive", # Use 'is_active' for status
+        "created_at": agent_row.get("created_at"),
+        "updated_at": agent_row.get("updated_at"),
+        "version": current_version,
+        "stats": stats,
+    }
 
 
 @router.patch("/agents/{agent_id}", tags=["Domain 3 - Agents & AI Workforce"])
-def update_agent(agent_id: UUID, payload: AgentUpdateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
-    db.execute(text("UPDATE agents SET name = COALESCE(:name, name) WHERE id = :id"), {"name": payload.name, "id": agent_id})
+def update_agent(agent_id: UUID, payload: AgentUpdateRequest, db: Session = Depends(get_db)) -> dict[str, Any]: # This function needs further updates for config/status
+    current_agent = get_agent(agent_id, db) # Fetch current agent to get tenant_id and existing data
+
+    update_fields = {}
+    if payload.name is not None:
+        update_fields["name"] = payload.name
+    if payload.status is not None:
+        update_fields["is_active"] = (payload.status == "active")
+
+    if update_fields:
+        set_clauses = ", ".join([f"{k} = :{k}" for k in update_fields.keys()])
+        db.execute(
+            text(f"UPDATE agents SET {set_clauses}, updated_at = :now WHERE id = :id"),
+            {**update_fields, "now": _now(), "id": _db_uuid(agent_id)},
+        )
+
+    if payload.config is not None:
+        # Fetch the current full config from the latest agent_version for merging
+        latest_version_config_row = _row(db.execute(
+            text("SELECT config FROM agent_versions WHERE agent_id = :agent_id ORDER BY version DESC LIMIT 1"),
+            {"agent_id": _db_uuid(agent_id)}
+        ).first())
+        
+        merged_config = (latest_version_config_row["config"] if latest_version_config_row else {}).copy()
+        merged_config.update(payload.config)
+
+        # Update agents table with new system_prompt, tools, model if they are in payload.config
+        agent_table_config_updates = {}
+        if "system_prompt" in payload.config:
+            agent_table_config_updates["system_prompt"] = payload.config["system_prompt"]
+        if "tools" in payload.config:
+            agent_table_config_updates["tools"] = payload.config["tools"]
+        if "model" in payload.config:
+            agent_table_config_updates["model"] = payload.config["model"]
+        
+        if agent_table_config_updates:
+            set_clauses_config = ", ".join([f"{k} = :{k}" for k in agent_table_config_updates.keys()])
+            db.execute(
+                text(f"UPDATE agents SET {set_clauses_config}, updated_at = :now WHERE id = :id"),
+                {**agent_table_config_updates, "now": _now(), "id": _db_uuid(agent_id)},
+            )
+
+        # Create a new agent version
+        version = db.execute(text("SELECT COALESCE(max(version), 0) + 1 FROM agent_versions WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one()
+        
+        db.execute(
+            text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, system_prompt, config, model, created_at) VALUES (:id, :tenant_id, :agent_id, :version, :system_prompt, :config, :model, :now)"),
+            {
+                "id": _db_uuid(uuid4()),
+                "tenant_id": _db_uuid(current_agent["tenant_id"]),
+                "agent_id": _db_uuid(agent_id),
+                "version": version,
+                "system_prompt": agent_table_config_updates.get("system_prompt", current_agent["description"]), # Use updated or current
+                "config": _db_json(merged_config),
+                "model": agent_table_config_updates.get("model", current_agent["config"].get("model")), # Use updated or current
+                "now": _now(),
+            },
+        )
+    
     db.commit()
     return get_agent(agent_id, db)
 
 
 @router.delete("/agents/{agent_id}", tags=["Domain 3 - Agents & AI Workforce"], status_code=status.HTTP_204_NO_CONTENT)
 def delete_agent(agent_id: UUID, db: Session = Depends(get_db)) -> Response:
-    db.execute(text("DELETE FROM agents WHERE id = :id"), {"id": agent_id})
+    db.execute(text("DELETE FROM agents WHERE id = :id"), {"id": _db_uuid(agent_id)})
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -733,8 +823,8 @@ def chat(agent_id: UUID, payload: AgentChatRequest, db: Session = Depends(get_db
     message_id = uuid4()
     tenant_id = agent["tenant_id"]
     if not payload.conversation_id:
-        db.execute(text("INSERT INTO conversations (id, tenant_id, agent_id, customer_id, lead_id, title, channel, status, created_at, started_at, updated_at) VALUES (:id, :tenant_id, :agent_id, :customer_id, :lead_id, :title, :channel, 'open', :now, :now, :now)"), {"id": conversation_id, "tenant_id": tenant_id, "agent_id": agent_id, "customer_id": payload.context.get("customer_id"), "lead_id": payload.context.get("lead_id"), "title": payload.message[:80], "channel": payload.metadata.get("source"), "now": _now()})
-    db.execute(text("INSERT INTO conversation_messages (id, tenant_id, conversation_id, role, content, sender_type, message, message_type, metadata, created_at) VALUES (:id, :tenant_id, :conversation_id, 'assistant', :content, 'agent', :message, 'text', :metadata, :now)"), {"id": message_id, "tenant_id": tenant_id, "conversation_id": conversation_id, "content": f"Stub response from {agent['name']}: {payload.message}", "message": f"Stub response from {agent['name']}: {payload.message}", "metadata": payload.metadata, "now": _now()})
+        db.execute(text("INSERT INTO conversations (id, tenant_id, agent_id, customer_id, lead_id, title, channel, status, created_at, started_at, updated_at) VALUES (:id, :tenant_id, :agent_id, :customer_id, :lead_id, :title, :channel, 'open', :now, :now, :now)"), {"id": _db_uuid(conversation_id), "tenant_id": _db_uuid(tenant_id), "agent_id": _db_uuid(agent_id), "customer_id": _db_uuid(payload.context.get("customer_id")) if payload.context.get("customer_id") else None, "lead_id": _db_uuid(payload.context.get("lead_id")) if payload.context.get("lead_id") else None, "title": payload.message[:80], "channel": payload.metadata.get("source"), "now": _now()})
+    db.execute(text("INSERT INTO conversation_messages (id, tenant_id, conversation_id, role, content, sender_type, message, message_type, metadata, created_at) VALUES (:id, :tenant_id, :conversation_id, :role, :content, :sender_type, :message, :message_type, :metadata, :now)"), {"id": _db_uuid(message_id), "tenant_id": _db_uuid(tenant_id), "conversation_id": _db_uuid(conversation_id), "role": 'assistant', "content": f"Stub response from {agent['name']}: {payload.message}", "sender_type": 'agent', "message": f"Stub response from {agent['name']}: {payload.message}", "message_type": 'text', "metadata": _db_json(payload.metadata), "now": _now()})
     db.commit()
     return {"message_id": str(message_id), "conversation_id": str(conversation_id), "agent_id": str(agent_id), "content": f"Stub response from {agent['name']}: {payload.message}", "role": "assistant", "citations": [], "confidence": 0.0, "supported": False, "tool_calls": [], "latency_ms": 0, "tokens_used": {"input": 0, "output": 0, "total": 0}, "created_at": _now()}
 
@@ -742,34 +832,37 @@ def chat(agent_id: UUID, payload: AgentChatRequest, db: Session = Depends(get_db
 @router.post("/agents/{agent_id}/versions", tags=["Domain 3 - Agents & AI Workforce"], status_code=status.HTTP_201_CREATED)
 def snapshot_agent(agent_id: UUID, payload: AgentVersionRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent = get_agent(agent_id, db)
-    version = db.execute(text("SELECT COALESCE(max(version), 0) + 1 FROM agent_versions WHERE agent_id = :id"), {"id": agent_id}).scalar_one()
-    db.execute(text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, model, system_prompt, config, created_at) VALUES (:id, :tenant_id, :agent_id, :version, :model, :system_prompt, :config, :now)"), {"id": uuid4(), "tenant_id": agent["tenant_id"], "agent_id": agent_id, "version": version, "model": agent.get("model"), "system_prompt": agent["system_prompt"], "config": {"name": payload.name, "notes": payload.notes}, "now": _now()})
+    version = db.execute(text("SELECT COALESCE(max(version), 0) + 1 FROM agent_versions WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one()
+    
+    config_json = _db_json({"name": payload.name, "notes": payload.notes})
+    
+    db.execute(text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, system_prompt, config, created_at) VALUES (:id, :tenant_id, :agent_id, :version, :system_prompt, :config, :now)"), {"id": _db_uuid(uuid4()), "tenant_id": _db_uuid(agent["tenant_id"]), "agent_id": _db_uuid(agent_id), "version": version, "system_prompt": agent["system_prompt"], "config": config_json, "now": _now()})
     db.commit()
     return {"version": version, "name": payload.name, "created_at": _now()}
 
 
 @router.get("/agents/{agent_id}/versions", tags=["Domain 3 - Agents & AI Workforce"])
 def list_agent_versions(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    return {"items": _rows(db.execute(text("SELECT version, config->>'name' AS name, created_at FROM agent_versions WHERE agent_id = :id ORDER BY version"), {"id": agent_id}))}
+    return {"items": _rows(db.execute(text("SELECT version, config->>'name' AS name, created_at FROM agent_versions WHERE agent_id = :id ORDER BY version"), {"id": _db_uuid(agent_id)}))}
 
 
 @router.post("/agents/{agent_id}/sessions", tags=["Domain 3 - Agents & AI Workforce"], status_code=status.HTTP_201_CREATED)
 def start_agent_session(agent_id: UUID, payload: AgentSessionRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent = get_agent(agent_id, db)
     session_id = uuid4()
-    db.execute(text("INSERT INTO agent_sessions (id, tenant_id, agent_id, conversation_id, status, started_at, metadata) VALUES (:id, :tenant_id, :agent_id, :conversation_id, 'active', :now, :metadata)"), {"id": session_id, "tenant_id": agent["tenant_id"], "agent_id": agent_id, "conversation_id": payload.conversation_id, "now": _now(), "metadata": payload.metadata})
+    db.execute(text("INSERT INTO agent_sessions (id, tenant_id, agent_id, conversation_id, status, started_at, metadata) VALUES (:id, :tenant_id, :agent_id, :conversation_id, 'active', :now, :metadata)"), {"id": _db_uuid(session_id), "tenant_id": _db_uuid(agent["tenant_id"]), "agent_id": _db_uuid(agent_id), "conversation_id": _db_uuid(payload.conversation_id) if payload.conversation_id else None, "now": _now(), "metadata": _db_json(payload.metadata)})
     db.commit()
     return {"id": str(session_id), "status": "active", "started_at": _now()}
 
 
 @router.get("/agents/{agent_id}/sessions", tags=["Domain 3 - Agents & AI Workforce"])
 def list_agent_sessions(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    return {"items": _rows(db.execute(text("SELECT id, status, started_at, ended_at FROM agent_sessions WHERE agent_id = :id ORDER BY started_at DESC"), {"id": agent_id}))}
+    return {"items": _rows(db.execute(text("SELECT id, status, started_at, ended_at FROM agent_sessions WHERE agent_id = :id ORDER BY started_at DESC"), {"id": _db_uuid(agent_id)}))}
 
 
 @router.patch("/agents/{agent_id}/sessions/{session_id}", tags=["Domain 3 - Agents & AI Workforce"])
 def update_agent_session(agent_id: UUID, session_id: UUID, payload: AgentSessionUpdateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
-    db.execute(text("UPDATE agent_sessions SET status = :status, ended_at = CASE WHEN :status = 'ended' THEN :now ELSE ended_at END WHERE id = :id AND agent_id = :agent_id"), {"status": payload.status, "now": _now(), "id": session_id, "agent_id": agent_id})
+    db.execute(text("UPDATE agent_sessions SET status = :status, ended_at = CASE WHEN :status = 'ended' THEN :now ELSE ended_at END WHERE id = :id AND agent_id = :agent_id"), {"status": payload.status, "now": _now(), "id": _db_uuid(session_id), "agent_id": _db_uuid(agent_id)})
     db.commit()
     return {"id": str(session_id), "status": payload.status, "end_reason": payload.end_reason}
 
@@ -778,19 +871,19 @@ def update_agent_session(agent_id: UUID, session_id: UUID, payload: AgentSession
 def create_agent_task(agent_id: UUID, payload: AgentTaskRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent = get_agent(agent_id, db)
     task_id = uuid4()
-    db.execute(text("INSERT INTO agent_tasks (id, tenant_id, agent_id, task_type, title, payload, status, due_at, created_at, updated_at) VALUES (:id, :tenant_id, :agent_id, :task_type, :title, :payload, 'pending', :due_at, :now, :now)"), {"id": task_id, "tenant_id": agent["tenant_id"], "agent_id": agent_id, "task_type": payload.type, "title": payload.description, "payload": {"priority": payload.priority, "context": payload.context}, "due_at": payload.due_at, "now": _now()})
+    db.execute(text("INSERT INTO agent_tasks (id, tenant_id, agent_id, task_type, title, payload, status, due_at, created_at, updated_at) VALUES (:id, :tenant_id, :agent_id, :task_type, :title, :payload, 'pending', :due_at, :now, :now)"), {"id": _db_uuid(task_id), "tenant_id": _db_uuid(agent["tenant_id"]), "agent_id": _db_uuid(agent_id), "task_type": payload.type, "title": payload.description, "payload": _db_json({"priority": payload.priority, "context": payload.context}), "due_at": payload.due_at, "now": _now()})
     db.commit()
     return {"id": str(task_id), "type": payload.type, "status": "pending", "priority": payload.priority}
 
 
 @router.get("/agents/{agent_id}/tasks", tags=["Domain 3 - Agents & AI Workforce"])
 def list_agent_tasks(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    return {"items": _rows(db.execute(text("SELECT id, task_type AS type, status, payload->>'priority' AS priority, due_at FROM agent_tasks WHERE agent_id = :id ORDER BY created_at DESC"), {"id": agent_id}))}
+    return {"items": _rows(db.execute(text("SELECT id, task_type AS type, status, payload->>'priority' AS priority, due_at FROM agent_tasks WHERE agent_id = :id ORDER BY created_at DESC"), {"id": _db_uuid(agent_id)}))}
 
 
 @router.patch("/agent-tasks/{task_id}", tags=["Domain 3 - Agents & AI Workforce"])
 def update_agent_task(task_id: UUID, payload: AgentTaskUpdateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
-    db.execute(text("UPDATE agent_tasks SET status = :status, updated_at = :now WHERE id = :id"), {"status": payload.status, "now": _now(), "id": task_id})
+    db.execute(text("UPDATE agent_tasks SET status = :status, updated_at = :now WHERE id = :id"), {"status": payload.status, "now": _now(), "id": _db_uuid(task_id)})
     db.commit()
     return {"id": str(task_id), "status": payload.status, "result": payload.result}
 
@@ -800,29 +893,29 @@ def store_agent_memory(agent_id: UUID, payload: AgentMemoryRequest, db: Session 
     agent = get_agent(agent_id, db)
     memory_id = uuid4()
     expires_at = _now() + timedelta(days=payload.ttl_days) if payload.ttl_days else None
-    db.execute(text("INSERT INTO agent_memories (id, tenant_id, agent_id, memory_type, content, metadata, expires_at, created_at, updated_at) VALUES (:id, :tenant_id, :agent_id, :memory_type, :content, :metadata, :expires_at, :now, :now)"), {"id": memory_id, "tenant_id": agent["tenant_id"], "agent_id": agent_id, "memory_type": payload.type, "content": str(payload.value), "metadata": {"key": payload.key, "context": payload.context}, "expires_at": expires_at, "now": _now()})
+    db.execute(text("INSERT INTO agent_memories (id, tenant_id, agent_id, memory_type, content, metadata, expires_at, created_at, updated_at) VALUES (:id, :tenant_id, :agent_id, :memory_type, :content, :metadata, :expires_at, :now, :now)"), {"id": _db_uuid(memory_id), "tenant_id": _db_uuid(agent["tenant_id"]), "agent_id": _db_uuid(agent_id), "memory_type": payload.type, "content": str(payload.value), "metadata": _db_json({"key": payload.key, "context": payload.context}), "expires_at": expires_at, "now": _now()})
     db.commit()
     return {"id": str(memory_id), "type": payload.type, "key": payload.key, "value": payload.value}
 
 
 @router.get("/agents/{agent_id}/memories", tags=["Domain 3 - Agents & AI Workforce"])
 def list_agent_memories(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    return {"items": _rows(db.execute(text("SELECT id, memory_type AS type, metadata->>'key' AS key, content AS value, created_at FROM agent_memories WHERE agent_id = :id ORDER BY created_at DESC"), {"id": agent_id}))}
+    return {"items": _rows(db.execute(text("SELECT id, memory_type AS type, metadata->>'key' AS key, content AS value, created_at FROM agent_memories WHERE agent_id = :id ORDER BY created_at DESC"), {"id": _db_uuid(agent_id)}))}
 
 
 @router.post("/agents/{agent_id}/feedback", tags=["Domain 3 - Agents & AI Workforce"], status_code=status.HTTP_201_CREATED)
 def submit_agent_feedback(agent_id: UUID, payload: AgentFeedbackRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent = get_agent(agent_id, db)
     feedback_id = uuid4()
-    db.execute(text("INSERT INTO agent_feedback (id, tenant_id, agent_id, message_id, rating, feedback, created_at) VALUES (:id, :tenant_id, :agent_id, :message_id, :rating, :feedback, :now)"), {"id": feedback_id, "tenant_id": agent["tenant_id"], "agent_id": agent_id, "message_id": payload.message_id, "rating": payload.rating, "feedback": payload.comment, "now": _now()})
+    db.execute(text("INSERT INTO agent_feedback (id, tenant_id, agent_id, message_id, rating, feedback, created_at) VALUES (:id, :tenant_id, :agent_id, :message_id, :rating, :feedback, :now)"), {"id": _db_uuid(feedback_id), "tenant_id": _db_uuid(agent["tenant_id"]), "agent_id": _db_uuid(agent_id), "message_id": _db_uuid(payload.message_id) if payload.message_id else None, "rating": payload.rating, "feedback": payload.comment, "now": _now()})
     db.commit()
     return {"id": str(feedback_id), "rating": payload.rating, "comment": payload.comment, "category": payload.category}
 
 
 @router.get("/agents/{agent_id}/feedback", tags=["Domain 3 - Agents & AI Workforce"])
 def list_agent_feedback(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    items = _rows(db.execute(text("SELECT id, rating, feedback AS comment, created_at FROM agent_feedback WHERE agent_id = :id ORDER BY created_at DESC"), {"id": agent_id}))
-    avg_rating = db.execute(text("SELECT COALESCE(avg(rating), 0) FROM agent_feedback WHERE agent_id = :id"), {"id": agent_id}).scalar_one()
+    items = _rows(db.execute(text("SELECT id, rating, feedback AS comment, created_at FROM agent_feedback WHERE agent_id = :id ORDER BY created_at DESC"), {"id": _db_uuid(agent_id)}))
+    avg_rating = db.execute(text("SELECT COALESCE(avg(rating), 0) FROM agent_feedback WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one()
     return {"items": items, "avg_rating": float(avg_rating), "total": len(items)}
 
 
@@ -830,14 +923,14 @@ def list_agent_feedback(agent_id: UUID, db: Session = Depends(get_db)) -> dict[s
 def grant_tool_permission(agent_id: UUID, payload: ToolPermissionRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent = get_agent(agent_id, db)
     permission_id = uuid4()
-    db.execute(text("INSERT INTO tool_permissions (id, tenant_id, tool_id, agent_id, is_allowed, created_at) VALUES (:id, :tenant_id, :tool_id, :agent_id, true, :now)"), {"id": permission_id, "tenant_id": agent["tenant_id"], "tool_id": payload.tool_id, "agent_id": agent_id, "now": _now()})
+    db.execute(text("INSERT INTO tool_permissions (id, tenant_id, tool_id, agent_id, is_allowed, created_at) VALUES (:id, :tenant_id, :tool_id, :agent_id, true, :now)"), {"id": _db_uuid(permission_id), "tenant_id": _db_uuid(agent["tenant_id"]), "tool_id": _db_uuid(payload.tool_id), "agent_id": _db_uuid(agent_id), "now": _now()})
     db.commit()
     return {"id": str(permission_id), "tool_id": str(payload.tool_id), "permission": payload.permission, "constraints": payload.constraints}
 
 
 @router.get("/agents/{agent_id}/tool-permissions", tags=["Domain 3 - Agents & AI Workforce"])
 def list_tool_permissions(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    return {"items": _rows(db.execute(text("SELECT tp.tool_id, tr.name AS tool_name, tp.is_allowed FROM tool_permissions tp LEFT JOIN tool_registry tr ON tr.id = tp.tool_id WHERE tp.agent_id = :id"), {"id": agent_id}))}
+    return {"items": _rows(db.execute(text("SELECT tp.tool_id, tr.name AS tool_name, tp.is_allowed FROM tool_permissions tp LEFT JOIN tool_registry tr ON tr.id = tp.tool_id WHERE tp.agent_id = :id"), {"id": _db_uuid(agent_id)}))}
 
 
 @router.get("/health", tags=["Domain 4 - System, Health & Jobs"])
@@ -852,10 +945,10 @@ def audit_logs(tenant_id: UUID | None = None, user_id: UUID | None = None, actio
     params: dict[str, Any] = {}
     if tenant_id:
         filters.append("tenant_id = :tenant_id")
-        params["tenant_id"] = tenant_id
+        params["tenant_id"] = _db_uuid(tenant_id)
     if user_id:
         filters.append("user_id = :user_id")
-        params["user_id"] = user_id
+        params["user_id"] = _db_uuid(user_id)
     if action:
         filters.append("action = :action")
         params["action"] = action
@@ -875,7 +968,7 @@ def audit_logs(tenant_id: UUID | None = None, user_id: UUID | None = None, actio
 @router.post("/background-jobs", tags=["Domain 4 - System, Health & Jobs"], status_code=status.HTTP_201_CREATED)
 def queue_background_job(payload: BackgroundJobRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     job_id = uuid4()
-    db.execute(text("INSERT INTO background_jobs (id, job_type, status, payload, scheduled_at, created_at, updated_at) VALUES (:id, :job_type, 'queued', :payload, :scheduled_at, :now, :now)"), {"id": job_id, "job_type": payload.type, "payload": {"priority": payload.priority, **payload.payload}, "scheduled_at": payload.scheduled_at, "now": _now()})
+    db.execute(text("INSERT INTO background_jobs (id, job_type, status, payload, scheduled_at, created_at, updated_at) VALUES (:id, :job_type, 'queued', :payload, :scheduled_at, :now, :now)"), {"id": _db_uuid(job_id), "job_type": payload.type, "payload": _db_json({"priority": payload.priority, **payload.payload}), "scheduled_at": payload.scheduled_at, "now": _now()})
     db.commit()
     return {"id": str(job_id), "type": payload.type, "status": "queued", "progress": 0}
 
@@ -887,7 +980,7 @@ def list_background_jobs(db: Session = Depends(get_db)) -> dict[str, Any]:
 
 @router.get("/background-jobs/{job_id}", tags=["Domain 4 - System, Health & Jobs"])
 def get_background_job(job_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    job = _row(db.execute(text("SELECT * FROM background_jobs WHERE id = :id"), {"id": job_id}).first())
+    job = _row(db.execute(text("SELECT * FROM background_jobs WHERE id = :id"), {"id": _db_uuid(job_id)}).first())
     if not job:
         raise HTTPException(status_code=404, detail="Background job not found")
     return {**job, "type": job["job_type"], "progress": 100 if job["status"] == "completed" else 0, "result": job.get("payload")}
@@ -898,12 +991,12 @@ def send_notification(payload: NotificationRequest, db: Session = Depends(get_db
     notification_id = uuid4()
     tenant_id = None
     if payload.user_id:
-        tenant_id = db.execute(text("SELECT tenant_id FROM users WHERE id = :id"), {"id": payload.user_id}).scalar()
+        tenant_id = db.execute(text("SELECT tenant_id FROM users WHERE id = :id"), {"id": _db_uuid(payload.user_id)}).scalar()
     if tenant_id is None:
         tenant_id = db.execute(text("SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1")).scalar()
     if tenant_id is None:
         raise HTTPException(status_code=400, detail="A tenant is required before sending notifications")
-    db.execute(text("INSERT INTO notifications (id, tenant_id, user_id, notification_type, title, body, payload, created_at) VALUES (:id, :tenant_id, :user_id, :type, :title, :body, :payload, :now)"), {"id": notification_id, "tenant_id": tenant_id, "user_id": payload.user_id, "type": payload.type, "title": payload.title, "body": payload.body, "payload": {"priority": payload.priority, **payload.data}, "now": _now()})
+    db.execute(text("INSERT INTO notifications (id, tenant_id, user_id, notification_type, title, body, payload, created_at) VALUES (:id, :tenant_id, :user_id, :type, :title, :body, :payload, :now)"), {"id": _db_uuid(notification_id), "tenant_id": _db_uuid(tenant_id), "user_id": _db_uuid(payload.user_id) if payload.user_id else None, "notification_type": payload.type, "title": payload.title, "body": payload.body, "payload": _db_json({"priority": payload.priority, **payload.data}), "now": _now()})
     db.commit()
     return {"id": str(notification_id), "title": payload.title, "read": False, "created_at": _now()}
 
@@ -917,7 +1010,7 @@ def list_notifications(db: Session = Depends(get_db)) -> dict[str, Any]:
 @router.patch("/notifications/{id}/read", tags=["Domain 4 - System, Health & Jobs"])
 def mark_notification_read(id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
     now = _now()
-    db.execute(text("UPDATE notifications SET read_at = :now WHERE id = :id"), {"now": now, "id": id})
+    db.execute(text("UPDATE notifications SET read_at = :now WHERE id = :id"), {"now": now, "id": _db_uuid(id)})
     db.commit()
     return {"id": str(id), "read": True, "read_at": now}
 
@@ -925,7 +1018,7 @@ def mark_notification_read(id: UUID, db: Session = Depends(get_db)) -> dict[str,
 @router.post("/feature-flags", tags=["Domain 4 - System, Health & Jobs"], status_code=status.HTTP_201_CREATED)
 def create_feature_flag(payload: FeatureFlagRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     flag_id = uuid4()
-    db.execute(text("INSERT INTO feature_flags (id, flag_key, is_enabled, config, created_at, updated_at) VALUES (:id, :key, :enabled, :config, :now, :now)"), {"id": flag_id, "key": payload.name, "enabled": payload.enabled, "config": {"description": payload.description, "target": payload.target}, "now": _now()})
+    db.execute(text("INSERT INTO feature_flags (id, flag_key, is_enabled, config, created_at, updated_at) VALUES (:id, :key, :enabled, :config, :now, :now)"), {"id": _db_uuid(flag_id), "key": payload.name, "enabled": payload.enabled, "config": _db_json({"description": payload.description, "target": payload.target}), "now": _now()})
     db.commit()
     return {"id": str(flag_id), "name": payload.name, "enabled": payload.enabled, "target": payload.target}
 
@@ -937,7 +1030,7 @@ def list_feature_flags(db: Session = Depends(get_db)) -> dict[str, Any]:
 
 @router.patch("/feature-flags/{flag_id}", tags=["Domain 4 - System, Health & Jobs"])
 def toggle_feature_flag(flag_id: UUID, payload: FeatureFlagUpdateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
-    db.execute(text("UPDATE feature_flags SET is_enabled = :enabled, updated_at = :now WHERE id = :id"), {"enabled": payload.enabled, "now": _now(), "id": flag_id})
+    db.execute(text("UPDATE feature_flags SET is_enabled = :enabled, updated_at = :now WHERE id = :id"), {"enabled": payload.enabled, "now": _now(), "id": _db_uuid(flag_id)})
     db.commit()
     return {"id": str(flag_id), "enabled": payload.enabled}
 
@@ -948,18 +1041,13 @@ def api_request_logs(tenant_id: UUID | None = None, endpoint: str | None = None,
     params: dict[str, Any] = {}
     if tenant_id:
         filters.append("tenant_id = :tenant_id")
-        params["tenant_id"] = tenant_id
+        params["tenant_id"] = _db_uuid(tenant_id)
     if endpoint:
         filters.append("path = :endpoint")
         params["endpoint"] = endpoint
     if status_code:
         filters.append("status_code = :status_code")
         params["status_code"] = status_code
-    if from_:
-        filters.append("created_at >= :from_")
-        params["from_"] = from_
-    where = "WHERE " + " AND ".join(filters) if filters else ""
-    return {"items": _rows(db.execute(text(f"SELECT * FROM api_request_logs {where} ORDER BY created_at DESC LIMIT 100"), params))}
     if from_:
         filters.append("created_at >= :from_")
         params["from_"] = from_
