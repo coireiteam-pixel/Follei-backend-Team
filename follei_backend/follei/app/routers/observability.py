@@ -136,7 +136,7 @@ def agent_performance(agent_id: UUID):
 @retrieval_router.post("", status_code=201)
 def create_retrieval_log(payload: RetrievalLogIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     _ensure_tenant(user, payload.tenant_id)
-    results = payload.model_dump()
+    results = payload.model_dump(mode='json')
     log = RetrievalLog(tenant_id=user.tenant_id, query=payload.query, results=results, scores=[], latency_ms=payload.latency_ms, created_at=payload.timestamp or datetime.utcnow())
     db.add(log)
     db.commit()
@@ -157,7 +157,7 @@ def list_retrieval_logs(tenant_id: Optional[UUID] = None, agent_id: Optional[UUI
 
 @evaluation_router.post("", status_code=201)
 def create_evaluation(payload: EvaluationIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    result = payload.model_dump()
+    result = payload.model_dump(mode='json')
     evaluation = EvaluationResult(tenant_id=user.tenant_id, subject_type="rag", evaluator=payload.evaluator, score=payload.relevance_score, result=result)
     db.add(evaluation)
     db.commit()

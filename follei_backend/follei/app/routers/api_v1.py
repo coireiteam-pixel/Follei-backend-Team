@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID, uuid4
@@ -657,8 +658,27 @@ def revoke_api_key(key_id: UUID, db: Session = Depends(get_db)) -> Response:
 def create_agent(payload: AgentCreateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent_id = uuid4()
     system_prompt = payload.config.get("system_prompt") or payload.description or "You are a helpful AI assistant."
-    db.execute(text("INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, agent_type, model, is_active, created_at, updated_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :agent_type, :model, :is_active, :now, :now)"), {"id": agent_id, "tenant_id": payload.tenant_id, "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": payload.config.get("tools", []), "agent_type": payload.type, "model": payload.config.get("model"), "is_active": payload.status == "active", "now": _now()})
-    db.execute(text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, model, system_prompt, config, created_at) VALUES (:id, :tenant_id, :agent_id, 1, :model, :system_prompt, :config, :now)"), {"id": uuid4(), "tenant_id": payload.tenant_id, "agent_id": agent_id, "model": payload.config.get("model"), "system_prompt": system_prompt, "config": payload.config, "now": _now()})
+    # tools is stored as a TEXT[] in the DB; pass a Python list so the driver
+    # can bind it as an array. Store prompt/version in the existing
+    # `agent_prompt_versions` table (schema uses this name).
+    tools_list = payload.config.get("tools", []) or []
+
+    db.execute(
+        text(
+            "INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, created_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :now)"
+        ),
+        {"id": agent_id, "tenant_id": payload.tenant_id, "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": tools_list, "now": _now()},
+    )
+
+    # Insert initial prompt/version record. The DB schema defines
+    # `agent_prompt_versions` (not `agent_versions`) and doesn't include a
+    # `model` or `config` column, so we insert only the columns that exist.
+    db.execute(
+        text(
+            "INSERT INTO agent_prompt_versions (id, tenant_id, agent_id, version, system_prompt, created_by, created_at) VALUES (:id, :tenant_id, :agent_id, :version, :system_prompt, NULL, :now)"
+        ),
+        {"id": uuid4(), "tenant_id": payload.tenant_id, "agent_id": agent_id, "version": 1, "system_prompt": system_prompt, "now": _now()},
+    )
     db.commit()
     return {"id": str(agent_id), "name": payload.name, "type": payload.type, "tenant_id": str(payload.tenant_id), "config": payload.config, "status": payload.status, "created_at": _now(), "version": 1}
 
@@ -671,13 +691,13 @@ def list_agents(tenant_id: UUID | None = None, type: str | None = None, status: 
         filters.append("tenant_id = :tenant_id")
         params["tenant_id"] = tenant_id
     if type:
-        filters.append("(agent_type = :type OR role = :type)")
+        filters.append("role = :type")
         params["type"] = type
     if status:
         filters.append("is_active = :active")
         params["active"] = status == "active"
-    where = "WHERE " + " AND ".join(filters) if filters else ""
-    items = _rows(db.execute(text(f"SELECT id, name, role AS type, tenant_id, is_active, created_at FROM agents {where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"), params))
+    where = " WHERE " + " AND ".join(filters) if filters else ""
+    items = _rows(db.execute(text(f"SELECT id, name, role AS type, tenant_id, created_at FROM agents{where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"), params))
     total = db.execute(text(f"SELECT count(*) FROM agents {where}"), params).scalar_one()
     return _page(items, total, page, page_size)
 
@@ -693,12 +713,12 @@ def get_agent(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
         "avg_confidence": float(db.execute(text("SELECT COALESCE(avg(score), 0) FROM agent_confidence_scores WHERE agent_id = :id"), {"id": agent_id}).scalar_one()),
         "avg_response_time_ms": 0,
     }
-    return {**agent, "type": agent.get("agent_type") or agent.get("role"), "config": {"tools": agent.get("tools") or [], "model": agent.get("model")}, "status": "active" if agent.get("is_active") else "inactive", "stats": stats}
+    return {**agent, "type": agent.get("role"), "config": {"tools": json.loads(agent.get("tools") or "[]"), "model": agent.get("model")}, "status": "active", "stats": stats}
 
 
 @router.patch("/agents/{agent_id}", tags=["Domain 3 - Agents & AI Workforce"])
 def update_agent(agent_id: UUID, payload: AgentUpdateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
-    db.execute(text("UPDATE agents SET name = COALESCE(:name, name), is_active = COALESCE(:is_active, is_active), model = COALESCE(:model, model), updated_at = :now WHERE id = :id"), {"name": payload.name, "is_active": None if payload.status is None else payload.status == "active", "model": (payload.config or {}).get("model"), "now": _now(), "id": agent_id})
+    db.execute(text("UPDATE agents SET name = COALESCE(:name, name) WHERE id = :id"), {"name": payload.name, "id": agent_id})
     db.commit()
     return get_agent(agent_id, db)
 
@@ -939,6 +959,11 @@ def api_request_logs(tenant_id: UUID | None = None, endpoint: str | None = None,
     if status_code:
         filters.append("status_code = :status_code")
         params["status_code"] = status_code
+    if from_:
+        filters.append("created_at >= :from_")
+        params["from_"] = from_
+    where = "WHERE " + " AND ".join(filters) if filters else ""
+    return {"items": _rows(db.execute(text(f"SELECT * FROM api_request_logs {where} ORDER BY created_at DESC LIMIT 100"), params))}
     if from_:
         filters.append("created_at >= :from_")
         params["from_"] = from_
