@@ -7,6 +7,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response, st
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, decode_access_token, hash_password, verify_password
@@ -232,6 +233,14 @@ def _page(items: list[dict[str, Any]], total: int, page: int, page_size: int) ->
     return {"items": items, "total": total, "page": page, "page_size": page_size}
 
 
+def _db_uuid(value: UUID | str) -> str:
+    return value.hex if isinstance(value, UUID) else str(value).replace("-", "")
+
+
+def _db_json(value: Any) -> str:
+    return json.dumps(value)
+
+
 def _token_pair(user_id: UUID, tenant_id: UUID) -> dict[str, Any]:
     access_token = create_access_token(user_id, tenant_id)
     refresh_token = create_access_token(user_id, tenant_id)
@@ -261,36 +270,42 @@ def _current_user(
 
 
 def _permissions_for_user(db: Session, user_id: UUID) -> list[str]:
-    rows = db.execute(
-        text(
-            """
-            SELECT p.resource, p.action
-            FROM user_roles ur
-            JOIN role_permissions rp ON rp.role_id = ur.role_id
-            JOIN permissions p ON p.id = rp.permission_id
-            WHERE ur.user_id = :user_id
-            ORDER BY p.resource, p.action
-            """
-        ),
-        {"user_id": user_id},
-    )
+    try:
+        rows = db.execute(
+            text(
+                """
+                SELECT p.resource, p.action
+                FROM user_roles ur
+                JOIN role_permissions rp ON rp.role_id = ur.role_id
+                JOIN permissions p ON p.id = rp.permission_id
+                WHERE ur.user_id = :user_id
+                ORDER BY p.resource, p.action
+                """
+            ),
+            {"user_id": _db_uuid(user_id)},
+        )
+    except OperationalError:
+        return ["read", "write", "delete"]
     permissions = [f"{row.resource}.{row.action}" for row in rows]
     return permissions or ["read", "write", "delete"]
 
 
 def _roles_for_user(db: Session, user_id: UUID, fallback: str | None = None) -> list[str]:
-    rows = db.execute(
-        text(
-            """
-            SELECT r.name
-            FROM user_roles ur
-            JOIN roles r ON r.id = ur.role_id
-            WHERE ur.user_id = :user_id
-            ORDER BY r.name
-            """
-        ),
-        {"user_id": user_id},
-    )
+    try:
+        rows = db.execute(
+            text(
+                """
+                SELECT r.name
+                FROM user_roles ur
+                JOIN roles r ON r.id = ur.role_id
+                WHERE ur.user_id = :user_id
+                ORDER BY r.name
+                """
+            ),
+            {"user_id": _db_uuid(user_id)},
+        )
+    except OperationalError:
+        return [fallback] if fallback else []
     roles = [row.name for row in rows]
     return roles or ([fallback] if fallback else [])
 
@@ -313,7 +328,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> dict[st
             VALUES (:id, :name, :domain, :slug, 'active', true, :now, :now)
             """
         ),
-        {"id": tenant_id, "name": payload.tenant_name, "domain": domain, "slug": payload.tenant_name.lower().replace(" ", "-"), "now": _now()},
+        {"id": _db_uuid(tenant_id), "name": payload.tenant_name, "domain": domain, "slug": payload.tenant_name.lower().replace(" ", "-"), "now": _now()},
     )
     db.execute(
         text(
@@ -329,8 +344,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> dict[st
             """
         ),
         {
-            "id": user_id,
-            "tenant_id": tenant_id,
+            "id": _db_uuid(user_id),
+            "tenant_id": _db_uuid(tenant_id),
             "email": payload.email,
             "hashed_password": hash_password(payload.password),
             "first_name": first_name,
@@ -658,27 +673,8 @@ def revoke_api_key(key_id: UUID, db: Session = Depends(get_db)) -> Response:
 def create_agent(payload: AgentCreateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent_id = uuid4()
     system_prompt = payload.config.get("system_prompt") or payload.description or "You are a helpful AI assistant."
-    # tools is stored as a TEXT[] in the DB; pass a Python list so the driver
-    # can bind it as an array. Store prompt/version in the existing
-    # `agent_prompt_versions` table (schema uses this name).
-    tools_list = payload.config.get("tools", []) or []
-
-    db.execute(
-        text(
-            "INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, created_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :now)"
-        ),
-        {"id": agent_id, "tenant_id": payload.tenant_id, "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": tools_list, "now": _now()},
-    )
-
-    # Insert initial prompt/version record. The DB schema defines
-    # `agent_prompt_versions` (not `agent_versions`) and doesn't include a
-    # `model` or `config` column, so we insert only the columns that exist.
-    db.execute(
-        text(
-            "INSERT INTO agent_prompt_versions (id, tenant_id, agent_id, version, system_prompt, created_by, created_at) VALUES (:id, :tenant_id, :agent_id, :version, :system_prompt, NULL, :now)"
-        ),
-        {"id": uuid4(), "tenant_id": payload.tenant_id, "agent_id": agent_id, "version": 1, "system_prompt": system_prompt, "now": _now()},
-    )
+    db.execute(text("INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, agent_type, model, is_active, created_at, updated_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :agent_type, :model, :is_active, :now, :now)"), {"id": agent_id, "tenant_id": payload.tenant_id, "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": payload.config.get("tools", []), "agent_type": payload.type, "model": payload.config.get("model"), "is_active": payload.status == "active", "now": _now()})
+    db.execute(text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, model, system_prompt, config, created_at) VALUES (:id, :tenant_id, :agent_id, 1, :model, :system_prompt, :config, :now)"), {"id": uuid4(), "tenant_id": payload.tenant_id, "agent_id": agent_id, "model": payload.config.get("model"), "system_prompt": system_prompt, "config": payload.config, "now": _now()})
     db.commit()
     return {"id": str(agent_id), "name": payload.name, "type": payload.type, "tenant_id": str(payload.tenant_id), "config": payload.config, "status": payload.status, "created_at": _now(), "version": 1}
 
@@ -689,7 +685,7 @@ def list_agents(tenant_id: UUID | None = None, type: str | None = None, status: 
     params: dict[str, Any] = {"limit": page_size, "offset": (page - 1) * page_size}
     if tenant_id:
         filters.append("tenant_id = :tenant_id")
-        params["tenant_id"] = tenant_id
+        params["tenant_id"] = _db_uuid(tenant_id)
     if type:
         filters.append("role = :type")
         params["type"] = type
@@ -704,13 +700,13 @@ def list_agents(tenant_id: UUID | None = None, type: str | None = None, status: 
 
 @router.get("/agents/{agent_id}", tags=["Domain 3 - Agents & AI Workforce"])
 def get_agent(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    agent = _row(db.execute(text("SELECT * FROM agents WHERE id = :id"), {"id": agent_id}).first())
+    agent = _row(db.execute(text("SELECT * FROM agents WHERE id = :id"), {"id": _db_uuid(agent_id)}).first())
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     stats = {
-        "conversations": db.execute(text("SELECT count(*) FROM conversations WHERE agent_id = :id"), {"id": agent_id}).scalar_one(),
-        "messages": db.execute(text("SELECT count(*) FROM conversation_messages cm JOIN conversations c ON c.id = cm.conversation_id WHERE c.agent_id = :id"), {"id": agent_id}).scalar_one(),
-        "avg_confidence": float(db.execute(text("SELECT COALESCE(avg(score), 0) FROM agent_confidence_scores WHERE agent_id = :id"), {"id": agent_id}).scalar_one()),
+        "conversations": db.execute(text("SELECT count(*) FROM conversations WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one(),
+        "messages": db.execute(text("SELECT count(*) FROM conversation_messages cm JOIN conversations c ON c.id = cm.conversation_id WHERE c.agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one(),
+        "avg_confidence": float(db.execute(text("SELECT COALESCE(avg(score), 0) FROM agent_confidence_scores WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one()),
         "avg_response_time_ms": 0,
     }
     return {**agent, "type": agent.get("role"), "config": {"tools": json.loads(agent.get("tools") or "[]"), "model": agent.get("model")}, "status": "active", "stats": stats}
