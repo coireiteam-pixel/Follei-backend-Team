@@ -18,7 +18,7 @@ class Agent(Base):
     name = Column(String, nullable=False)
     role = Column(String, nullable=False) # e.g., 'SDR', 'Support'
     system_prompt = Column(String, nullable=False)
-    tools = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list) # Assigned MCP tool names
+    tools = Column(ARRAY(String), default=list) # Assigned MCP tool names
     
     created_at = Column(DateTime, default=datetime.utcnow)
 

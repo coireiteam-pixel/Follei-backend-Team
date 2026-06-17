@@ -1,13 +1,12 @@
-import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from psycopg2.extras import Json
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token, decode_access_token, hash_password, verify_password
@@ -233,12 +232,8 @@ def _page(items: list[dict[str, Any]], total: int, page: int, page_size: int) ->
     return {"items": items, "total": total, "page": page, "page_size": page_size}
 
 
-def _db_uuid(value: UUID | str) -> str:
-    return value.hex if isinstance(value, UUID) else str(value).replace("-", "")
-
-
-def _db_json(value: Any) -> str:
-    return json.dumps(value)
+def _pg_json(value: Any) -> Json:
+    return Json(value)
 
 
 def _token_pair(user_id: UUID, tenant_id: UUID) -> dict[str, Any]:
@@ -270,42 +265,36 @@ def _current_user(
 
 
 def _permissions_for_user(db: Session, user_id: UUID) -> list[str]:
-    try:
-        rows = db.execute(
-            text(
-                """
-                SELECT p.resource, p.action
-                FROM user_roles ur
-                JOIN role_permissions rp ON rp.role_id = ur.role_id
-                JOIN permissions p ON p.id = rp.permission_id
-                WHERE ur.user_id = :user_id
-                ORDER BY p.resource, p.action
-                """
-            ),
-            {"user_id": _db_uuid(user_id)},
-        )
-    except OperationalError:
-        return ["read", "write", "delete"]
+    rows = db.execute(
+        text(
+            """
+            SELECT p.resource, p.action
+            FROM user_roles ur
+            JOIN role_permissions rp ON rp.role_id = ur.role_id
+            JOIN permissions p ON p.id = rp.permission_id
+            WHERE ur.user_id = :user_id
+            ORDER BY p.resource, p.action
+            """
+        ),
+        {"user_id": user_id},
+    )
     permissions = [f"{row.resource}.{row.action}" for row in rows]
     return permissions or ["read", "write", "delete"]
 
 
 def _roles_for_user(db: Session, user_id: UUID, fallback: str | None = None) -> list[str]:
-    try:
-        rows = db.execute(
-            text(
-                """
-                SELECT r.name
-                FROM user_roles ur
-                JOIN roles r ON r.id = ur.role_id
-                WHERE ur.user_id = :user_id
-                ORDER BY r.name
-                """
-            ),
-            {"user_id": _db_uuid(user_id)},
-        )
-    except OperationalError:
-        return [fallback] if fallback else []
+    rows = db.execute(
+        text(
+            """
+            SELECT r.name
+            FROM user_roles ur
+            JOIN roles r ON r.id = ur.role_id
+            WHERE ur.user_id = :user_id
+            ORDER BY r.name
+            """
+        ),
+        {"user_id": user_id},
+    )
     roles = [row.name for row in rows]
     return roles or ([fallback] if fallback else [])
 
@@ -328,7 +317,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> dict[st
             VALUES (:id, :name, :domain, :slug, 'active', true, :now, :now)
             """
         ),
-        {"id": _db_uuid(tenant_id), "name": payload.tenant_name, "domain": domain, "slug": payload.tenant_name.lower().replace(" ", "-"), "now": _now()},
+        {"id": tenant_id, "name": payload.tenant_name, "domain": domain, "slug": payload.tenant_name.lower().replace(" ", "-"), "now": _now()},
     )
     db.execute(
         text(
@@ -344,8 +333,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> dict[st
             """
         ),
         {
-            "id": _db_uuid(user_id),
-            "tenant_id": _db_uuid(tenant_id),
+            "id": user_id,
+            "tenant_id": tenant_id,
             "email": payload.email,
             "hashed_password": hash_password(payload.password),
             "first_name": first_name,
@@ -673,13 +662,8 @@ def revoke_api_key(key_id: UUID, db: Session = Depends(get_db)) -> Response:
 def create_agent(payload: AgentCreateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent_id = uuid4()
     system_prompt = payload.config.get("system_prompt") or payload.description or "You are a helpful AI assistant."
-    tools_param = payload.config.get("tools", []) # Pass as list, not JSON string
-    config_json = _db_json(payload.config)
-    model_param = payload.config.get("model")
-    is_active_param = (payload.status == "active")
-    
-    db.execute(text("INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, model, is_active, created_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :model, :is_active, :now)"), {"id": _db_uuid(agent_id), "tenant_id": _db_uuid(payload.tenant_id), "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": tools_param, "model": model_param, "is_active": is_active_param, "now": _now()})
-    db.execute(text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, system_prompt, config, model, created_at) VALUES (:id, :tenant_id, :agent_id, 1, :system_prompt, :config, :model, :now)"), {"id": _db_uuid(uuid4()), "tenant_id": _db_uuid(payload.tenant_id), "agent_id": _db_uuid(agent_id), "system_prompt": system_prompt, "config": config_json, "model": model_param, "now": _now()})
+    db.execute(text("INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, agent_type, model, is_active, created_at, updated_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :agent_type, :model, :is_active, :now, :now)"), {"id": _db_uuid(agent_id), "tenant_id": _db_uuid(payload.tenant_id), "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": _db_json(payload.config.get("tools", [])), "agent_type": payload.type, "model": payload.config.get("model"), "is_active": payload.status == "active", "now": _now()})
+    db.execute(text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, model, system_prompt, config, created_at) VALUES (:id, :tenant_id, :agent_id, 1, :model, :system_prompt, :config, :now)"), {"id": _db_uuid(uuid4()), "tenant_id": _db_uuid(payload.tenant_id), "agent_id": _db_uuid(agent_id), "model": payload.config.get("model"), "system_prompt": system_prompt, "config": _db_json(payload.config), "now": _now()})
     db.commit()
     return {"id": str(agent_id), "name": payload.name, "type": payload.type, "tenant_id": str(payload.tenant_id), "config": payload.config, "status": payload.status, "created_at": _now(), "version": 1}
 
@@ -690,7 +674,7 @@ def list_agents(tenant_id: UUID | None = None, type: str | None = None, status: 
     params: dict[str, Any] = {"limit": page_size, "offset": (page - 1) * page_size}
     if tenant_id:
         filters.append("tenant_id = :tenant_id")
-        params["tenant_id"] = _db_uuid(tenant_id)
+        params["tenant_id"] = tenant_id
     if type:
         filters.append("role = :type")
         params["type"] = type
@@ -705,8 +689,8 @@ def list_agents(tenant_id: UUID | None = None, type: str | None = None, status: 
 
 @router.get("/agents/{agent_id}", tags=["Domain 3 - Agents & AI Workforce"])
 def get_agent(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
-    agent_row = _row(db.execute(text("SELECT * FROM agents WHERE id = :id"), {"id": _db_uuid(agent_id)}).first())
-    if not agent_row:
+    agent = _row(db.execute(text("SELECT * FROM agents WHERE id = :id"), {"id": _db_uuid(agent_id)}).first())
+    if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
 
     # Fetch the latest agent version to get the full config and version number
@@ -719,9 +703,9 @@ def get_agent(agent_id: UUID, db: Session = Depends(get_db)) -> dict[str, Any]:
     current_version = latest_version_data["version"] if latest_version_data else 1 # Default to 1 if no versions found
 
     stats = {
-        "conversations": db.execute(text("SELECT count(*) FROM conversations WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one(),
-        "messages": db.execute(text("SELECT count(*) FROM conversation_messages cm JOIN conversations c ON c.id = cm.conversation_id WHERE c.agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one(),
-        "avg_confidence": float(db.execute(text("SELECT COALESCE(avg(score), 0) FROM agent_confidence_scores WHERE agent_id = :id"), {"id": _db_uuid(agent_id)}).scalar_one()),
+        "conversations": db.execute(text("SELECT count(*) FROM conversations WHERE agent_id = :id"), {"id": agent_id}).scalar_one(),
+        "messages": db.execute(text("SELECT count(*) FROM conversation_messages cm JOIN conversations c ON c.id = cm.conversation_id WHERE c.agent_id = :id"), {"id": agent_id}).scalar_one(),
+        "avg_confidence": float(db.execute(text("SELECT COALESCE(avg(score), 0) FROM agent_confidence_scores WHERE agent_id = :id"), {"id": agent_id}).scalar_one()),
         "avg_response_time_ms": 0,
     }
     
@@ -968,7 +952,7 @@ def audit_logs(tenant_id: UUID | None = None, user_id: UUID | None = None, actio
 @router.post("/background-jobs", tags=["Domain 4 - System, Health & Jobs"], status_code=status.HTTP_201_CREATED)
 def queue_background_job(payload: BackgroundJobRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     job_id = uuid4()
-    db.execute(text("INSERT INTO background_jobs (id, job_type, status, payload, scheduled_at, created_at, updated_at) VALUES (:id, :job_type, 'queued', :payload, :scheduled_at, :now, :now)"), {"id": _db_uuid(job_id), "job_type": payload.type, "payload": _db_json({"priority": payload.priority, **payload.payload}), "scheduled_at": payload.scheduled_at, "now": _now()})
+    db.execute(text("INSERT INTO background_jobs (id, job_type, status, payload, scheduled_at, created_at, updated_at) VALUES (:id, :job_type, 'queued', :payload, :scheduled_at, :now, :now)"), {"id": job_id, "job_type": payload.type, "payload": {"priority": payload.priority, **payload.payload}, "scheduled_at": payload.scheduled_at, "now": _now()})
     db.commit()
     return {"id": str(job_id), "type": payload.type, "status": "queued", "progress": 0}
 
@@ -996,7 +980,7 @@ def send_notification(payload: NotificationRequest, db: Session = Depends(get_db
         tenant_id = db.execute(text("SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1")).scalar()
     if tenant_id is None:
         raise HTTPException(status_code=400, detail="A tenant is required before sending notifications")
-    db.execute(text("INSERT INTO notifications (id, tenant_id, user_id, notification_type, title, body, payload, created_at) VALUES (:id, :tenant_id, :user_id, :type, :title, :body, :payload, :now)"), {"id": _db_uuid(notification_id), "tenant_id": _db_uuid(tenant_id), "user_id": _db_uuid(payload.user_id) if payload.user_id else None, "notification_type": payload.type, "title": payload.title, "body": payload.body, "payload": _db_json({"priority": payload.priority, **payload.data}), "now": _now()})
+    db.execute(text("INSERT INTO notifications (id, tenant_id, user_id, notification_type, title, body, payload, created_at) VALUES (:id, :tenant_id, :user_id, :type, :title, :body, :payload, :now)"), {"id": notification_id, "tenant_id": tenant_id, "user_id": payload.user_id, "type": payload.type, "title": payload.title, "body": payload.body, "payload": {"priority": payload.priority, **payload.data}, "now": _now()})
     db.commit()
     return {"id": str(notification_id), "title": payload.title, "read": False, "created_at": _now()}
 
@@ -1018,7 +1002,7 @@ def mark_notification_read(id: UUID, db: Session = Depends(get_db)) -> dict[str,
 @router.post("/feature-flags", tags=["Domain 4 - System, Health & Jobs"], status_code=status.HTTP_201_CREATED)
 def create_feature_flag(payload: FeatureFlagRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     flag_id = uuid4()
-    db.execute(text("INSERT INTO feature_flags (id, flag_key, is_enabled, config, created_at, updated_at) VALUES (:id, :key, :enabled, :config, :now, :now)"), {"id": _db_uuid(flag_id), "key": payload.name, "enabled": payload.enabled, "config": _db_json({"description": payload.description, "target": payload.target}), "now": _now()})
+    db.execute(text("INSERT INTO feature_flags (id, flag_key, is_enabled, config, created_at, updated_at) VALUES (:id, :key, :enabled, :config, :now, :now)"), {"id": flag_id, "key": payload.name, "enabled": payload.enabled, "config": {"description": payload.description, "target": payload.target}, "now": _now()})
     db.commit()
     return {"id": str(flag_id), "name": payload.name, "enabled": payload.enabled, "target": payload.target}
 

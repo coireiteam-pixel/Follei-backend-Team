@@ -5,11 +5,11 @@ Backend API for the Follei autonomous business operating system.
 ## Requirements
 
 - Python 3.12
-- Docker Desktop, optional for PostgreSQL/Docker development
+- Docker Desktop for local PostgreSQL development
 
 ## Local Development With Python
 
-The local Python setup uses SQLite by default, so it can run without Docker or PostgreSQL.
+The local Python setup uses PostgreSQL by default.
 
 1. Open a terminal and go to the backend folder:
 
@@ -17,19 +17,25 @@ The local Python setup uses SQLite by default, so it can run without Docker or P
 cd C:\Users\User\Desktop\Follei15pc\Follei-backend-Team\follei_backend\follei
 ```
 
-2. Run the backend:
+2. Start PostgreSQL:
+
+```powershell
+docker compose up -d postgres
+```
+
+3. Run the backend:
 
 ```powershell
 python -m uvicorn app.main:app --reload
 ```
 
-3. Open Swagger docs:
+4. Open Swagger docs:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-4. Verify health:
+5. Verify health:
 
 ```text
 http://127.0.0.1:8000/health
@@ -78,12 +84,12 @@ http://localhost:8000/docs
 
 ### Notes
 
-- Local Python currently uses SQLite:
-  `sqlite:///./follei.db`
+- Local Python uses PostgreSQL:
+  `postgresql://postgres:Vignesh%40123@127.0.0.1:5432/follei_db`
 - Docker backend connects to PostgreSQL using:
   `postgresql://postgres:Vignesh%40123@postgres:5432/follei_db`
 - Local PostgreSQL is exposed on:
-  `postgresql://postgres:Vignesh%40123@127.0.0.1:55589/follei_db`
+  `postgresql://postgres:Vignesh%40123@127.0.0.1:5432/follei_db`
 - PostgreSQL data is stored in the `postgres-data` Docker volume.
 - If you want, add more services later for Redis, Kafka, or Weaviate.
 

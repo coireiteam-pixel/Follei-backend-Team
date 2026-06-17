@@ -15,7 +15,7 @@ class FAQ(Base):
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
     embedding_vector_id = Column(Uuid(as_uuid=True), nullable=True)
-    tags = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list, nullable=False)
+    tags = Column(ARRAY(String), default=list, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

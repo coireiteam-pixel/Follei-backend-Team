@@ -28,14 +28,14 @@ This document summarizes the backend work completed in this project so far.
 
 ## Database Setup
 
-- Local development was changed to use SQLite so the backend can run without Docker or a local PostgreSQL install.
-- Current local SQLite database URL:
+- Local development uses PostgreSQL.
+- Current local PostgreSQL database URL:
 
 ```text
-sqlite:///./follei.db
+postgresql://postgres:Vignesh%40123@127.0.0.1:5432/follei_db
 ```
 
-- Docker Compose is still configured for PostgreSQL.
+- Docker Compose is configured for PostgreSQL.
 - Docker PostgreSQL settings currently use:
 
 ```text
