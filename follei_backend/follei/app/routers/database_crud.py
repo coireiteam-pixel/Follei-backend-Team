@@ -22,8 +22,9 @@ class RecordPayload(BaseModel):
         examples=[
             {
                 "tenant_id": "00000000-0000-0000-0000-000000000000",
-                "name": "Example",
-                "metadata": {},
+                "agent_id": "00000000-0000-0000-0000-000000000000",
+                "score": 0.87,
+                "reasoning": "Answer matched the retrieved context.",
             }
         ],
     )
@@ -85,7 +86,20 @@ def _clean_payload(table: Table, payload: dict[str, Any]) -> dict[str, Any]:
     columns = {column.name: column for column in table.columns}
     invalid = sorted(set(payload) - set(columns))
     if invalid:
-        raise HTTPException(status_code=400, detail={"invalid_columns": invalid})
+        writable_columns = [
+            column.name
+            for column in table.columns
+            if not column.primary_key and column.name in columns
+        ]
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": f"Payload contains columns that do not exist in '{table.name}'",
+                "invalid_columns": invalid,
+                "valid_columns": sorted(columns),
+                "writable_columns": writable_columns,
+            },
+        )
 
     return {
         key: _coerce_value(value, columns[key])

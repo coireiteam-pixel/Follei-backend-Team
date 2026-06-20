@@ -670,6 +670,12 @@ def revoke_api_key(key_id: UUID, db: Session = Depends(get_db)) -> Response:
 def create_agent(payload: AgentCreateRequest, db: Session = Depends(get_db)) -> dict[str, Any]:
     agent_id = uuid4()
     system_prompt = payload.config.get("system_prompt") or payload.description or "You are a helpful AI assistant."
+    tenant_exists = db.execute(
+        text("SELECT 1 FROM tenants WHERE id = :id"),
+        {"id": _db_uuid(payload.tenant_id)},
+    ).first()
+    if not tenant_exists:
+        raise HTTPException(status_code=404, detail="Tenant not found")
     db.execute(text("INSERT INTO agents (id, tenant_id, name, role, system_prompt, tools, agent_type, model, is_active, created_at, updated_at) VALUES (:id, :tenant_id, :name, :role, :system_prompt, :tools, :agent_type, :model, :is_active, :now, :now)"), {"id": _db_uuid(agent_id), "tenant_id": _db_uuid(payload.tenant_id), "name": payload.name, "role": payload.type, "system_prompt": system_prompt, "tools": payload.config.get("tools", []), "agent_type": payload.type, "model": payload.config.get("model"), "is_active": payload.status == "active", "now": _now()})
     db.execute(text("INSERT INTO agent_versions (id, tenant_id, agent_id, version, model, system_prompt, config, created_at) VALUES (:id, :tenant_id, :agent_id, 1, :model, :system_prompt, :config, :now)"), {"id": _db_uuid(uuid4()), "tenant_id": _db_uuid(payload.tenant_id), "agent_id": _db_uuid(agent_id), "model": payload.config.get("model"), "system_prompt": system_prompt, "config": _db_json(payload.config), "now": _now()})
     db.commit()

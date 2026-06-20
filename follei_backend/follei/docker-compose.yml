@@ -17,6 +17,8 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - postgres
+    volumes:
+      - .:/usr/src/app
     environment:
       DATABASE_URL: postgresql://admin:secret@postgres:5432/follei_db
     ports:

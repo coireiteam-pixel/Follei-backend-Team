@@ -2,9 +2,9 @@ from datetime import date, datetime
 from typing import Any, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
@@ -136,6 +136,33 @@ def agent_performance(agent_id: UUID):
 @retrieval_router.post("", status_code=201)
 def create_retrieval_log(payload: RetrievalLogIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     _ensure_tenant(user, payload.tenant_id)
+    tenant_exists = db.execute(
+        text("SELECT 1 FROM tenants WHERE id = :id"),
+        {"id": str(payload.tenant_id)},
+    ).first()
+    if not tenant_exists:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    if payload.agent_id:
+        agent = db.execute(
+            text("SELECT tenant_id FROM agents WHERE id = :id"),
+            {"id": str(payload.agent_id)},
+        ).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        if agent.tenant_id != user.tenant_id:
+            raise HTTPException(status_code=403, detail="Agent tenant mismatch")
+
+    if payload.conversation_id:
+        conversation = db.execute(
+            text("SELECT tenant_id FROM conversations WHERE id = :id"),
+            {"id": str(payload.conversation_id)},
+        ).first()
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        if conversation.tenant_id != user.tenant_id:
+            raise HTTPException(status_code=403, detail="Conversation tenant mismatch")
+
     results = payload.model_dump(mode='json')
     log = RetrievalLog(tenant_id=user.tenant_id, query=payload.query, results=results, scores=[], latency_ms=payload.latency_ms, created_at=payload.timestamp or datetime.utcnow())
     db.add(log)

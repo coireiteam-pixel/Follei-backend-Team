@@ -54,7 +54,7 @@ def login(payload: schema.LoginRequest, db: Session = Depends(get_db)) -> Any:
     user = db.query(User).filter(User.email == payload.email).first()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    if not user.is_active:
+    if user.is_active is False:
         raise HTTPException(status_code=403, detail="User is inactive")
     return {"access_token": create_access_token(user.id, user.tenant_id), "token_type": "bearer"}
 
@@ -74,6 +74,6 @@ def get_current_user(
     user = db.get(User, UUID(payload["sub"]))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if not user.is_active:
+    if user.is_active is False:
         raise HTTPException(status_code=403, detail="User is inactive")
     return user
