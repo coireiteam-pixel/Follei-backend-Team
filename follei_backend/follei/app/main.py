@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -27,10 +29,18 @@ from app.routers import (
 API_PREFIX = "/api"
 FAVICON_SVG = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#111827"/><path d="M18 47V17h29v8H28v6h16v8H28v8z" fill="#22c55e"/></svg>"""
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
 app = FastAPI(
     title="Follei API",
     description="APIs for Vignesh domains: conversations, messages, leads, revenue, customers, and customer success.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -83,12 +93,6 @@ app.include_router(observability.events_router, prefix=API_PREFIX)
 app.include_router(observability.analytics_router, prefix=API_PREFIX)
 app.include_router(observability.retrieval_router, prefix=API_PREFIX)
 app.include_router(observability.evaluation_router, prefix=API_PREFIX)
-
-
-@app.on_event("startup")
-def on_startup():
-    init_db()
-
 
 @app.get("/", tags=["System"])
 def root():
