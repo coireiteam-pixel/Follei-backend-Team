@@ -1,14 +1,13 @@
 from datetime import datetime
 from typing import Any, Optional
-from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class EntityCreate(BaseModel):
-    name: str = Field(..., min_length=1)
-    type: str = Field(..., min_length=1)
-    tenant_id: UUID
+    name: str = Field(..., min_length=1, examples=["Acme Corp"])
+    type: str = Field(..., min_length=1, examples=["company"])
+    tenant_id: str = Field(examples=["T001"])
     aliases: list[str] = Field(default_factory=list)
     attributes: dict[str, Any] = Field(default_factory=dict)
 
@@ -21,7 +20,7 @@ class EntityUpdate(BaseModel):
 
 
 class EntityListItem(BaseModel):
-    id: UUID
+    id: str
     name: str
     type: str
     aliases: list[str] = Field(default_factory=list)
@@ -32,14 +31,14 @@ class EntityListResponse(BaseModel):
 
 
 class EntityRelationRead(BaseModel):
-    to_entity_id: UUID
+    to_entity_id: str
     relation: str
 
 
 class EntityRead(EntityListItem):
     attributes: dict[str, Any] = Field(default_factory=dict)
     relations: list[EntityRelationRead] = Field(default_factory=list)
-    tenant_id: UUID
+    tenant_id: str
     created_at: datetime
     updated_at: datetime
 

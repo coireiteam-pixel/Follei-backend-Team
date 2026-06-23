@@ -1,0 +1,317 @@
+# Follei Project Implementation Details
+
+Last verified: 2026-06-23
+
+## Current Status
+
+The Follei backend is working in the local project with the imported Hugging Face CUDA engineer dataset available on disk. The FastAPI app imports successfully, OpenAPI generation works, and the current automated test suite passes.
+
+Verification completed:
+
+```text
+python -m pytest -q
+6 passed
+```
+
+Dataset verification completed:
+
+```text
+level_1: 12,157 rows
+level_2: 12,938 rows
+level_3: 5,520 rows
+```
+
+Realtime generator verification completed:
+
+```text
+python generate_realtime_data.py --iterations 3 --interval 0 --seed 7
+Generated realtime batch. Total generated: 3
+```
+
+## Implemented Backend Areas
+
+Core application:
+
+- FastAPI app entrypoint in `follei_backend/follei/app/main.py`
+- Health check at `/health`
+- Swagger/OpenAPI docs at `/docs`
+- CORS middleware enabled
+- SQLite fallback for local development
+- PostgreSQL support through `DATABASE_URL`
+- Docker Compose PostgreSQL service
+- SQLAlchemy model registration and schema initialization
+
+Authentication and tenancy:
+
+- Tenant registration
+- Login
+- JWT access token generation and validation
+- Current-user endpoint
+- Tenant and user routers
+- Tenant-isolated secure endpoint patterns
+
+Conversation and messaging:
+
+- Conversation CRUD flow
+- Conversation messages
+- Message attachments
+- Message reactions
+- Conversation summaries
+- Intents
+- Sentiments
+- Emotions
+- Objections
+- Buying signals
+- Conversation metrics
+
+Lead and revenue flow:
+
+- Leads
+- Lead activities
+- Lead scores
+- Qualification frameworks
+- Lead qualifications
+- Opportunities
+- Opportunity updates
+- Proposals
+- Quotes
+- Meetings
+
+Customer success:
+
+- Customers
+- Customer contacts
+- Health scores
+- Customer events
+- Renewals
+
+Knowledge and RAG-related foundation:
+
+- Documents
+- Document chunks
+- Chunk embeddings metadata
+- Entities
+- Entity aliases, attributes, and relations
+- Knowledge search endpoint
+- FAQs
+- Policies
+- Procedures
+
+Commerce and billing:
+
+- Products
+- Services
+- Pricing models
+- Pricing rules
+- Competitors
+- Competitor features
+- Plans
+- Subscriptions
+- Invoices
+- Payments
+- Credits and credit transactions
+
+Integrations and MCP-style tools:
+
+- Integration registry
+- Integration connections
+- Sync jobs
+- Webhook receive endpoint
+- Webhook event listing
+- Tool registry
+- Tool execution logs
+- Tool permissions
+- Connector logs
+
+Analytics and observability:
+
+- Events
+- Daily and monthly analytics
+- Retrieval logs
+- Evaluation results
+- Model and token usage foundations in models/schema
+
+Realtime demo data generation:
+
+- `generate_realtime_data.py` now writes real database records.
+- Creates seed tenants, users, agents, leads, and customers when missing.
+- Generates conversations and paired user/agent messages.
+- Generates conversation intents, sentiments, buying signals, metrics, response metrics.
+- Generates agent tasks, actions, and tool calls.
+- Generates event stream rows, daily analytics rows, and model usage rows.
+- Supports continuous mode and bounded test runs.
+
+Database utilities:
+
+- Generic database table listing
+- Generic record listing/creation
+- Generic record update/delete
+- Table schema inspection
+
+## API Inventory
+
+The app currently exposes 230 OpenAPI operations overall.
+
+The test-covered `/api` contract includes 209 operations across these domains:
+
+- Conversations and messages
+- Leads, qualification, opportunities, proposals, quotes, and meetings
+- Customers and renewals
+- Integrations, webhooks, tools, and connector logs
+- Documents, chunks, entities, knowledge, FAQs, policies, and procedures
+- Products, services, pricing, competitors
+- Billing, subscriptions, invoices, payments, credits
+- Events, analytics, retrieval logs, evaluation results
+
+## Imported Hugging Face Dataset
+
+Dataset:
+
+```text
+SakanaAI/AI-CUDA-Engineer-Archive
+```
+
+Local path:
+
+```text
+follei_backend/follei/data/ai_cuda_engineer_archive
+```
+
+Files created by `datasets.save_to_disk()`:
+
+```text
+dataset_dict.json
+level_1/data-00000-of-00001.arrow
+level_1/dataset_info.json
+level_1/state.json
+level_2/data-00000-of-00001.arrow
+level_2/dataset_info.json
+level_2/state.json
+level_3/data-00000-of-00001.arrow
+level_3/dataset_info.json
+level_3/state.json
+```
+
+Python usage:
+
+```python
+from datasets import load_from_disk
+
+dataset = load_from_disk("data/ai_cuda_engineer_archive")
+print(dataset)
+print(dataset["level_1"][0])
+```
+
+Columns:
+
+- `Op_Name`
+- `Level_ID`
+- `Task_ID`
+- `Kernel_Name`
+- `CUDA_Runtime`
+- `PyTorch_Native_Runtime`
+- `PyTorch_Compile_Runtime`
+- `CUDA_Speedup_Native`
+- `CUDA_Speedup_Compile`
+- `CUDA_Code`
+- `PyTorch_Code_Module`
+- `PyTorch_Code_Functional`
+- `Correct`
+- `Max_Diff`
+- `Error`
+- `NCU_Profile`
+- `Torch_Profile`
+- `Clang_Tidy`
+- `__index_level_0__`
+
+## Generated Follei Synthetic Dataset
+
+The project also has a large synthetic Follei business dataset generated by:
+
+```text
+tools/generate_production_dataset.py
+```
+
+Output path:
+
+```text
+generated_dataset/
+```
+
+Important files:
+
+- `generated_dataset/dataset_manifest.json`
+- `generated_dataset/database_schema.sql`
+- `generated_dataset/sql_insert_scripts.sql`
+- `generated_dataset/sample_data.json`
+- `generated_dataset/sample_data.csv`
+- `generated_dataset/csv/`
+- `generated_dataset/data_dictionary.xlsx`
+- `generated_dataset/er_diagram_structure.json`
+
+This dataset is for Follei application testing and database seeding. The Hugging Face CUDA dataset is separate and is for AI/CUDA/kernel analysis use cases.
+
+## Fixes Applied
+
+Dependency fixes:
+
+- Added `httpx<0.28` to keep FastAPI 0.110.0 and Starlette 0.36.3 test client compatible.
+- Added `datasets`, `pyarrow`, and `pandas` so the imported Hugging Face dataset can be loaded from disk in a fresh setup.
+
+Documentation fixes:
+
+- Updated README database instructions to match `docker-compose.yml`.
+- Documented local SQLite fallback.
+- Documented Docker PostgreSQL URL:
+  `postgresql://admin:secret@127.0.0.1:55589/follei_db`
+- Documented imported CUDA dataset path and usage.
+
+Cleanup:
+
+- Removed empty/confusing `app/database.py`.
+- Removed unused duplicate `app/psql-postgres`.
+- Removed incomplete duplicate `app/services/realtime_dataset.py`.
+- Removed infinite demo script `realtime.py`.
+
+Realtime generator implementation:
+
+- Replaced the old print-only `generate_realtime_data.py` loop with a database-backed generator.
+- Added CLI options:
+  - `--once`
+  - `--iterations`
+  - `--interval`
+  - `--batch-size`
+  - `--seed`
+- Added SQLite compatibility for the `Agent.tools` PostgreSQL ARRAY field during local demo seeding.
+
+## Removed Files
+
+These files were removed because they were unused or misleading:
+
+```text
+follei_backend/follei/app/database.py
+follei_backend/follei/app/psql-postgres
+follei_backend/follei/app/services/realtime_dataset.py
+follei_backend/follei/realtime.py
+```
+
+## Remaining Notes
+
+The test suite passes, but there are two dependency warnings:
+
+- `python_multipart` import deprecation from Starlette internals.
+- `httpx` 0.27 warns that the `app` shortcut used by Starlette's older `TestClient` is deprecated.
+
+These warnings do not fail the project today. A future cleanup can upgrade FastAPI/Starlette together and then remove the `httpx<0.28` pin.
+
+## Recommended Next Work
+
+Useful next implementation steps:
+
+- Add an API endpoint or service wrapper for reading `ai_cuda_engineer_archive` from `data/`.
+- Decide whether CUDA dataset rows should become knowledge documents, analytics records, or a separate ML training/evaluation domain.
+- Add tests around CUDA dataset loading if it becomes part of the runtime API.
+- Add tests around `generate_realtime_data.py` if realtime demo data becomes part of CI.
+- Add Alembic migrations for production database changes instead of relying only on startup schema creation.
+- Add `.env.example` with safe local settings.
+- Add Docker services for Redis, Kafka, and Weaviate/Qdrant only when those integrations are actively wired into runtime flows.

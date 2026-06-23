@@ -1,23 +1,43 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, EmailStr
-from uuid import UUID
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class UserBase(BaseModel):
-    tenant_id: UUID
-    email: EmailStr
-    first_name: str
-    last_name: str
-    role: str
+    email: str = Field(examples=["admin@example.com"])
+    first_name: str = Field(examples=["John"])
+    last_name: str = Field(examples=["Doe"])
+    role: str = Field(examples=["admin"])
+    is_active: bool = True
 
 
 class UserCreate(UserBase):
-    password: str
+    tenant_id: str = Field(examples=["T001"])
+    password: str = Field(examples=["SecurePass123"])
 
 
-class UserRead(UserBase):
-    model_config = ConfigDict(from_attributes=True)
+class UserUpdate(BaseModel):
+    email: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    role: str | None = None
+    is_active: bool | None = None
 
-    id: UUID
-    is_active: bool
+
+class UserResponse(UserBase):
+    id: str
+    tenant_id: str
     created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+UserRead = UserResponse
+
+
+class UserListResponse(BaseModel):
+    items: list[UserResponse]
+    total: int
+    page: int
+    page_size: int

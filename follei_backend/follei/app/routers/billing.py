@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from typing import Any, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -29,30 +28,30 @@ class PlanIn(BaseModel):
 
 
 class SubscriptionIn(BaseModel):
-    tenant_id: UUID
-    plan_id: Optional[UUID] = None
-    customer_id: Optional[UUID] = None
+    tenant_id: str
+    plan_id: Optional[str] = None
+    customer_id: Optional[str] = None
     status: str = "active"
     start_date: Optional[date] = None
     billing_cycle: str = "monthly"
-    payment_method_id: Optional[UUID] = None
+    payment_method_id: Optional[str] = None
 
 
 class SubscriptionUpdate(BaseModel):
-    plan_id: Optional[UUID] = None
+    plan_id: Optional[str] = None
     status: Optional[str] = None
 
 
 class InvoiceIn(BaseModel):
-    subscription_id: Optional[UUID] = None
-    tenant_id: UUID
+    subscription_id: Optional[str] = None
+    tenant_id: str
     items: list[dict[str, Any]] = Field(default_factory=list)
     due_date: Optional[date] = None
     currency: str = "USD"
 
 
 class PaymentIn(BaseModel):
-    invoice_id: Optional[UUID] = None
+    invoice_id: Optional[str] = None
     amount: float
     currency: str = "USD"
     method: str
@@ -66,7 +65,7 @@ class CreditTxIn(BaseModel):
     description: Optional[str] = None
 
 
-def _ensure_tenant(user: User, tenant_id: UUID) -> None:
+def _ensure_tenant(user: User, tenant_id: str) -> None:
     if tenant_id != user.tenant_id:
         raise HTTPException(status_code=403, detail="Tenant mismatch")
 
@@ -109,7 +108,7 @@ def list_subscriptions(user: User = Depends(get_current_user), db: Session = Dep
 
 
 @subscriptions_router.patch("/{subscription_id}")
-def update_subscription(subscription_id: UUID, payload: SubscriptionUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_subscription(subscription_id: str, payload: SubscriptionUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     subscription = db.query(Subscription).filter(Subscription.id == subscription_id, Subscription.tenant_id == user.tenant_id).first()
     if not subscription:
         raise HTTPException(status_code=404, detail="Subscription not found")

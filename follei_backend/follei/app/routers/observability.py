@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from typing import Any, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -20,17 +19,17 @@ evaluation_router = APIRouter(prefix="/evaluation-results", tags=["Analytics & O
 
 class EventIn(BaseModel):
     event_type: str
-    tenant_id: UUID
-    user_id: Optional[UUID] = None
+    tenant_id: str
+    user_id: Optional[str] = None
     properties: dict[str, Any] = Field(default_factory=dict)
     timestamp: Optional[datetime] = None
 
 
 class RetrievalLogIn(BaseModel):
     query: str
-    tenant_id: UUID
-    agent_id: Optional[UUID] = None
-    conversation_id: Optional[UUID] = None
+    tenant_id: str
+    agent_id: Optional[str] = None
+    conversation_id: Optional[str] = None
     results_count: int = 0
     dense_results: int = 0
     bm25_results: int = 0
@@ -46,7 +45,7 @@ class EvaluationIn(BaseModel):
     query: str
     expected_answer: Optional[str] = None
     actual_answer: Optional[str] = None
-    retrieved_chunks: list[UUID] = Field(default_factory=list)
+    retrieved_chunks: list[str] = Field(default_factory=list)
     relevance_score: Optional[float] = None
     hallucination_detected: bool = False
     confidence: Optional[float] = None
@@ -54,7 +53,7 @@ class EvaluationIn(BaseModel):
     notes: Optional[str] = None
 
 
-def _ensure_tenant(user: User, tenant_id: UUID) -> None:
+def _ensure_tenant(user: User, tenant_id: str) -> None:
     if tenant_id != user.tenant_id:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Tenant mismatch")
@@ -72,7 +71,7 @@ def create_event(payload: EventIn, user: User = Depends(get_current_user), db: S
 
 @events_router.get("")
 def list_events(
-    tenant_id: Optional[UUID] = None,
+    tenant_id: Optional[str] = None,
     event_type: Optional[str] = None,
     from_date: Optional[date] = Query(default=None, alias="from"),
     to_date: Optional[date] = Query(default=None, alias="to"),
@@ -97,7 +96,7 @@ def _metric_map(rows) -> dict[str, float]:
 
 
 @analytics_router.get("/daily")
-def daily_metrics(tenant_id: Optional[UUID] = None, metric_date: date = Query(default_factory=date.today, alias="date"), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def daily_metrics(tenant_id: Optional[str] = None, metric_date: date = Query(default_factory=date.today, alias="date"), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if tenant_id:
         _ensure_tenant(user, tenant_id)
     metrics = _metric_map(db.query(AnalyticsDaily).filter(AnalyticsDaily.tenant_id == user.tenant_id, AnalyticsDaily.metric_date == metric_date).all())
@@ -105,7 +104,7 @@ def daily_metrics(tenant_id: Optional[UUID] = None, metric_date: date = Query(de
 
 
 @analytics_router.get("/monthly")
-def monthly_metrics(tenant_id: Optional[UUID] = None, year: int = 2026, month: int = 6, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def monthly_metrics(tenant_id: Optional[str] = None, year: int = 2026, month: int = 6, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if tenant_id:
         _ensure_tenant(user, tenant_id)
     metric_month = date(year, month, 1)
@@ -129,7 +128,7 @@ def customer_stats():
 
 
 @analytics_router.get("/agents/{agent_id}")
-def agent_performance(agent_id: UUID):
+def agent_performance(agent_id: str):
     return {"agent_id": agent_id, "conversations_handled": 0, "messages_sent": 0, "avg_confidence": 0, "avg_response_time_ms": 0, "avg_tokens_per_message": 0, "customer_satisfaction": 0, "tool_usage": [], "rag_hit_rate": 0}
 
 
@@ -172,7 +171,7 @@ def create_retrieval_log(payload: RetrievalLogIn, user: User = Depends(get_curre
 
 
 @retrieval_router.get("")
-def list_retrieval_logs(tenant_id: Optional[UUID] = None, agent_id: Optional[UUID] = None, from_date: Optional[date] = Query(default=None, alias="from"), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def list_retrieval_logs(tenant_id: Optional[str] = None, agent_id: Optional[str] = None, from_date: Optional[date] = Query(default=None, alias="from"), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if tenant_id:
         _ensure_tenant(user, tenant_id)
     query = db.query(RetrievalLog).filter(RetrievalLog.tenant_id == user.tenant_id)

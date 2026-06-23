@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from uuid import uuid4
+from app.core.ids import short_id
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 
@@ -67,7 +67,7 @@ def _get_lead_or_404(lead_id: str) -> LeadResponse:
 @router.post("", response_model=LeadResponse, status_code=status.HTTP_201_CREATED)
 def create_lead(payload: CreateLeadRequest) -> LeadResponse:
     now = _now()
-    lead_id = str(uuid4())
+    lead_id = str(short_id())
     lead = LeadResponse(
         id=lead_id,
         email=str(payload.email),
@@ -156,8 +156,13 @@ def _get_meeting_or_404(meeting_id: str) -> MeetingResponse:
 @router.post("/{lead_id}/activities", response_model=LeadActivityResponse, status_code=status.HTTP_201_CREATED)
 def create_activity(lead_id: str, payload: LeadActivityRequest) -> LeadActivityResponse:
     _get_lead_or_404(lead_id)
-    activity_id = str(uuid4())
-    activity = LeadActivityResponse(id=activity_id, lead_id=lead_id, created_at=_now(), **payload.model_dump())
+    activity_id = str(short_id())
+    activity = LeadActivityResponse(
+        id=activity_id,
+        lead_id=lead_id,
+        created_at=_now(),
+        **payload.model_dump(exclude={"lead_id"}),
+    )
     ACTIVITIES[activity_id] = activity
     LEAD_ACTIVITIES.setdefault(lead_id, []).append(activity_id)
     return activity
@@ -180,7 +185,7 @@ def list_activities(
 def create_score(lead_id: str, payload: LeadScoreRequest) -> LeadScoreResponse:
     lead = _get_lead_or_404(lead_id)
     base_score = 85 if payload.force_recalculate else max(lead.score, 50)
-    score_id = str(uuid4())
+    score_id = str(short_id())
     score = LeadScoreResponse(
         id=score_id,
         lead_id=lead_id,
@@ -211,7 +216,7 @@ def list_scores(
 
 @frameworks_router.post("", response_model=QualificationFrameworkResponse, status_code=status.HTTP_201_CREATED)
 def create_framework(payload: QualificationFrameworkRequest) -> QualificationFrameworkResponse:
-    framework_id = str(uuid4())
+    framework_id = str(short_id())
     framework = QualificationFrameworkResponse(id=framework_id, created_at=_now(), **payload.model_dump())
     FRAMEWORKS[framework_id] = framework
     return framework
@@ -233,13 +238,13 @@ def create_qualification(lead_id: str, payload: LeadQualificationRequest) -> Lea
     _get_lead_or_404(lead_id)
     if payload.framework_id not in FRAMEWORKS:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Qualification framework not found")
-    qualification_id = str(uuid4())
+    qualification_id = str(short_id())
     qualification = LeadQualificationResponse(
         id=qualification_id,
         lead_id=lead_id,
         score=min(100, len(payload.answers) * 25),
         created_at=_now(),
-        **payload.model_dump(),
+        **payload.model_dump(exclude={"lead_id", "score"}),
     )
     QUALIFICATIONS[qualification_id] = qualification
     LEAD_QUALIFICATIONS.setdefault(lead_id, []).append(qualification_id)
@@ -264,7 +269,7 @@ def create_opportunity(payload: OpportunityRequest) -> OpportunityResponse:
     if payload.lead_id is not None:
         _get_lead_or_404(payload.lead_id)
     now = _now()
-    opportunity_id = str(uuid4())
+    opportunity_id = str(short_id())
     opportunity = OpportunityResponse(id=opportunity_id, created_at=now, updated_at=now, **payload.model_dump())
     OPPORTUNITIES[opportunity_id] = opportunity
     return opportunity
@@ -297,14 +302,14 @@ def update_opportunity(opportunity_id: str, payload: UpdateOpportunityRequest) -
 @opportunities_router.post("/{opportunity_id}/proposals", response_model=ProposalResponse, status_code=status.HTTP_201_CREATED)
 def create_proposal(opportunity_id: str, payload: ProposalRequest) -> ProposalResponse:
     _get_opportunity_or_404(opportunity_id)
-    proposal_id = str(uuid4())
+    proposal_id = str(short_id())
     proposal = ProposalResponse(
         id=proposal_id,
         opportunity_id=opportunity_id,
-        document_id=str(uuid4()),
+        document_id=str(short_id()),
         status="draft",
         created_at=_now(),
-        **payload.model_dump(),
+        **payload.model_dump(exclude={"opportunity_id", "document_id", "status"}),
     )
     PROPOSALS[proposal_id] = proposal
     return proposal
@@ -313,7 +318,7 @@ def create_proposal(opportunity_id: str, payload: ProposalRequest) -> ProposalRe
 @opportunities_router.post("/{opportunity_id}/quotes", response_model=QuoteResponse, status_code=status.HTTP_201_CREATED)
 def create_quote(opportunity_id: str, payload: QuoteRequest) -> QuoteResponse:
     _get_opportunity_or_404(opportunity_id)
-    quote_id = str(uuid4())
+    quote_id = str(short_id())
     total = sum(float(item.get("quantity", 1)) * float(item.get("price", 0)) for item in payload.items)
     quote = QuoteResponse(
         id=quote_id,
@@ -321,7 +326,7 @@ def create_quote(opportunity_id: str, payload: QuoteRequest) -> QuoteResponse:
         status="draft",
         total=total,
         created_at=_now(),
-        **payload.model_dump(),
+        **payload.model_dump(exclude={"opportunity_id", "status", "total"}),
     )
     QUOTES[quote_id] = quote
     return quote
@@ -334,8 +339,15 @@ def create_meeting(payload: MeetingRequest) -> MeetingResponse:
     if payload.opportunity_id is not None:
         _get_opportunity_or_404(payload.opportunity_id)
     now = _now()
-    meeting_id = str(uuid4())
-    meeting = MeetingResponse(id=meeting_id, status="scheduled", notes=None, created_at=now, updated_at=now, **payload.model_dump())
+    meeting_id = str(short_id())
+    meeting = MeetingResponse(
+        id=meeting_id,
+        status="scheduled",
+        notes=None,
+        created_at=now,
+        updated_at=now,
+        **payload.model_dump(exclude={"status", "notes"}),
+    )
     MEETINGS[meeting_id] = meeting
     return meeting
 

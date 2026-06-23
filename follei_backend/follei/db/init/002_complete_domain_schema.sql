@@ -9,7 +9,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TABLE IF NOT EXISTS tenants (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
     name VARCHAR(255) NOT NULL,
     domain VARCHAR(255) UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -26,8 +26,8 @@ ALTER TABLE tenants ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEF
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_slug_unique ON tenants(slug) WHERE slug IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     email VARCHAR(320) NOT NULL UNIQUE,
     hashed_password TEXT NOT NULL DEFAULT '',
     first_name VARCHAR(120) NOT NULL DEFAULT '',
@@ -43,8 +43,8 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 
 CREATE TABLE IF NOT EXISTS tenant_settings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL UNIQUE REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL UNIQUE REFERENCES tenants(id) ON DELETE CASCADE,
     default_llm VARCHAR(160),
     embedding_model VARCHAR(160),
     retention_days INTEGER,
@@ -58,8 +58,8 @@ ALTER TABLE tenant_settings ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(160
 ALTER TABLE tenant_settings ADD COLUMN IF NOT EXISTS retention_days INTEGER;
 
 CREATE TABLE IF NOT EXISTS tenant_usage (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     usage_month DATE NOT NULL,
     messages INTEGER NOT NULL DEFAULT 0,
     tokens BIGINT NOT NULL DEFAULT 0,
@@ -72,9 +72,9 @@ CREATE TABLE IF NOT EXISTS tenant_usage (
 );
 
 CREATE TABLE IF NOT EXISTS user_auth (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     password_hash TEXT NOT NULL,
     totp_secret TEXT,
     failed_attempts INTEGER NOT NULL DEFAULT 0,
@@ -84,9 +84,9 @@ CREATE TABLE IF NOT EXISTS user_auth (
 );
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash TEXT NOT NULL UNIQUE,
     revoked_at TIMESTAMPTZ,
     expires_at TIMESTAMPTZ NOT NULL,
@@ -94,9 +94,9 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 );
 
 CREATE TABLE IF NOT EXISTS user_sessions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     device VARCHAR(160),
     browser VARCHAR(160),
     ip_address INET,
@@ -107,8 +107,8 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 );
 
 CREATE TABLE IF NOT EXISTS roles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(120) NOT NULL,
     description TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 CREATE TABLE IF NOT EXISTS permissions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
     resource VARCHAR(160) NOT NULL,
     action VARCHAR(160) NOT NULL,
     description TEXT,
@@ -126,22 +126,22 @@ CREATE TABLE IF NOT EXISTS permissions (
 );
 
 CREATE TABLE IF NOT EXISTS role_permissions (
-    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+    role_id VARCHAR(4) NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    permission_id VARCHAR(4) NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (role_id, permission_id)
 );
 
 CREATE TABLE IF NOT EXISTS user_roles (
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role_id VARCHAR(4) NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, role_id)
 );
 
 CREATE TABLE IF NOT EXISTS tenant_api_keys (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(160) NOT NULL,
     key_hash TEXT NOT NULL UNIQUE,
     scopes TEXT[] NOT NULL DEFAULT '{}',
@@ -153,23 +153,23 @@ CREATE TABLE IF NOT EXISTS tenant_api_keys (
 );
 
 CREATE TABLE IF NOT EXISTS audit_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     action VARCHAR(160) NOT NULL,
     entity_type VARCHAR(120),
-    entity_id UUID,
+    entity_id VARCHAR(4),
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS resource_type VARCHAR(120);
-ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS resource_id UUID;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS resource_id VARCHAR(4);
 ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS payload JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS knowledge_sources (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(160) NOT NULL,
     source_type VARCHAR(120) NOT NULL,
     config JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -179,9 +179,9 @@ CREATE TABLE IF NOT EXISTS knowledge_sources (
 );
 
 CREATE TABLE IF NOT EXISTS source_connections (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    source_id UUID REFERENCES knowledge_sources(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    source_id VARCHAR(4) REFERENCES knowledge_sources(id) ON DELETE SET NULL,
     provider VARCHAR(120) NOT NULL,
     status VARCHAR(80) NOT NULL DEFAULT 'active',
     oauth_token JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -192,9 +192,9 @@ CREATE TABLE IF NOT EXISTS source_connections (
 );
 
 CREATE TABLE IF NOT EXISTS source_sync_jobs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    connection_id UUID NOT NULL REFERENCES source_connections(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    connection_id VARCHAR(4) NOT NULL REFERENCES source_connections(id) ON DELETE CASCADE,
     status VARCHAR(80) NOT NULL DEFAULT 'queued',
     started_at TIMESTAMPTZ,
     finished_at TIMESTAMPTZ,
@@ -204,8 +204,8 @@ CREATE TABLE IF NOT EXISTS source_sync_jobs (
 );
 
 CREATE TABLE IF NOT EXISTS documents (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     source_type VARCHAR(80) NOT NULL,
     status VARCHAR(80) NOT NULL DEFAULT 'pending',
@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS documents (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE documents ADD COLUMN IF NOT EXISTS source_id UUID REFERENCES knowledge_sources(id) ON DELETE SET NULL;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS source_id VARCHAR(4) REFERENCES knowledge_sources(id) ON DELETE SET NULL;
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS source_uri TEXT;
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS mime_type VARCHAR(160);
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS path TEXT;
@@ -225,9 +225,9 @@ ALTER TABLE documents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL D
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS indexed_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS document_versions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    document_id VARCHAR(4) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     version INTEGER NOT NULL,
     title VARCHAR(255),
     content_hash TEXT,
@@ -238,9 +238,9 @@ CREATE TABLE IF NOT EXISTS document_versions (
 );
 
 CREATE TABLE IF NOT EXISTS document_pages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    document_id VARCHAR(4) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     page_number INTEGER NOT NULL,
     text TEXT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -249,22 +249,22 @@ CREATE TABLE IF NOT EXISTS document_pages (
 );
 
 CREATE TABLE IF NOT EXISTS document_chunks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    document_id VARCHAR(4) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     chunk_index INTEGER NOT NULL,
     content TEXT NOT NULL,
     token_count INTEGER,
-    weaviate_object_id UUID,
+    weaviate_object_id VARCHAR(4),
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (document_id, chunk_index)
 );
 
 CREATE TABLE IF NOT EXISTS chunk_embeddings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    chunk_id UUID NOT NULL REFERENCES document_chunks(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    chunk_id VARCHAR(4) NOT NULL REFERENCES document_chunks(id) ON DELETE CASCADE,
     embedding_model VARCHAR(160) NOT NULL,
     vector_id TEXT NOT NULL,
     dimensions INTEGER,
@@ -278,19 +278,19 @@ ALTER TABLE chunk_embeddings ADD COLUMN IF NOT EXISTS dimensions INTEGER;
 ALTER TABLE chunk_embeddings ADD COLUMN IF NOT EXISTS distance_metric VARCHAR(80);
 
 CREATE TABLE IF NOT EXISTS chunk_citations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    chunk_id UUID NOT NULL REFERENCES document_chunks(id) ON DELETE CASCADE,
-    message_id UUID,
-    response_id UUID,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    chunk_id VARCHAR(4) NOT NULL REFERENCES document_chunks(id) ON DELETE CASCADE,
+    message_id VARCHAR(4),
+    response_id VARCHAR(4),
     quote TEXT,
     confidence NUMERIC(5, 4),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS entities (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     entity_type VARCHAR(120) NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -301,18 +301,18 @@ CREATE TABLE IF NOT EXISTS entities (
 );
 
 CREATE TABLE IF NOT EXISTS entity_aliases (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    entity_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    entity_id VARCHAR(4) NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
     alias VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (entity_id, alias)
 );
 
 CREATE TABLE IF NOT EXISTS entity_attributes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    entity_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    entity_id VARCHAR(4) NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
     key VARCHAR(160) NOT NULL,
     value JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -321,10 +321,10 @@ CREATE TABLE IF NOT EXISTS entity_attributes (
 );
 
 CREATE TABLE IF NOT EXISTS entity_relations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    source_entity_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
-    target_entity_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    source_entity_id VARCHAR(4) NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    target_entity_id VARCHAR(4) NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
     relation_type VARCHAR(160) NOT NULL,
     confidence NUMERIC(5, 4),
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -332,11 +332,11 @@ CREATE TABLE IF NOT EXISTS entity_relations (
 );
 
 CREATE TABLE IF NOT EXISTS faqs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     question TEXT NOT NULL,
     answer TEXT NOT NULL,
-    embedding_vector_id UUID,
+    embedding_vector_id VARCHAR(4),
     tags TEXT[] NOT NULL DEFAULT '{}',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -344,8 +344,8 @@ CREATE TABLE IF NOT EXISTS faqs (
 );
 
 CREATE TABLE IF NOT EXISTS policies (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     body TEXT,
     policy_type VARCHAR(120),
@@ -356,8 +356,8 @@ CREATE TABLE IF NOT EXISTS policies (
 );
 
 CREATE TABLE IF NOT EXISTS procedures (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     steps JSONB NOT NULL DEFAULT '[]'::jsonb,
     status VARCHAR(80) NOT NULL DEFAULT 'active',
@@ -367,8 +367,8 @@ CREATE TABLE IF NOT EXISTS procedures (
 );
 
 CREATE TABLE IF NOT EXISTS products (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     sku VARCHAR(160),
     description TEXT,
@@ -379,8 +379,8 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 CREATE TABLE IF NOT EXISTS services (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -390,8 +390,8 @@ CREATE TABLE IF NOT EXISTS services (
 );
 
 CREATE TABLE IF NOT EXISTS pricing_models (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     model_type VARCHAR(120) NOT NULL,
     tiers JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -401,9 +401,9 @@ CREATE TABLE IF NOT EXISTS pricing_models (
 );
 
 CREATE TABLE IF NOT EXISTS pricing_rules (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    pricing_model_id UUID REFERENCES pricing_models(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    pricing_model_id VARCHAR(4) REFERENCES pricing_models(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     conditions JSONB NOT NULL DEFAULT '{}'::jsonb,
     actions JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -414,8 +414,8 @@ CREATE TABLE IF NOT EXISTS pricing_rules (
 );
 
 CREATE TABLE IF NOT EXISTS competitors (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     website TEXT,
     summary TEXT,
@@ -425,9 +425,9 @@ CREATE TABLE IF NOT EXISTS competitors (
 );
 
 CREATE TABLE IF NOT EXISTS competitor_features (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    competitor_id UUID NOT NULL REFERENCES competitors(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    competitor_id VARCHAR(4) NOT NULL REFERENCES competitors(id) ON DELETE CASCADE,
     feature_name VARCHAR(255) NOT NULL,
     comparison TEXT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -435,8 +435,8 @@ CREATE TABLE IF NOT EXISTS competitor_features (
 );
 
 CREATE TABLE IF NOT EXISTS knowledge_tags (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(160) NOT NULL,
     description TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -444,12 +444,12 @@ CREATE TABLE IF NOT EXISTS knowledge_tags (
 );
 
 CREATE TABLE IF NOT EXISTS knowledge_feedback (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     query TEXT,
     result_type VARCHAR(120),
-    result_id UUID,
+    result_id VARCHAR(4),
     rating INTEGER,
     feedback TEXT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -457,8 +457,8 @@ CREATE TABLE IF NOT EXISTS knowledge_feedback (
 );
 
 CREATE TABLE IF NOT EXISTS leads (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     email VARCHAR(320) NOT NULL,
     status VARCHAR(80) NOT NULL DEFAULT 'new',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -475,8 +475,8 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}':
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 
 CREATE TABLE IF NOT EXISTS lead_sources (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(160) NOT NULL,
     channel VARCHAR(120),
     campaign VARCHAR(160),
@@ -486,9 +486,9 @@ CREATE TABLE IF NOT EXISTS lead_sources (
 );
 
 CREATE TABLE IF NOT EXISTS lead_activities (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    lead_id VARCHAR(4) NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
     activity_type VARCHAR(120) NOT NULL,
     subject VARCHAR(255),
     description TEXT,
@@ -498,9 +498,9 @@ CREATE TABLE IF NOT EXISTS lead_activities (
 );
 
 CREATE TABLE IF NOT EXISTS lead_scores (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    lead_id VARCHAR(4) NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
     icp_score INTEGER NOT NULL DEFAULT 0,
     intent_score INTEGER NOT NULL DEFAULT 0,
     engagement_score INTEGER NOT NULL DEFAULT 0,
@@ -512,9 +512,9 @@ CREATE TABLE IF NOT EXISTS lead_scores (
 );
 
 CREATE TABLE IF NOT EXISTS lead_intents (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    lead_id VARCHAR(4) NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
     intent VARCHAR(160) NOT NULL,
     confidence NUMERIC(5, 4),
     evidence TEXT,
@@ -523,8 +523,8 @@ CREATE TABLE IF NOT EXISTS lead_intents (
 );
 
 CREATE TABLE IF NOT EXISTS qualification_frameworks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(120) NOT NULL,
     description TEXT,
     criteria JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -535,10 +535,10 @@ CREATE TABLE IF NOT EXISTS qualification_frameworks (
 );
 
 CREATE TABLE IF NOT EXISTS lead_qualifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
-    framework_id UUID NOT NULL REFERENCES qualification_frameworks(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    lead_id VARCHAR(4) NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+    framework_id VARCHAR(4) NOT NULL REFERENCES qualification_frameworks(id) ON DELETE CASCADE,
     score NUMERIC(8, 2),
     status VARCHAR(80),
     reasoning TEXT,
@@ -547,9 +547,9 @@ CREATE TABLE IF NOT EXISTS lead_qualifications (
 );
 
 CREATE TABLE IF NOT EXISTS qualification_answers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    qualification_id UUID NOT NULL REFERENCES lead_qualifications(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    qualification_id VARCHAR(4) NOT NULL REFERENCES lead_qualifications(id) ON DELETE CASCADE,
     question TEXT NOT NULL,
     answer TEXT,
     score NUMERIC(8, 2),
@@ -558,9 +558,9 @@ CREATE TABLE IF NOT EXISTS qualification_answers (
 );
 
 CREATE TABLE IF NOT EXISTS opportunities (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    lead_id VARCHAR(4) REFERENCES leads(id) ON DELETE SET NULL,
     name VARCHAR(255) NOT NULL,
     stage VARCHAR(120),
     amount NUMERIC(18, 2),
@@ -573,8 +573,8 @@ CREATE TABLE IF NOT EXISTS opportunities (
 );
 
 CREATE TABLE IF NOT EXISTS opportunity_stages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(120) NOT NULL,
     stage_order INTEGER NOT NULL DEFAULT 0,
     probability NUMERIC(5, 2),
@@ -586,23 +586,23 @@ CREATE TABLE IF NOT EXISTS opportunity_stages (
 );
 
 CREATE TABLE IF NOT EXISTS proposals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    opportunity_id UUID REFERENCES opportunities(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    opportunity_id VARCHAR(4) REFERENCES opportunities(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     version INTEGER NOT NULL DEFAULT 1,
     status VARCHAR(80) NOT NULL DEFAULT 'draft',
-    document_id UUID REFERENCES documents(id) ON DELETE SET NULL,
+    document_id VARCHAR(4) REFERENCES documents(id) ON DELETE SET NULL,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS quotes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    proposal_id UUID REFERENCES proposals(id) ON DELETE SET NULL,
-    opportunity_id UUID REFERENCES opportunities(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    proposal_id VARCHAR(4) REFERENCES proposals(id) ON DELETE SET NULL,
+    opportunity_id VARCHAR(4) REFERENCES opportunities(id) ON DELETE SET NULL,
     total_amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
     currency VARCHAR(12) NOT NULL DEFAULT 'USD',
     status VARCHAR(80) NOT NULL DEFAULT 'draft',
@@ -613,11 +613,11 @@ CREATE TABLE IF NOT EXISTS quotes (
 );
 
 CREATE TABLE IF NOT EXISTS meetings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
-    customer_id UUID,
-    opportunity_id UUID REFERENCES opportunities(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    lead_id VARCHAR(4) REFERENCES leads(id) ON DELETE SET NULL,
+    customer_id VARCHAR(4),
+    opportunity_id VARCHAR(4) REFERENCES opportunities(id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
     scheduled_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
@@ -628,18 +628,18 @@ CREATE TABLE IF NOT EXISTS meetings (
 );
 
 CREATE TABLE IF NOT EXISTS meeting_notes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    meeting_id UUID NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    meeting_id VARCHAR(4) NOT NULL REFERENCES meetings(id) ON DELETE CASCADE,
     note_type VARCHAR(80) NOT NULL DEFAULT 'human',
     content TEXT NOT NULL,
-    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_by VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS forecasts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     period_start DATE NOT NULL,
     period_end DATE NOT NULL,
     forecast_amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
@@ -651,15 +651,15 @@ CREATE TABLE IF NOT EXISTS forecasts (
 );
 
 CREATE TABLE IF NOT EXISTS conversations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE SET NULL,
     title VARCHAR(255),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS customer_id UUID;
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS lead_id UUID REFERENCES leads(id) ON DELETE SET NULL;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS customer_id VARCHAR(4);
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS lead_id VARCHAR(4) REFERENCES leads(id) ON DELETE SET NULL;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS channel VARCHAR(80);
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS status VARCHAR(80) NOT NULL DEFAULT 'open';
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
@@ -667,35 +667,35 @@ ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ended_at TIMESTAMPTZ;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 
 CREATE TABLE IF NOT EXISTS conversation_participants (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     participant_type VARCHAR(80) NOT NULL,
-    participant_id UUID,
+    participant_id VARCHAR(4),
     display_name VARCHAR(255),
     joined_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     left_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS conversation_messages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     role VARCHAR(40) NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE conversation_messages ADD COLUMN IF NOT EXISTS sender_type VARCHAR(80);
-ALTER TABLE conversation_messages ADD COLUMN IF NOT EXISTS sender_id UUID;
+ALTER TABLE conversation_messages ADD COLUMN IF NOT EXISTS sender_id VARCHAR(4);
 ALTER TABLE conversation_messages ADD COLUMN IF NOT EXISTS message TEXT;
 ALTER TABLE conversation_messages ADD COLUMN IF NOT EXISTS message_type VARCHAR(80) NOT NULL DEFAULT 'text';
 ALTER TABLE conversation_messages ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS message_attachments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    message_id UUID NOT NULL REFERENCES conversation_messages(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) NOT NULL REFERENCES conversation_messages(id) ON DELETE CASCADE,
     file_name VARCHAR(255),
     file_type VARCHAR(120),
     file_url TEXT,
@@ -704,19 +704,19 @@ CREATE TABLE IF NOT EXISTS message_attachments (
 );
 
 CREATE TABLE IF NOT EXISTS message_reactions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    message_id UUID NOT NULL REFERENCES conversation_messages(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) NOT NULL REFERENCES conversation_messages(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     reaction VARCHAR(80) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (message_id, user_id, reaction)
 );
 
 CREATE TABLE IF NOT EXISTS message_delivery_status (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    message_id UUID NOT NULL REFERENCES conversation_messages(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) NOT NULL REFERENCES conversation_messages(id) ON DELETE CASCADE,
     channel VARCHAR(80) NOT NULL,
     status VARCHAR(80) NOT NULL,
     provider_message_id TEXT,
@@ -727,9 +727,9 @@ CREATE TABLE IF NOT EXISTS message_delivery_status (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_intents (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     intent VARCHAR(160) NOT NULL,
     confidence NUMERIC(5, 4),
     evidence TEXT,
@@ -738,10 +738,10 @@ CREATE TABLE IF NOT EXISTS conversation_intents (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_sentiments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    message_id UUID REFERENCES conversation_messages(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) REFERENCES conversation_messages(id) ON DELETE CASCADE,
     sentiment VARCHAR(80) NOT NULL,
     score NUMERIC(6, 4),
     detected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -749,10 +749,10 @@ CREATE TABLE IF NOT EXISTS conversation_sentiments (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_emotions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    message_id UUID REFERENCES conversation_messages(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) REFERENCES conversation_messages(id) ON DELETE CASCADE,
     emotion VARCHAR(80) NOT NULL,
     score NUMERIC(6, 4),
     detected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -760,10 +760,10 @@ CREATE TABLE IF NOT EXISTS conversation_emotions (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_entities (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    entity_id UUID REFERENCES entities(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    entity_id VARCHAR(4) REFERENCES entities(id) ON DELETE SET NULL,
     entity_text VARCHAR(255),
     entity_type VARCHAR(120),
     confidence NUMERIC(5, 4),
@@ -771,9 +771,9 @@ CREATE TABLE IF NOT EXISTS conversation_entities (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_objections (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     objection_type VARCHAR(160) NOT NULL,
     evidence TEXT,
     confidence NUMERIC(5, 4),
@@ -782,9 +782,9 @@ CREATE TABLE IF NOT EXISTS conversation_objections (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_buying_signals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     signal_type VARCHAR(160) NOT NULL,
     evidence TEXT,
     confidence NUMERIC(5, 4),
@@ -793,31 +793,31 @@ CREATE TABLE IF NOT EXISTS conversation_buying_signals (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_summaries (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     summary_type VARCHAR(80) NOT NULL DEFAULT 'ai',
     summary TEXT NOT NULL,
-    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_by VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS conversation_citations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    message_id UUID NOT NULL REFERENCES conversation_messages(id) ON DELETE CASCADE,
-    document_id UUID REFERENCES documents(id) ON DELETE SET NULL,
-    chunk_id UUID REFERENCES document_chunks(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) NOT NULL REFERENCES conversation_messages(id) ON DELETE CASCADE,
+    document_id VARCHAR(4) REFERENCES documents(id) ON DELETE SET NULL,
+    chunk_id VARCHAR(4) REFERENCES document_chunks(id) ON DELETE SET NULL,
     quote TEXT,
     confidence NUMERIC(5, 4),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS conversation_actions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    agent_id UUID,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4),
     action_type VARCHAR(160) NOT NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     status VARCHAR(80) NOT NULL DEFAULT 'completed',
@@ -825,10 +825,10 @@ CREATE TABLE IF NOT EXISTS conversation_actions (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_feedback (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    message_id UUID REFERENCES conversation_messages(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) REFERENCES conversation_messages(id) ON DELETE SET NULL,
     rating INTEGER,
     feedback TEXT,
     feedback_type VARCHAR(80),
@@ -836,9 +836,9 @@ CREATE TABLE IF NOT EXISTS conversation_feedback (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_transcripts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     transcript TEXT NOT NULL,
     provider VARCHAR(120),
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -846,9 +846,9 @@ CREATE TABLE IF NOT EXISTS conversation_transcripts (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_metrics (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     response_time_seconds NUMERIC(12, 3),
     resolution_time_seconds NUMERIC(12, 3),
     message_count INTEGER NOT NULL DEFAULT 0,
@@ -858,13 +858,13 @@ CREATE TABLE IF NOT EXISTS conversation_metrics (
 );
 
 CREATE TABLE IF NOT EXISTS customers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE customers ADD COLUMN IF NOT EXISTS lead_id UUID REFERENCES leads(id) ON DELETE SET NULL;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS lead_id VARCHAR(4) REFERENCES leads(id) ON DELETE SET NULL;
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS health_score INTEGER NOT NULL DEFAULT 100;
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS churn_risk VARCHAR(40) NOT NULL DEFAULT 'low';
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}'::jsonb;
@@ -891,9 +891,9 @@ END;
 $$;
 
 CREATE TABLE IF NOT EXISTS customer_accounts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    parent_account_id UUID REFERENCES customer_accounts(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    parent_account_id VARCHAR(4) REFERENCES customer_accounts(id) ON DELETE SET NULL,
     name VARCHAR(255) NOT NULL,
     account_type VARCHAR(120),
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -902,9 +902,9 @@ CREATE TABLE IF NOT EXISTS customer_accounts (
 );
 
 CREATE TABLE IF NOT EXISTS customer_contacts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    customer_id VARCHAR(4) NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
     email VARCHAR(320),
     first_name VARCHAR(120),
     last_name VARCHAR(120),
@@ -915,8 +915,8 @@ CREATE TABLE IF NOT EXISTS customer_contacts (
 );
 
 CREATE TABLE IF NOT EXISTS customer_segments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(160) NOT NULL,
     criteria JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -925,9 +925,9 @@ CREATE TABLE IF NOT EXISTS customer_segments (
 );
 
 CREATE TABLE IF NOT EXISTS customer_health_scores (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    customer_id VARCHAR(4) NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
     score INTEGER NOT NULL,
     factors JSONB NOT NULL DEFAULT '{}'::jsonb,
     measured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -935,9 +935,9 @@ CREATE TABLE IF NOT EXISTS customer_health_scores (
 );
 
 CREATE TABLE IF NOT EXISTS customer_churn_scores (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    customer_id VARCHAR(4) NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
     probability NUMERIC(6, 4) NOT NULL,
     risk_level VARCHAR(80),
     factors JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -946,9 +946,9 @@ CREATE TABLE IF NOT EXISTS customer_churn_scores (
 );
 
 CREATE TABLE IF NOT EXISTS customer_expansion_scores (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    customer_id VARCHAR(4) NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
     score INTEGER NOT NULL,
     opportunity_amount NUMERIC(18, 2),
     factors JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -957,9 +957,9 @@ CREATE TABLE IF NOT EXISTS customer_expansion_scores (
 );
 
 CREATE TABLE IF NOT EXISTS customer_usage_metrics (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    customer_id VARCHAR(4) NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
     metric_name VARCHAR(160) NOT NULL,
     metric_value NUMERIC(18, 4) NOT NULL DEFAULT 0,
     measured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -968,9 +968,9 @@ CREATE TABLE IF NOT EXISTS customer_usage_metrics (
 );
 
 CREATE TABLE IF NOT EXISTS customer_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    customer_id VARCHAR(4) NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
     event_type VARCHAR(160) NOT NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     occurred_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -978,9 +978,9 @@ CREATE TABLE IF NOT EXISTS customer_events (
 );
 
 CREATE TABLE IF NOT EXISTS renewals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    customer_id VARCHAR(4) NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
     renewal_date DATE NOT NULL,
     amount NUMERIC(18, 2),
     status VARCHAR(80) NOT NULL DEFAULT 'pending',
@@ -990,8 +990,8 @@ CREATE TABLE IF NOT EXISTS renewals (
 );
 
 CREATE TABLE IF NOT EXISTS agents (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     role VARCHAR(80) NOT NULL,
     system_prompt TEXT NOT NULL,
@@ -1005,34 +1005,34 @@ ALTER TABLE agents ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT T
 ALTER TABLE agents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 
 CREATE TABLE IF NOT EXISTS agent_versions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
     version INTEGER NOT NULL,
     model VARCHAR(160),
     system_prompt TEXT NOT NULL,
     config JSONB NOT NULL DEFAULT '{}'::jsonb,
-    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_by VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (agent_id, version)
 );
 
 CREATE TABLE IF NOT EXISTS agent_prompt_versions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
     version INTEGER NOT NULL,
     system_prompt TEXT NOT NULL,
-    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_by VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (agent_id, version)
 );
 
 CREATE TABLE IF NOT EXISTS agent_sessions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-    conversation_id UUID REFERENCES conversations(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) REFERENCES conversations(id) ON DELETE SET NULL,
     status VARCHAR(80) NOT NULL DEFAULT 'active',
     started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     ended_at TIMESTAMPTZ,
@@ -1040,10 +1040,10 @@ CREATE TABLE IF NOT EXISTS agent_sessions (
 );
 
 CREATE TABLE IF NOT EXISTS agent_tasks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
-    assigned_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE SET NULL,
+    assigned_by VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     task_type VARCHAR(160) NOT NULL,
     title VARCHAR(255) NOT NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1054,10 +1054,10 @@ CREATE TABLE IF NOT EXISTS agent_tasks (
 );
 
 CREATE TABLE IF NOT EXISTS agent_plans (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-    task_id UUID REFERENCES agent_tasks(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    task_id VARCHAR(4) REFERENCES agent_tasks(id) ON DELETE SET NULL,
     plan JSONB NOT NULL DEFAULT '{}'::jsonb,
     status VARCHAR(80) NOT NULL DEFAULT 'draft',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -1065,11 +1065,11 @@ CREATE TABLE IF NOT EXISTS agent_plans (
 );
 
 CREATE TABLE IF NOT EXISTS agent_actions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
-    session_id UUID REFERENCES agent_sessions(id) ON DELETE SET NULL,
-    task_id UUID REFERENCES agent_tasks(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE SET NULL,
+    session_id VARCHAR(4) REFERENCES agent_sessions(id) ON DELETE SET NULL,
+    task_id VARCHAR(4) REFERENCES agent_tasks(id) ON DELETE SET NULL,
     action_type VARCHAR(160) NOT NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     result JSONB,
@@ -1078,13 +1078,13 @@ CREATE TABLE IF NOT EXISTS agent_actions (
 );
 
 CREATE TABLE IF NOT EXISTS agent_memories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-    customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    customer_id VARCHAR(4) REFERENCES customers(id) ON DELETE SET NULL,
     memory_type VARCHAR(80) NOT NULL,
     content TEXT NOT NULL,
-    vector_id UUID,
+    vector_id VARCHAR(4),
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -1092,30 +1092,30 @@ CREATE TABLE IF NOT EXISTS agent_memories (
 );
 
 CREATE TABLE IF NOT EXISTS agent_feedback (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-    message_id UUID REFERENCES conversation_messages(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) REFERENCES conversation_messages(id) ON DELETE SET NULL,
     rating INTEGER,
     feedback TEXT,
-    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_by VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS agent_confidence_scores (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-    message_id UUID REFERENCES conversation_messages(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) REFERENCES conversation_messages(id) ON DELETE SET NULL,
     score NUMERIC(6, 4) NOT NULL,
     reasoning TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS agent_tool_calls (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE SET NULL,
     tool_name VARCHAR(160) NOT NULL,
     request JSONB NOT NULL DEFAULT '{}'::jsonb,
     response JSONB,
@@ -1127,9 +1127,9 @@ CREATE TABLE IF NOT EXISTS agent_tool_calls (
 );
 
 CREATE TABLE IF NOT EXISTS agent_errors (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE SET NULL,
     error_type VARCHAR(160),
     message TEXT NOT NULL,
     stack_trace TEXT,
@@ -1138,29 +1138,29 @@ CREATE TABLE IF NOT EXISTS agent_errors (
 );
 
 CREATE TABLE IF NOT EXISTS agent_learning_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE SET NULL,
     event_type VARCHAR(160) NOT NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS prompt_versions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(160) NOT NULL,
     version INTEGER NOT NULL,
     prompt TEXT NOT NULL,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_by VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (tenant_id, name, version)
 );
 
 CREATE TABLE IF NOT EXISTS prompt_experiments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(160) NOT NULL,
     variants JSONB NOT NULL DEFAULT '[]'::jsonb,
     metrics JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1172,7 +1172,7 @@ CREATE TABLE IF NOT EXISTS prompt_experiments (
 );
 
 CREATE TABLE IF NOT EXISTS integrations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
     name VARCHAR(160) NOT NULL UNIQUE,
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -1180,9 +1180,9 @@ CREATE TABLE IF NOT EXISTS integrations (
 );
 
 CREATE TABLE IF NOT EXISTS integration_connections (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    integration_id UUID NOT NULL REFERENCES integrations(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    integration_id VARCHAR(4) NOT NULL REFERENCES integrations(id) ON DELETE CASCADE,
     status VARCHAR(80) NOT NULL DEFAULT 'active',
     config JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -1193,9 +1193,9 @@ CREATE TABLE IF NOT EXISTS integration_connections (
 ALTER TABLE integration_connections ADD COLUMN IF NOT EXISTS oauth_token JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS integration_sync_jobs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    integration_connection_id UUID NOT NULL REFERENCES integration_connections(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    integration_connection_id VARCHAR(4) NOT NULL REFERENCES integration_connections(id) ON DELETE CASCADE,
     status VARCHAR(80) NOT NULL DEFAULT 'queued',
     started_at TIMESTAMPTZ,
     finished_at TIMESTAMPTZ,
@@ -1205,9 +1205,9 @@ CREATE TABLE IF NOT EXISTS integration_sync_jobs (
 );
 
 CREATE TABLE IF NOT EXISTS integration_webhooks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    integration_connection_id UUID REFERENCES integration_connections(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    integration_connection_id VARCHAR(4) REFERENCES integration_connections(id) ON DELETE CASCADE,
     url TEXT NOT NULL,
     events TEXT[] NOT NULL DEFAULT '{}',
     secret_hash TEXT,
@@ -1217,9 +1217,9 @@ CREATE TABLE IF NOT EXISTS integration_webhooks (
 );
 
 CREATE TABLE IF NOT EXISTS webhook_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    integration_id UUID REFERENCES integrations(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    integration_id VARCHAR(4) REFERENCES integrations(id) ON DELETE SET NULL,
     event_type VARCHAR(160) NOT NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     status VARCHAR(80) NOT NULL DEFAULT 'received',
@@ -1229,7 +1229,7 @@ CREATE TABLE IF NOT EXISTS webhook_events (
 );
 
 CREATE TABLE IF NOT EXISTS tool_registry (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
     name VARCHAR(160) NOT NULL UNIQUE,
     description TEXT,
     schema JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1239,20 +1239,20 @@ CREATE TABLE IF NOT EXISTS tool_registry (
 );
 
 CREATE TABLE IF NOT EXISTS tool_permissions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    tool_id UUID NOT NULL REFERENCES tool_registry(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    tool_id VARCHAR(4) NOT NULL REFERENCES tool_registry(id) ON DELETE CASCADE,
     agent_role VARCHAR(120),
-    agent_id UUID REFERENCES agents(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE CASCADE,
     is_allowed BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS tool_executions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
-    integration_connection_id UUID REFERENCES integration_connections(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE SET NULL,
+    integration_connection_id VARCHAR(4) REFERENCES integration_connections(id) ON DELETE SET NULL,
     tool_name VARCHAR(160) NOT NULL,
     status VARCHAR(80) NOT NULL DEFAULT 'queued',
     request JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1264,9 +1264,9 @@ CREATE TABLE IF NOT EXISTS tool_executions (
 );
 
 CREATE TABLE IF NOT EXISTS connector_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    integration_connection_id UUID REFERENCES integration_connections(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    integration_connection_id VARCHAR(4) REFERENCES integration_connections(id) ON DELETE SET NULL,
     level VARCHAR(40) NOT NULL DEFAULT 'info',
     message TEXT NOT NULL,
     context JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1274,16 +1274,16 @@ CREATE TABLE IF NOT EXISTS connector_logs (
 );
 
 CREATE TABLE IF NOT EXISTS events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     event_type VARCHAR(160) NOT NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS analytics_daily (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     metric_date DATE NOT NULL,
     metric_name VARCHAR(160) NOT NULL,
     metric_value NUMERIC(18, 4) NOT NULL DEFAULT 0,
@@ -1293,8 +1293,8 @@ CREATE TABLE IF NOT EXISTS analytics_daily (
 );
 
 CREATE TABLE IF NOT EXISTS analytics_monthly (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     metric_month DATE NOT NULL,
     metric_name VARCHAR(160) NOT NULL,
     metric_value NUMERIC(18, 4) NOT NULL DEFAULT 0,
@@ -1304,44 +1304,44 @@ CREATE TABLE IF NOT EXISTS analytics_monthly (
 );
 
 CREATE TABLE IF NOT EXISTS conversation_analytics (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(4) REFERENCES conversations(id) ON DELETE CASCADE,
     metrics JSONB NOT NULL DEFAULT '{}'::jsonb,
     measured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS lead_analytics (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    lead_id VARCHAR(4) REFERENCES leads(id) ON DELETE CASCADE,
     metrics JSONB NOT NULL DEFAULT '{}'::jsonb,
     measured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS customer_analytics (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    customer_id VARCHAR(4) REFERENCES customers(id) ON DELETE CASCADE,
     metrics JSONB NOT NULL DEFAULT '{}'::jsonb,
     measured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS agent_analytics (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID REFERENCES agents(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE CASCADE,
     metrics JSONB NOT NULL DEFAULT '{}'::jsonb,
     measured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS model_usage (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     model VARCHAR(160) NOT NULL,
     provider VARCHAR(120),
     prompt_tokens INTEGER NOT NULL DEFAULT 0,
@@ -1354,10 +1354,10 @@ CREATE TABLE IF NOT EXISTS model_usage (
 );
 
 CREATE TABLE IF NOT EXISTS token_usage (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE SET NULL,
     model VARCHAR(160),
     token_type VARCHAR(80),
     quantity INTEGER NOT NULL DEFAULT 0,
@@ -1365,9 +1365,9 @@ CREATE TABLE IF NOT EXISTS token_usage (
 );
 
 CREATE TABLE IF NOT EXISTS llm_requests (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE SET NULL,
     model VARCHAR(160) NOT NULL,
     prompt JSONB NOT NULL DEFAULT '{}'::jsonb,
     parameters JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1375,9 +1375,9 @@ CREATE TABLE IF NOT EXISTS llm_requests (
 );
 
 CREATE TABLE IF NOT EXISTS llm_responses (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    request_id UUID REFERENCES llm_requests(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    request_id VARCHAR(4) REFERENCES llm_requests(id) ON DELETE CASCADE,
     response JSONB NOT NULL DEFAULT '{}'::jsonb,
     finish_reason VARCHAR(120),
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1385,8 +1385,8 @@ CREATE TABLE IF NOT EXISTS llm_responses (
 );
 
 CREATE TABLE IF NOT EXISTS retrieval_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     query TEXT NOT NULL,
     results JSONB NOT NULL DEFAULT '[]'::jsonb,
     scores JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -1395,8 +1395,8 @@ CREATE TABLE IF NOT EXISTS retrieval_logs (
 );
 
 CREATE TABLE IF NOT EXISTS reranking_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     query TEXT NOT NULL,
     input_results JSONB NOT NULL DEFAULT '[]'::jsonb,
     reranked_results JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -1406,10 +1406,10 @@ CREATE TABLE IF NOT EXISTS reranking_logs (
 );
 
 CREATE TABLE IF NOT EXISTS evaluation_results (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     subject_type VARCHAR(120) NOT NULL,
-    subject_id UUID,
+    subject_id VARCHAR(4),
     evaluator VARCHAR(160),
     score NUMERIC(8, 4),
     result JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1417,26 +1417,26 @@ CREATE TABLE IF NOT EXISTS evaluation_results (
 );
 
 CREATE TABLE IF NOT EXISTS hallucination_checks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    message_id UUID REFERENCES conversation_messages(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) REFERENCES conversation_messages(id) ON DELETE SET NULL,
     status VARCHAR(80) NOT NULL,
     findings JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS response_metrics (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    message_id UUID REFERENCES conversation_messages(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    message_id VARCHAR(4) REFERENCES conversation_messages(id) ON DELETE SET NULL,
     quality_score NUMERIC(8, 4),
     metrics JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS latency_metrics (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     component VARCHAR(160) NOT NULL,
     latency_ms INTEGER NOT NULL,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1444,8 +1444,8 @@ CREATE TABLE IF NOT EXISTS latency_metrics (
 );
 
 CREATE TABLE IF NOT EXISTS cost_tracking (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     model VARCHAR(160),
     provider VARCHAR(120),
     cost NUMERIC(18, 6) NOT NULL DEFAULT 0,
@@ -1455,7 +1455,7 @@ CREATE TABLE IF NOT EXISTS cost_tracking (
 );
 
 CREATE TABLE IF NOT EXISTS plans (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
     name VARCHAR(120) NOT NULL UNIQUE,
     description TEXT,
     price NUMERIC(18, 2) NOT NULL DEFAULT 0,
@@ -1468,8 +1468,8 @@ CREATE TABLE IF NOT EXISTS plans (
 );
 
 CREATE TABLE IF NOT EXISTS subscriptions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     plan_name VARCHAR(120) NOT NULL,
     status VARCHAR(80) NOT NULL DEFAULT 'active',
     current_period_start TIMESTAMPTZ,
@@ -1479,13 +1479,13 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES plans(id) ON DELETE SET NULL;
-ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS customer_id UUID REFERENCES customers(id) ON DELETE SET NULL;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS plan_id VARCHAR(4) REFERENCES plans(id) ON DELETE SET NULL;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS customer_id VARCHAR(4) REFERENCES customers(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS subscription_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    subscription_id UUID NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    subscription_id VARCHAR(4) NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
     item_type VARCHAR(120) NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 1,
     unit_price NUMERIC(18, 2) NOT NULL DEFAULT 0,
@@ -1495,9 +1495,9 @@ CREATE TABLE IF NOT EXISTS subscription_items (
 );
 
 CREATE TABLE IF NOT EXISTS usage_records (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    subscription_id UUID REFERENCES subscriptions(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    subscription_id VARCHAR(4) REFERENCES subscriptions(id) ON DELETE SET NULL,
     metric_name VARCHAR(160) NOT NULL,
     quantity NUMERIC(18, 4) NOT NULL DEFAULT 0,
     recorded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -1506,10 +1506,10 @@ CREATE TABLE IF NOT EXISTS usage_records (
 );
 
 CREATE TABLE IF NOT EXISTS invoices (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    subscription_id UUID REFERENCES subscriptions(id) ON DELETE SET NULL,
-    customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    subscription_id VARCHAR(4) REFERENCES subscriptions(id) ON DELETE SET NULL,
+    customer_id VARCHAR(4) REFERENCES customers(id) ON DELETE SET NULL,
     invoice_number VARCHAR(120),
     amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
     currency VARCHAR(12) NOT NULL DEFAULT 'USD',
@@ -1522,10 +1522,10 @@ CREATE TABLE IF NOT EXISTS invoices (
 );
 
 CREATE TABLE IF NOT EXISTS payments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    invoice_id UUID REFERENCES invoices(id) ON DELETE SET NULL,
-    customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    invoice_id VARCHAR(4) REFERENCES invoices(id) ON DELETE SET NULL,
+    customer_id VARCHAR(4) REFERENCES customers(id) ON DELETE SET NULL,
     amount NUMERIC(18, 2) NOT NULL DEFAULT 0,
     currency VARCHAR(12) NOT NULL DEFAULT 'USD',
     status VARCHAR(80) NOT NULL DEFAULT 'pending',
@@ -1538,10 +1538,10 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 
 CREATE TABLE IF NOT EXISTS payment_attempts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    payment_id UUID REFERENCES payments(id) ON DELETE CASCADE,
-    invoice_id UUID REFERENCES invoices(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    payment_id VARCHAR(4) REFERENCES payments(id) ON DELETE CASCADE,
+    invoice_id VARCHAR(4) REFERENCES invoices(id) ON DELETE SET NULL,
     status VARCHAR(80) NOT NULL DEFAULT 'failed',
     error TEXT,
     attempted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -1550,9 +1550,9 @@ CREATE TABLE IF NOT EXISTS payment_attempts (
 );
 
 CREATE TABLE IF NOT EXISTS payment_methods (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    customer_id VARCHAR(4) REFERENCES customers(id) ON DELETE SET NULL,
     provider VARCHAR(120) NOT NULL,
     token TEXT NOT NULL,
     brand VARCHAR(80),
@@ -1565,8 +1565,8 @@ CREATE TABLE IF NOT EXISTS payment_methods (
 );
 
 CREATE TABLE IF NOT EXISTS credits (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL UNIQUE REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL UNIQUE REFERENCES tenants(id) ON DELETE CASCADE,
     balance NUMERIC(18, 4) NOT NULL DEFAULT 0,
     currency VARCHAR(12) NOT NULL DEFAULT 'USD',
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -1574,9 +1574,9 @@ CREATE TABLE IF NOT EXISTS credits (
 );
 
 CREATE TABLE IF NOT EXISTS credit_transactions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    credit_id UUID REFERENCES credits(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    credit_id VARCHAR(4) REFERENCES credits(id) ON DELETE SET NULL,
     transaction_type VARCHAR(80) NOT NULL,
     amount NUMERIC(18, 4) NOT NULL,
     balance_after NUMERIC(18, 4),
@@ -1585,18 +1585,18 @@ CREATE TABLE IF NOT EXISTS credit_transactions (
 );
 
 CREATE TABLE IF NOT EXISTS billing_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     event_type VARCHAR(160) NOT NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS usage_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    agent_id UUID REFERENCES agents(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
+    agent_id VARCHAR(4) REFERENCES agents(id) ON DELETE SET NULL,
     event_name VARCHAR(160) NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 1,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1604,8 +1604,8 @@ CREATE TABLE IF NOT EXISTS usage_events (
 );
 
 CREATE TABLE IF NOT EXISTS background_jobs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) REFERENCES tenants(id) ON DELETE CASCADE,
     job_type VARCHAR(160) NOT NULL,
     status VARCHAR(80) NOT NULL DEFAULT 'queued',
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1619,8 +1619,8 @@ CREATE TABLE IF NOT EXISTS background_jobs (
 );
 
 CREATE TABLE IF NOT EXISTS scheduled_tasks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(160) NOT NULL,
     cron_expression VARCHAR(120) NOT NULL,
     task_type VARCHAR(160) NOT NULL,
@@ -1631,9 +1631,9 @@ CREATE TABLE IF NOT EXISTS scheduled_tasks (
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     notification_type VARCHAR(120) NOT NULL,
     title VARCHAR(255) NOT NULL,
     body TEXT,
@@ -1643,8 +1643,8 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE TABLE IF NOT EXISTS notification_templates (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(160) NOT NULL,
     channel VARCHAR(80) NOT NULL,
     subject_template TEXT,
@@ -1655,8 +1655,8 @@ CREATE TABLE IF NOT EXISTS notification_templates (
 );
 
 CREATE TABLE IF NOT EXISTS feature_flags (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) REFERENCES tenants(id) ON DELETE CASCADE,
     flag_key VARCHAR(160) NOT NULL,
     is_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     config JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -1666,7 +1666,7 @@ CREATE TABLE IF NOT EXISTS feature_flags (
 );
 
 CREATE TABLE IF NOT EXISTS system_settings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
     key VARCHAR(160) NOT NULL UNIQUE,
     value JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -1674,16 +1674,16 @@ CREATE TABLE IF NOT EXISTS system_settings (
 );
 
 CREATE TABLE IF NOT EXISTS migrations_log (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
     migration_name VARCHAR(255) NOT NULL UNIQUE,
     applied_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
 CREATE TABLE IF NOT EXISTS api_request_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id VARCHAR(4) REFERENCES users(id) ON DELETE SET NULL,
     method VARCHAR(16) NOT NULL,
     path TEXT NOT NULL,
     status_code INTEGER,
@@ -1696,8 +1696,8 @@ CREATE TABLE IF NOT EXISTS api_request_logs (
 );
 
 CREATE TABLE IF NOT EXISTS rate_limits (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
+    tenant_id VARCHAR(4) REFERENCES tenants(id) ON DELETE CASCADE,
     key VARCHAR(255) NOT NULL,
     window_start TIMESTAMPTZ NOT NULL,
     request_count INTEGER NOT NULL DEFAULT 0,

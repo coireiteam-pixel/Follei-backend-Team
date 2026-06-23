@@ -4,11 +4,12 @@ from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Uuid
 from sqlalchemy.orm import relationship
 
 from app.database.base import Base
+from app.core.ids import short_id
 
 class Tenant(Base):
     __tablename__ = "tenants"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
     name = Column(String, index=True, nullable=False)
     domain = Column(String, unique=True, index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -31,8 +32,8 @@ class Tenant(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     first_name = Column(String, nullable=False)

@@ -6,8 +6,8 @@ from pydantic import BaseModel, Field
 class CreateMessageRequest(BaseModel):
     content: str = Field(examples=["Here is the answer based on your knowledge base."])
     role: str = Field(default="user", examples=["assistant"])
-    user_id: str | None = Field(default=None, examples=["55555555-5555-4555-8555-555555555555"])
-    agent_id: str | None = Field(default=None, examples=["44444444-4444-4444-8444-444444444444"])
+    user_id: str | None = Field(default=None, examples=["U001"])
+    agent_id: str | None = Field(default=None, examples=["A001"])
     citations: list[dict[str, Any]] = Field(
         default_factory=list,
         examples=[[{"source": "pricing-guide", "url": "https://example.com/pricing", "snippet": "Plan starts at $99"}]],
@@ -78,7 +78,7 @@ class AttachmentListResponse(BaseModel):
 
 class ReactionRequest(BaseModel):
     emoji: str = Field(examples=["like"])
-    user_id: str | None = Field(default=None, examples=["55555555-5555-4555-8555-555555555555"])
+    user_id: str | None = Field(default=None, examples=["U001"])
     metadata: dict[str, Any] = Field(default_factory=dict, examples=[{"source": "swagger"}])
 
 

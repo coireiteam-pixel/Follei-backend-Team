@@ -1,7 +1,6 @@
 import time
 from datetime import date
 from typing import Any, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
@@ -23,7 +22,7 @@ procedure_router = APIRouter(prefix="/procedures", tags=["Knowledge & RAG"])
 class SourceIn(BaseModel):
     name: str
     type: str
-    tenant_id: UUID
+    tenant_id: str
     config: dict[str, Any] = Field(default_factory=dict)
     status: str = "active"
 
@@ -36,8 +35,8 @@ class SourceUpdate(BaseModel):
 
 class SearchIn(BaseModel):
     query: str
-    tenant_id: UUID
-    source_ids: list[UUID] = Field(default_factory=list)
+    tenant_id: str
+    source_ids: list[str] = Field(default_factory=list)
     top_k: int = Field(default=5, ge=1, le=50)
     filters: dict[str, Any] = Field(default_factory=dict)
 
@@ -45,10 +44,10 @@ class SearchIn(BaseModel):
 class FAQIn(BaseModel):
     question: str
     answer: str
-    tenant_id: UUID
+    tenant_id: str
     category: Optional[str] = None
     tags: list[str] = Field(default_factory=list)
-    source_document_id: Optional[UUID] = None
+    source_document_id: Optional[str] = None
 
 
 class FAQUpdate(BaseModel):
@@ -61,7 +60,7 @@ class FAQUpdate(BaseModel):
 class PolicyIn(BaseModel):
     title: str
     content: str
-    tenant_id: UUID
+    tenant_id: str
     category: Optional[str] = None
     effective_date: Optional[date] = None
     version: Optional[str] = None
@@ -70,11 +69,11 @@ class PolicyIn(BaseModel):
 class ProcedureIn(BaseModel):
     title: str
     steps: list[dict[str, Any]]
-    tenant_id: UUID
+    tenant_id: str
     category: Optional[str] = None
 
 
-def _ensure_tenant(user: User, tenant_id: UUID) -> None:
+def _ensure_tenant(user: User, tenant_id: str) -> None:
     if tenant_id != user.tenant_id:
         raise HTTPException(status_code=403, detail="Tenant mismatch")
 
@@ -136,7 +135,7 @@ def list_sources(user: User = Depends(get_current_user), db: Session = Depends(g
 
 
 @router.get("/sources/{source_id}")
-def get_source(source_id: UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_source(source_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     source = (
         db.query(KnowledgeSource)
         .options(selectinload(KnowledgeSource.documents))
@@ -149,7 +148,7 @@ def get_source(source_id: UUID, user: User = Depends(get_current_user), db: Sess
 
 
 @router.patch("/sources/{source_id}")
-def update_source(source_id: UUID, payload: SourceUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_source(source_id: str, payload: SourceUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     source = db.query(KnowledgeSource).filter(KnowledgeSource.id == source_id, KnowledgeSource.tenant_id == user.tenant_id).first()
     if not source:
         raise HTTPException(status_code=404, detail="Knowledge source not found")
@@ -166,7 +165,7 @@ def update_source(source_id: UUID, payload: SourceUpdate, user: User = Depends(g
 
 
 @router.delete("/sources/{source_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_source(source_id: UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_source(source_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     source = db.query(KnowledgeSource).filter(KnowledgeSource.id == source_id, KnowledgeSource.tenant_id == user.tenant_id).first()
     if not source:
         raise HTTPException(status_code=404, detail="Knowledge source not found")
@@ -230,7 +229,7 @@ def list_faqs(user: User = Depends(get_current_user), db: Session = Depends(get_
 
 
 @faq_router.patch("/{faq_id}")
-def update_faq(faq_id: UUID, payload: FAQUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_faq(faq_id: str, payload: FAQUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     faq = db.query(FAQ).filter(FAQ.id == faq_id, FAQ.tenant_id == user.tenant_id).first()
     if not faq:
         raise HTTPException(status_code=404, detail="FAQ not found")
@@ -244,7 +243,7 @@ def update_faq(faq_id: UUID, payload: FAQUpdate, user: User = Depends(get_curren
 
 
 @faq_router.delete("/{faq_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_faq(faq_id: UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_faq(faq_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     faq = db.query(FAQ).filter(FAQ.id == faq_id, FAQ.tenant_id == user.tenant_id).first()
     if not faq:
         raise HTTPException(status_code=404, detail="FAQ not found")

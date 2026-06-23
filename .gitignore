@@ -7,3 +7,8 @@ __MACOSX/
 .venv/
 venv/
 *.log
+
+# Generated datasets and large local artifacts
+*.arrow
+follei_backend/follei/data/ai_cuda_engineer_archive/
+generated_dataset/sql_insert_scripts.sql

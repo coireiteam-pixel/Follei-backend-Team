@@ -1,20 +1,38 @@
-from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Optional
-from uuid import UUID
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class TenantBase(BaseModel):
-    name: str
-    domain: Optional[str] = None
+    name: str = Field(examples=["Acme Corp"])
+    domain: str | None = Field(default=None, examples=["acme.example.com"])
 
 
 class TenantCreate(TenantBase):
-    pass
+    admin_email: str = Field(examples=["admin@acme.com"])
+    admin_password: str = Field(examples=["SecurePass123"])
+    admin_first_name: str = Field(examples=["John"])
+    admin_last_name: str = Field(examples=["Doe"])
 
 
-class TenantRead(TenantBase):
-    model_config = ConfigDict(from_attributes=True)
+class TenantUpdate(BaseModel):
+    name: str | None = None
+    domain: str | None = None
 
-    id: UUID
+
+class TenantResponse(TenantBase):
+    id: str
     created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+TenantRead = TenantResponse
+
+
+class TenantListResponse(BaseModel):
+    items: list[TenantResponse]
+    total: int
+    page: int
+    page_size: int

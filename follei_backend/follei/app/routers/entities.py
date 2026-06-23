@@ -1,5 +1,4 @@
 from typing import Any, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session, selectinload
@@ -20,7 +19,7 @@ from app.schemas.entity import (
 router = APIRouter(prefix="/entities", tags=["Entities"])
 
 
-def _ensure_tenant(current_user: User, tenant_id: UUID) -> None:
+def _ensure_tenant(current_user: User, tenant_id: str) -> None:
     if tenant_id != current_user.tenant_id:
         raise HTTPException(status_code=403, detail="Tenant mismatch")
 
@@ -37,7 +36,7 @@ def _query_entities(db: Session, current_user: User):
     )
 
 
-def _get_entity_or_404(db: Session, current_user: User, entity_id: UUID) -> Entity:
+def _get_entity_or_404(db: Session, current_user: User, entity_id: str) -> Entity:
     entity = _query_entities(db, current_user).filter(Entity.id == entity_id).first()
     if not entity:
         raise HTTPException(status_code=404, detail="Entity not found")
@@ -130,7 +129,7 @@ def create_entity(
 
 @router.get("", response_model=EntityListResponse)
 def list_entities(
-    tenant_id: Optional[UUID] = None,
+    tenant_id: Optional[str] = None,
     entity_type: Optional[str] = Query(default=None, alias="type"),
     page: int = 1,
     current_user: User = Depends(get_current_user),
@@ -150,7 +149,7 @@ def list_entities(
 
 @router.get("/{entity_id}", response_model=EntityRead)
 def get_entity(
-    entity_id: UUID,
+    entity_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> EntityRead:
@@ -159,7 +158,7 @@ def get_entity(
 
 @router.patch("/{entity_id}", response_model=EntityRead)
 def update_entity(
-    entity_id: UUID,
+    entity_id: str,
     payload: EntityUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -183,7 +182,7 @@ def update_entity(
 
 @router.delete("/{entity_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_entity(
-    entity_id: UUID,
+    entity_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Response:

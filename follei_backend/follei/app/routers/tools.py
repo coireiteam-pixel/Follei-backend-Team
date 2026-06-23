@@ -1,6 +1,6 @@
 import time
 from datetime import datetime, timezone
-from uuid import uuid4
+from app.core.ids import short_id
 
 from fastapi import APIRouter, HTTPException, Query, status
 
@@ -40,7 +40,7 @@ def _get_tool_or_404(tool_id: str) -> ToolResponse:
 
 
 def _seed_log(connector: str, level: str, message: str) -> None:
-    log_id = str(uuid4())
+    log_id = str(short_id())
     CONNECTOR_LOGS[log_id] = ConnectorLogResponse(
         id=log_id,
         connector=connector,
@@ -52,7 +52,7 @@ def _seed_log(connector: str, level: str, message: str) -> None:
 
 @tools_router.post("", response_model=ToolResponse, status_code=status.HTTP_201_CREATED)
 def create_tool(payload: CreateToolRequest) -> ToolResponse:
-    tool_id = str(uuid4())
+    tool_id = str(short_id())
     tool = ToolResponse(id=tool_id, executions_count=0, avg_latency_ms=0, success_rate=1.0, created_at=_now(), **payload.model_dump())
     TOOLS[tool_id] = tool
     return tool
@@ -87,7 +87,7 @@ def execute_tool(tool_id: str, payload: ExecuteToolRequest) -> ToolExecutionResp
     result = {
         "contacts": [
             {
-                "id": str(uuid4()),
+                "id": str(short_id()),
                 "name": "Jane Lead",
                 "company": payload.parameters.get("query", "Acme Corp"),
                 "email": "jane@acme.com",
@@ -95,7 +95,7 @@ def execute_tool(tool_id: str, payload: ExecuteToolRequest) -> ToolExecutionResp
         ]
     }
     latency_ms = max(1, int((time.perf_counter() - start) * 1000))
-    execution_id = str(uuid4())
+    execution_id = str(short_id())
     execution = ToolExecutionResponse(
         id=execution_id,
         tool_id=tool_id,
@@ -138,7 +138,7 @@ def list_tool_executions(
 @tools_router.post("/{tool_id}/permissions", response_model=ToolPermissionResponse, status_code=status.HTTP_201_CREATED)
 def create_tool_permission(tool_id: str, payload: ToolPermissionRequest) -> ToolPermissionResponse:
     _get_tool_or_404(tool_id)
-    permission_id = str(uuid4())
+    permission_id = str(short_id())
     permission = ToolPermissionResponse(id=permission_id, tool_id=tool_id, created_at=_now(), **payload.model_dump())
     PERMISSIONS[permission_id] = permission
     return permission

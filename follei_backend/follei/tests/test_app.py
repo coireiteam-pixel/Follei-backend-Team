@@ -1,10 +1,14 @@
+import json
+import re
+
 from fastapi.testclient import TestClient
 
+from app.core.ids import short_id
 from app.main import app
 
 
 client = TestClient(app)
-TENANT_ID = "11111111-1111-4111-8111-111111111111"
+TENANT_ID = "T001"
 
 
 def test_health_check():
@@ -42,6 +46,38 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
     assert "GET /api/plans" in methods
     assert "GET /api/events" in methods
     assert "GET /api/agents" not in methods
+
+
+def test_openapi_schema_does_not_expose_swagger_placeholder_props():
+    openapi = client.app.openapi()
+    openapi_json = json.dumps(openapi)
+
+    assert "additionalProp" not in openapi_json
+    assert '"additionalProperties": true' not in openapi_json
+
+
+def test_auth_register_creates_short_alphanumeric_ids():
+    suffix = short_id()
+    response = client.post(
+        "/auth/register",
+        json={
+            "name": f"Short ID Tenant {suffix}",
+            "domain": f"short-{suffix}.example.com",
+            "admin_email": f"short-{suffix}@example.com",
+            "admin_password": "password123",
+            "admin_first_name": "Short",
+            "admin_last_name": "User",
+        },
+    )
+    assert response.status_code == 201
+
+    token = response.json()["access_token"]
+    profile_response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    profile = profile_response.json()
+
+    assert profile_response.status_code == 200
+    assert re.fullmatch(r"[A-Z][0-9]{3}", profile["id"])
+    assert re.fullmatch(r"[A-Z][0-9]{3}", profile["tenant_id"])
 
 
 def test_conversation_message_p2_p3_flow_does_not_return_422():
@@ -197,11 +233,11 @@ def test_integrations_webhooks_and_tools_flow_does_not_return_422():
         ),
         client.post(
             f"/api/tools/{tool_id}/execute",
-            json={"agent_id": "22222222-2222-4222-8222-222222222222", "parameters": {"query": "Acme Corp"}},
+            json={"agent_id": "A001", "parameters": {"query": "Acme Corp"}},
         ),
         client.post(
             f"/api/tools/{tool_id}/permissions",
-            json={"agent_id": "22222222-2222-4222-8222-222222222222", "permission": "execute"},
+            json={"agent_id": "A001", "permission": "execute"},
         ),
         client.get("/api/tool-executions"),
         client.get("/api/connector-logs"),

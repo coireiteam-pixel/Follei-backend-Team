@@ -4,6 +4,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, Str
 from sqlalchemy.orm import relationship
 
 from app.database.base import Base
+from app.core.ids import short_id
 
 class Conversation(Base):
     """
@@ -11,11 +12,11 @@ class Conversation(Base):
     """
     __tablename__ = "conversations"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True)
-    customer_id = Column(Uuid(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"), nullable=True)
-    lead_id = Column(Uuid(as_uuid=True), ForeignKey("leads.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True)
+    customer_id = Column(String(4), ForeignKey("customers.id", ondelete="SET NULL"), nullable=True)
+    lead_id = Column(String(4), ForeignKey("leads.id", ondelete="SET NULL"), nullable=True)
     
     title = Column(String, nullable=True)
     channel = Column(String, nullable=True)
@@ -48,14 +49,14 @@ class Conversation(Base):
 class Message(Base):
     __tablename__ = "conversation_messages"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
     
     role = Column(String, nullable=False) # 'user', 'agent', 'system', 'tool'
     content = Column(Text, nullable=False)
     sender_type = Column(String, nullable=True)
-    sender_id = Column(Uuid(as_uuid=True), nullable=True)
+    sender_id = Column(String(4), nullable=True)
     message = Column(Text, nullable=True)
     message_type = Column(String, default="text", nullable=False)
     metadata_ = Column("metadata", JSON, default=dict, nullable=False)
@@ -79,10 +80,10 @@ class Message(Base):
 class ConversationAction(Base):
     __tablename__ = "conversation_actions"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True)
     action_type = Column(String, nullable=False)
     payload = Column(JSON, default=dict, nullable=False)
     status = Column(String, default="completed", nullable=False)
@@ -96,9 +97,9 @@ class ConversationAction(Base):
 class ConversationAnalytics(Base):
     __tablename__ = "conversation_analytics"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=True)
     metrics = Column(JSON, default=dict, nullable=False)
     measured_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -110,9 +111,9 @@ class ConversationAnalytics(Base):
 class ConversationBuyingSignal(Base):
     __tablename__ = "conversation_buying_signals"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
     signal_type = Column(String, nullable=False)
     evidence = Column(Text, nullable=True)
     confidence = Column(Numeric, nullable=True)
@@ -126,11 +127,11 @@ class ConversationBuyingSignal(Base):
 class ConversationCitation(Base):
     __tablename__ = "conversation_citations"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    message_id = Column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=False, index=True)
-    document_id = Column(Uuid(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
-    chunk_id = Column(Uuid(as_uuid=True), ForeignKey("document_chunks.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = Column(String(4), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=False, index=True)
+    document_id = Column(String(4), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
+    chunk_id = Column(String(4), ForeignKey("document_chunks.id", ondelete="SET NULL"), nullable=True)
     quote = Column(Text, nullable=True)
     confidence = Column(Numeric, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -144,10 +145,10 @@ class ConversationCitation(Base):
 class ConversationEmotion(Base):
     __tablename__ = "conversation_emotions"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
-    message_id = Column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = Column(String(4), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=True)
     emotion = Column(String, nullable=False)
     score = Column(Numeric, nullable=True)
     detected_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -161,10 +162,10 @@ class ConversationEmotion(Base):
 class ConversationEntity(Base):
     __tablename__ = "conversation_entities"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
-    entity_id = Column(Uuid(as_uuid=True), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    entity_id = Column(String(4), nullable=True)
     entity_text = Column(String, nullable=True)
     entity_type = Column(String, nullable=True)
     confidence = Column(Numeric, nullable=True)
@@ -177,10 +178,10 @@ class ConversationEntity(Base):
 class ConversationFeedback(Base):
     __tablename__ = "conversation_feedback"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
-    message_id = Column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = Column(String(4), ForeignKey("conversation_messages.id", ondelete="SET NULL"), nullable=True)
     rating = Column(Integer, nullable=True)
     feedback = Column(Text, nullable=True)
     feedback_type = Column(String, nullable=True)
@@ -194,9 +195,9 @@ class ConversationFeedback(Base):
 class ConversationIntent(Base):
     __tablename__ = "conversation_intents"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
     intent = Column(String, nullable=False)
     confidence = Column(Numeric, nullable=True)
     evidence = Column(Text, nullable=True)
@@ -210,9 +211,9 @@ class ConversationIntent(Base):
 class ConversationMetric(Base):
     __tablename__ = "conversation_metrics"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
     response_time_seconds = Column(Numeric, nullable=True)
     resolution_time_seconds = Column(Numeric, nullable=True)
     message_count = Column(Integer, default=0, nullable=False)
@@ -226,9 +227,9 @@ class ConversationMetric(Base):
 class ConversationObjection(Base):
     __tablename__ = "conversation_objections"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
     objection_type = Column(String, nullable=False)
     evidence = Column(Text, nullable=True)
     confidence = Column(Numeric, nullable=True)
@@ -242,11 +243,11 @@ class ConversationObjection(Base):
 class ConversationParticipant(Base):
     __tablename__ = "conversation_participants"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
     participant_type = Column(String, nullable=False)
-    participant_id = Column(Uuid(as_uuid=True), nullable=True)
+    participant_id = Column(String(4), nullable=True)
     display_name = Column(String, nullable=True)
     joined_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     left_at = Column(DateTime, nullable=True)
@@ -258,10 +259,10 @@ class ConversationParticipant(Base):
 class ConversationSentiment(Base):
     __tablename__ = "conversation_sentiments"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
-    message_id = Column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = Column(String(4), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=True)
     sentiment = Column(String, nullable=False)
     score = Column(Numeric, nullable=True)
     detected_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -275,12 +276,12 @@ class ConversationSentiment(Base):
 class ConversationSummary(Base):
     __tablename__ = "conversation_summaries"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
     summary_type = Column(String, default="ai", nullable=False)
     summary = Column(Text, nullable=False)
-    created_by = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by = Column(String(4), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     tenant = relationship("Tenant")
@@ -291,9 +292,9 @@ class ConversationSummary(Base):
 class ConversationTranscript(Base):
     __tablename__ = "conversation_transcripts"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
     transcript = Column(Text, nullable=False)
     provider = Column(String, nullable=True)
     metadata_ = Column("metadata", JSON, default=dict, nullable=False)
@@ -306,9 +307,9 @@ class ConversationTranscript(Base):
 class MessageAttachment(Base):
     __tablename__ = "message_attachments"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    message_id = Column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = Column(String(4), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=False, index=True)
     file_name = Column(String, nullable=True)
     file_url = Column(Text, nullable=True)
     content_type = Column(String, nullable=True)
@@ -322,9 +323,9 @@ class MessageAttachment(Base):
 class MessageDeliveryStatus(Base):
     __tablename__ = "message_delivery_status"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    message_id = Column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = Column(String(4), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=False, index=True)
     status = Column(String, nullable=False)
     provider = Column(String, nullable=True)
     delivered_at = Column(DateTime, nullable=True)
@@ -338,10 +339,10 @@ class MessageDeliveryStatus(Base):
 class MessageReaction(Base):
     __tablename__ = "message_reactions"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    message_id = Column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=False, index=True)
-    user_id = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = Column(String(4), ForeignKey("conversation_messages.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(4), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     reaction = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -353,9 +354,9 @@ class MessageReaction(Base):
 class ResponseMetric(Base):
     __tablename__ = "response_metrics"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    message_id = Column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = Column(String(4), ForeignKey("conversation_messages.id", ondelete="SET NULL"), nullable=True)
     quality_score = Column(Numeric, nullable=True)
     metrics = Column(JSON, default=dict, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

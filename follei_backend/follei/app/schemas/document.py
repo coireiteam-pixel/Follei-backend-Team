@@ -1,17 +1,16 @@
 from datetime import datetime
 from typing import Any, Optional
-from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class DocumentCreate(BaseModel):
-    source_id: Optional[UUID] = None
-    filename: str = Field(..., min_length=1)
-    file_path: Optional[str] = None
-    file_type: str = Field(..., min_length=1)
-    file_size: Optional[int] = Field(default=None, ge=0)
-    tenant_id: UUID
+    source_id: Optional[str] = Field(default=None, examples=["S001"])
+    filename: str = Field(..., min_length=1, examples=["pricing.pdf"])
+    file_path: Optional[str] = Field(default=None, examples=["/uploads/pricing.pdf"])
+    file_type: str = Field(..., min_length=1, examples=["application/pdf"])
+    file_size: Optional[int] = Field(default=None, ge=0, examples=[204800])
+    tenant_id: str = Field(examples=["T001"])
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -21,7 +20,7 @@ class DocumentUpdate(BaseModel):
 
 
 class DocumentChunkRead(BaseModel):
-    id: UUID
+    id: str
     index: int
     page: Optional[int] = None
     heading: Optional[str] = None
@@ -43,13 +42,13 @@ class DocumentChunksCreate(BaseModel):
 
 
 class DocumentChunkCreateItem(BaseModel):
-    id: UUID
+    id: str
     index: int
     page: Optional[int] = None
 
 
 class DocumentChunksCreateResponse(BaseModel):
-    document_id: UUID
+    document_id: str
     chunks_created: int
     chunks: list[DocumentChunkCreateItem]
 
@@ -74,8 +73,8 @@ class ChunkEmbeddingCreate(BaseModel):
 
 
 class ChunkEmbeddingResponse(BaseModel):
-    id: UUID
-    chunk_id: UUID
+    id: str
+    chunk_id: str
     vector_id: str
     model: str
     dimensions: Optional[int] = None
@@ -86,19 +85,19 @@ class ChunkEmbeddingResponse(BaseModel):
 class DocumentCreateResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
-    source_id: Optional[UUID] = None
+    id: str
+    source_id: Optional[str] = None
     filename: str
     file_type: str
     status: str
     total_pages: int
     total_chunks: int
-    tenant_id: UUID
+    tenant_id: str
     created_at: datetime
 
 
 class DocumentListItem(BaseModel):
-    id: UUID
+    id: str
     filename: str
     status: str
     total_chunks: int

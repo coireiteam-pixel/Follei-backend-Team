@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-06-22T18:00:00+05:30",
+  "seed": 20260622,
+  "history_window": {
+    "start": "2025-06-22T18:00:00+05:30",
+    "end": "2026-06-22T18:00:00+05:30"
+  },
+  "row_counts": {
+    "activities": 20000,
+    "agent_tasks": 20000,
+    "agents": 10000,
+    "analytics_daily": 20000,
+    "analytics_monthly": 10000,
+    "api_request_logs": 20000,
+    "audit_logs": 10000,
+    "conversation_messages": 20000,
+    "conversations": 10000,
+    "documents": 10000,
+    "file_uploads": 10000,
+    "invalid_test_records": 10000,
+    "login_attempts": 20000,
+    "notifications": 10000,
+    "password_reset_requests": 10000,
+    "permissions": 96,
+    "projects": 10000,
+    "refresh_tokens": 10000,
+    "reports": 10000,
+    "roles": 10000,
+    "tenant_api_keys": 10000,
+    "tenants": 10000,
+    "token_usage": 10000,
+    "user_auth": 20000,
+    "user_roles": 20000,
+    "user_sessions": 20000,
+    "users": 20000
+  },
+  "files": {
+    "database_schema": "database_schema.sql",
+    "json_sample": "sample_data.json",
+    "csv_sample": "sample_data.csv",
+    "full_csv_directory": "csv/",
+    "sql_insert_scripts": "sql_insert_scripts.sql",
+    "data_dictionary": "data_dictionary.xlsx",
+    "er_diagram": "er_diagram_structure.json"
+  },
+  "workload_characteristics": [
+    "Tenant-isolated data with app-compatible foreign keys",
+    "12 months of biased real-time timestamps with peak usage hours",
+    "Successful and failed transactions across auth, API, uploads, reports, and tasks",
+    "Soft-deleted, inactive, duplicate-candidate, invalid, and quarantined test scenarios",
+    "Analytics metrics for DAU, MAU, session duration, API calls, error rates, conversion, and retention"
+  ]
+}

@@ -6,7 +6,6 @@ import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from uuid import UUID
 
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
@@ -46,7 +45,7 @@ def verify_password(password: str, password_hash: str) -> bool:
     return hmac.compare_digest(digest, expected)
 
 
-def create_access_token(user_id: UUID, tenant_id: UUID) -> str:
+def create_access_token(user_id: str, tenant_id: str) -> str:
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": str(user_id),

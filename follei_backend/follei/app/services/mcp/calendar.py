@@ -1,8 +1,8 @@
-from uuid import uuid4
+from app.core.ids import short_id
 
 
 def create_event(title: str, start: str, end: str, attendees: list | None = None) -> dict:
-    event_id = str(uuid4())
+    event_id = str(short_id())
     return {"event_id": event_id, "title": title, "start": start, "end": end, "attendees": attendees or [], "calendar_link": f"https://calendar.example.com/{event_id}", "created": True}
 
 

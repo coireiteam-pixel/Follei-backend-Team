@@ -23,19 +23,27 @@ cd C:\Users\User\Desktop\Follei15pc\Follei-backend-Team\follei_backend\follei
 docker compose up -d postgres
 ```
 
-3. Run the backend:
+3. Set the local database URL when you want Python to connect to the Docker PostgreSQL container:
+
+```powershell
+$env:DATABASE_URL="postgresql://admin:secret@127.0.0.1:55589/follei_db"
+```
+
+If `DATABASE_URL` is not set, the app uses the local SQLite fallback at `follei.db`.
+
+4. Run the backend:
 
 ```powershell
 python -m uvicorn app.main:app --reload
 ```
 
-4. Open Swagger docs:
+5. Open Swagger docs:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-5. Verify health:
+6. Verify health:
 
 ```text
 http://127.0.0.1:8000/health
@@ -84,14 +92,56 @@ http://localhost:8000/docs
 
 ### Notes
 
-- Local Python uses PostgreSQL:
-  `postgresql://postgres:Vignesh%40123@127.0.0.1:5432/follei_db`
+- Local Python uses SQLite by default:
+  `sqlite:///./follei.db`
+- Local Python can use Docker PostgreSQL with:
+  `postgresql://admin:secret@127.0.0.1:55589/follei_db`
 - Docker backend connects to PostgreSQL using:
-  `postgresql://postgres:Vignesh%40123@postgres:5432/follei_db`
+  `postgresql://admin:secret@postgres:5432/follei_db`
 - Local PostgreSQL is exposed on:
-  `postgresql://postgres:Vignesh%40123@127.0.0.1:5432/follei_db`
+  `postgresql://admin:secret@127.0.0.1:55589/follei_db`
 - PostgreSQL data is stored in the `postgres-data` Docker volume.
 - If you want, add more services later for Redis, Kafka, or Weaviate.
+
+## Imported CUDA Engineer Dataset
+
+The Hugging Face dataset `SakanaAI/AI-CUDA-Engineer-Archive` is saved locally at:
+
+```text
+follei_backend/follei/data/ai_cuda_engineer_archive
+```
+
+Load it with:
+
+```python
+from datasets import load_from_disk
+
+dataset = load_from_disk("data/ai_cuda_engineer_archive")
+```
+
+Available splits:
+
+- `level_1`: 12,157 rows
+- `level_2`: 12,938 rows
+- `level_3`: 5,520 rows
+
+## Realtime Demo Dataset Generator
+
+Generate live demo data into the configured database:
+
+```powershell
+cd follei_backend\follei
+python generate_realtime_data.py
+```
+
+Useful test commands:
+
+```powershell
+python generate_realtime_data.py --once
+python generate_realtime_data.py --iterations 10 --interval 1
+```
+
+The generator creates seed tenants, users, agents, leads, and customers when needed, then keeps adding conversations, messages, events, analytics, model usage, agent tasks, actions, and tool calls.
 
 ## Work History
 

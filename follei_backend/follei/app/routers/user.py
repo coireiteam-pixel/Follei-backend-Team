@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from uuid import UUID, uuid4
+from app.core.ids import short_id
 
 from app.database import get_db
 from app.core.security import hash_password
@@ -21,7 +21,7 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
 
     data = payload.model_dump()
     password = data.pop("password")
-    user = User(id=uuid4(), hashed_password=hash_password(password), **data)
+    user = User(id=short_id(), hashed_password=hash_password(password), **data)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -29,7 +29,7 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{user_id}", response_model=UserRead)
-def get_user(user_id: UUID, db: Session = Depends(get_db)):
+def get_user(user_id: str, db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

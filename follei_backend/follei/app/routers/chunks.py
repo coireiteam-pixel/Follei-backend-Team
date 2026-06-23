@@ -1,4 +1,3 @@
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -12,7 +11,7 @@ from app.schemas.document import ChunkEmbeddingCreate, ChunkEmbeddingResponse
 router = APIRouter(prefix="/chunks", tags=["Chunks"])
 
 
-def _get_chunk_or_404(db: Session, current_user: User, chunk_id: UUID) -> DocumentChunk:
+def _get_chunk_or_404(db: Session, current_user: User, chunk_id: str) -> DocumentChunk:
     chunk = (
         db.query(DocumentChunk)
         .filter(DocumentChunk.id == chunk_id, DocumentChunk.tenant_id == current_user.tenant_id)
@@ -25,7 +24,7 @@ def _get_chunk_or_404(db: Session, current_user: User, chunk_id: UUID) -> Docume
 
 @router.post("/{chunk_id}/embeddings", response_model=ChunkEmbeddingResponse, status_code=status.HTTP_201_CREATED)
 def create_chunk_embedding(
-    chunk_id: UUID,
+    chunk_id: str,
     payload: ChunkEmbeddingCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),

@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
 from app.database.base import Base
+from app.core.ids import short_id
 
 class Agent(Base):
     """
@@ -12,8 +13,8 @@ class Agent(Base):
     """
     __tablename__ = "agents"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     
     name = Column(String, nullable=False)
     role = Column(String, nullable=False) # e.g., 'SDR', 'Support'
@@ -42,10 +43,10 @@ class Agent(Base):
 class AgentSession(Base):
     __tablename__ = "agent_sessions"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
-    conversation_id = Column(Uuid(as_uuid=True), ForeignKey("conversations.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(String(4), ForeignKey("conversations.id", ondelete="SET NULL"), nullable=True)
     status = Column(String, nullable=False, default="active")
     started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     ended_at = Column(DateTime, nullable=True)
@@ -60,10 +61,10 @@ class AgentSession(Base):
 class AgentTask(Base):
     __tablename__ = "agent_tasks"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
-    assigned_by = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
+    assigned_by = Column(String(4), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     task_type = Column(String, nullable=False)
     title = Column(String, nullable=False)
     payload = Column(JSON, default=dict, nullable=False)
@@ -82,11 +83,11 @@ class AgentTask(Base):
 class AgentAction(Base):
     __tablename__ = "agent_actions"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
-    session_id = Column(Uuid(as_uuid=True), ForeignKey("agent_sessions.id", ondelete="SET NULL"), nullable=True)
-    task_id = Column(Uuid(as_uuid=True), ForeignKey("agent_tasks.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
+    session_id = Column(String(4), ForeignKey("agent_sessions.id", ondelete="SET NULL"), nullable=True)
+    task_id = Column(String(4), ForeignKey("agent_tasks.id", ondelete="SET NULL"), nullable=True)
     action_type = Column(String, nullable=False)
     payload = Column(JSON, default=dict, nullable=False)
     result = Column(JSON, nullable=True)
@@ -102,9 +103,9 @@ class AgentAction(Base):
 class AgentAnalytics(Base):
     __tablename__ = "agent_analytics"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
     metrics = Column(JSON, default=dict, nullable=False)
     measured_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -116,10 +117,10 @@ class AgentAnalytics(Base):
 class AgentConfidenceScore(Base):
     __tablename__ = "agent_confidence_scores"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
-    message_id = Column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = Column(String(4), ForeignKey("conversation_messages.id", ondelete="SET NULL"), nullable=True)
     score = Column(Numeric, nullable=False)
     reasoning = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -132,9 +133,9 @@ class AgentConfidenceScore(Base):
 class AgentError(Base):
     __tablename__ = "agent_errors"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
     error_type = Column(String, nullable=True)
     message = Column(Text, nullable=False)
     stack_trace = Column(Text, nullable=True)
@@ -148,13 +149,13 @@ class AgentError(Base):
 class AgentFeedback(Base):
     __tablename__ = "agent_feedback"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
-    message_id = Column(Uuid(as_uuid=True), ForeignKey("conversation_messages.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = Column(String(4), ForeignKey("conversation_messages.id", ondelete="SET NULL"), nullable=True)
     rating = Column(Integer, nullable=True)
     feedback = Column(Text, nullable=True)
-    created_by = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by = Column(String(4), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     tenant = relationship("Tenant")
@@ -166,9 +167,9 @@ class AgentFeedback(Base):
 class AgentLearningEvent(Base):
     __tablename__ = "agent_learning_events"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
     event_type = Column(String, nullable=False)
     payload = Column(JSON, default=dict, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -180,13 +181,13 @@ class AgentLearningEvent(Base):
 class AgentMemory(Base):
     __tablename__ = "agent_memories"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
-    customer_id = Column(Uuid(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    customer_id = Column(String(4), ForeignKey("customers.id", ondelete="SET NULL"), nullable=True)
     memory_type = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    vector_id = Column(Uuid(as_uuid=True), nullable=True)
+    vector_id = Column(String(4), nullable=True)
     metadata_ = Column("metadata", JSON, default=dict, nullable=False)
     expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -200,10 +201,10 @@ class AgentMemory(Base):
 class AgentPlan(Base):
     __tablename__ = "agent_plans"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
-    task_id = Column(Uuid(as_uuid=True), ForeignKey("agent_tasks.id", ondelete="SET NULL"), nullable=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    task_id = Column(String(4), ForeignKey("agent_tasks.id", ondelete="SET NULL"), nullable=True)
     plan = Column(JSON, default=dict, nullable=False)
     status = Column(String, default="draft", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -217,12 +218,12 @@ class AgentPlan(Base):
 class AgentPromptVersion(Base):
     __tablename__ = "agent_prompt_versions"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
     version = Column(Integer, nullable=False)
     system_prompt = Column(Text, nullable=False)
-    created_by = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by = Column(String(4), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     tenant = relationship("Tenant")
@@ -233,9 +234,9 @@ class AgentPromptVersion(Base):
 class AgentToolCall(Base):
     __tablename__ = "agent_tool_calls"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, index=True)
     tool_name = Column(String, nullable=False)
     request = Column(JSON, default=dict, nullable=False)
     response = Column(JSON, nullable=True)
@@ -252,14 +253,14 @@ class AgentToolCall(Base):
 class AgentVersion(Base):
     __tablename__ = "agent_versions"
 
-    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    tenant_id = Column(Uuid(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    agent_id = Column(Uuid(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(String(4), primary_key=True, default=short_id, index=True)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id = Column(String(4), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
     version = Column(Integer, nullable=False)
     model = Column(String, nullable=True)
     system_prompt = Column(Text, nullable=False)
     config = Column(JSON, default=dict, nullable=False)
-    created_by = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by = Column(String(4), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     tenant = relationship("Tenant")

@@ -1,5 +1,4 @@
 from typing import Any, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
@@ -19,7 +18,7 @@ competitors_router = APIRouter(prefix="/competitors", tags=["Products & Pricing"
 class ProductIn(BaseModel):
     name: str
     description: Optional[str] = None
-    tenant_id: UUID
+    tenant_id: str
     status: str = "active"
     features: list[dict[str, Any]] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -36,13 +35,13 @@ class ProductUpdate(BaseModel):
 class ServiceIn(BaseModel):
     name: str
     description: Optional[str] = None
-    tenant_id: UUID
+    tenant_id: str
     pricing_type: Optional[str] = None
     base_price: Optional[float] = None
 
 
 class PricingModelIn(BaseModel):
-    product_id: Optional[UUID] = None
+    product_id: Optional[str] = None
     name: str
     billing_period: str
     currency: str = "USD"
@@ -61,7 +60,7 @@ class PricingRuleIn(BaseModel):
 class CompetitorIn(BaseModel):
     name: str
     website: Optional[str] = None
-    tenant_id: UUID
+    tenant_id: str
     strengths: list[str] = Field(default_factory=list)
     weaknesses: list[str] = Field(default_factory=list)
 
@@ -73,7 +72,7 @@ class CompetitorFeatureIn(BaseModel):
     notes: Optional[str] = None
 
 
-def _ensure_tenant(user: User, tenant_id: UUID) -> None:
+def _ensure_tenant(user: User, tenant_id: str) -> None:
     if tenant_id != user.tenant_id:
         raise HTTPException(status_code=403, detail="Tenant mismatch")
 
@@ -107,7 +106,7 @@ def list_products(user: User = Depends(get_current_user), db: Session = Depends(
 
 
 @products_router.get("/{product_id}")
-def get_product(product_id: UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_product(product_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id, Product.tenant_id == user.tenant_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -118,7 +117,7 @@ def get_product(product_id: UUID, user: User = Depends(get_current_user), db: Se
 
 
 @products_router.patch("/{product_id}")
-def update_product(product_id: UUID, payload: ProductUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_product(product_id: str, payload: ProductUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id, Product.tenant_id == user.tenant_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -141,7 +140,7 @@ def update_product(product_id: UUID, payload: ProductUpdate, user: User = Depend
 
 
 @products_router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_product(product_id: UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_product(product_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == product_id, Product.tenant_id == user.tenant_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -182,7 +181,7 @@ def list_pricing_models(user: User = Depends(get_current_user), db: Session = De
 
 
 @pricing_router.post("/{model_id}/rules", status_code=status.HTTP_201_CREATED)
-def add_pricing_rule(model_id: UUID, payload: PricingRuleIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def add_pricing_rule(model_id: str, payload: PricingRuleIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     model = db.query(PricingModel).filter(PricingModel.id == model_id, PricingModel.tenant_id == user.tenant_id).first()
     if not model:
         raise HTTPException(status_code=404, detail="Pricing model not found")
@@ -210,7 +209,7 @@ def list_competitors(user: User = Depends(get_current_user), db: Session = Depen
 
 
 @competitors_router.post("/{competitor_id}/features", status_code=status.HTTP_201_CREATED)
-def add_competitor_feature(competitor_id: UUID, payload: CompetitorFeatureIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def add_competitor_feature(competitor_id: str, payload: CompetitorFeatureIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     competitor = db.query(Competitor).filter(Competitor.id == competitor_id, Competitor.tenant_id == user.tenant_id).first()
     if not competitor:
         raise HTTPException(status_code=404, detail="Competitor not found")

@@ -1,0 +1,1809 @@
+{
+  "application": "Follei autonomous business operating system",
+  "generated_at": "2026-06-22T18:00:00+05:30",
+  "source_schema_exports": {
+    "columns": "B:\\COIREI OFFICE\\follei_backend\\database_schema_exports\\columns.csv",
+    "relations": "B:\\COIREI OFFICE\\follei_backend\\database_schema_exports\\relations.csv",
+    "indexes": "B:\\COIREI OFFICE\\follei_backend\\database_schema_exports\\indexes.csv"
+  },
+  "nodes": [
+    {
+      "table": "activities",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "project_id",
+        "task_id",
+        "activity_type",
+        "channel",
+        "status",
+        "description",
+        "metadata",
+        "created_at"
+      ],
+      "generated_rows": 20000,
+      "domain": "AI Workforce and Workflow"
+    },
+    {
+      "table": "agent_tasks",
+      "columns": [
+        "id",
+        "tenant_id",
+        "agent_id",
+        "assigned_by",
+        "task_type",
+        "title",
+        "payload",
+        "status",
+        "due_at",
+        "created_at",
+        "updated_at"
+      ],
+      "generated_rows": 20000,
+      "domain": "AI Workforce and Workflow"
+    },
+    {
+      "table": "agents",
+      "columns": [
+        "id",
+        "tenant_id",
+        "name",
+        "role",
+        "system_prompt",
+        "tools",
+        "created_at",
+        "agent_type",
+        "model",
+        "is_active",
+        "updated_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "AI Workforce and Workflow"
+    },
+    {
+      "table": "analytics_daily",
+      "columns": [
+        "id",
+        "tenant_id",
+        "metric_date",
+        "metric_name",
+        "metric_value",
+        "dimensions",
+        "created_at"
+      ],
+      "generated_rows": 20000,
+      "domain": "Analytics and Reporting"
+    },
+    {
+      "table": "analytics_monthly",
+      "columns": [
+        "id",
+        "tenant_id",
+        "metric_month",
+        "metric_name",
+        "metric_value",
+        "dimensions",
+        "created_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Analytics and Reporting"
+    },
+    {
+      "table": "api_request_logs",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "method",
+        "path",
+        "status_code",
+        "request_body",
+        "response_body",
+        "ip_address",
+        "user_agent",
+        "duration_ms",
+        "created_at"
+      ],
+      "generated_rows": 20000,
+      "domain": "Security and Observability"
+    },
+    {
+      "table": "audit_logs",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "action",
+        "entity_type",
+        "entity_id",
+        "metadata",
+        "created_at",
+        "resource_type",
+        "resource_id",
+        "payload"
+      ],
+      "generated_rows": 10000,
+      "domain": "Security and Observability"
+    },
+    {
+      "table": "conversation_messages",
+      "columns": [
+        "id",
+        "tenant_id",
+        "conversation_id",
+        "role",
+        "content",
+        "created_at",
+        "sender_type",
+        "sender_id",
+        "message",
+        "message_type",
+        "metadata"
+      ],
+      "generated_rows": 20000,
+      "domain": "Conversations and Collaboration"
+    },
+    {
+      "table": "conversations",
+      "columns": [
+        "id",
+        "tenant_id",
+        "agent_id",
+        "title",
+        "created_at",
+        "customer_id",
+        "lead_id",
+        "channel",
+        "status",
+        "started_at",
+        "ended_at",
+        "updated_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Conversations and Collaboration"
+    },
+    {
+      "table": "documents",
+      "columns": [
+        "id",
+        "tenant_id",
+        "title",
+        "source_type",
+        "status",
+        "tags",
+        "created_at",
+        "source_id",
+        "source_uri",
+        "mime_type",
+        "path",
+        "metadata",
+        "updated_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Knowledge and Files"
+    },
+    {
+      "table": "file_uploads",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "project_id",
+        "document_id",
+        "file_name",
+        "mime_type",
+        "file_size_bytes",
+        "storage_path",
+        "checksum",
+        "scan_status",
+        "status",
+        "deleted_at",
+        "metadata",
+        "created_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Knowledge and Files"
+    },
+    {
+      "table": "invalid_test_records",
+      "columns": [
+        "id",
+        "tenant_id",
+        "source_table",
+        "scenario",
+        "raw_payload",
+        "validation_error",
+        "expected_handling",
+        "created_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Security and Observability"
+    },
+    {
+      "table": "login_attempts",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "email",
+        "ip_address",
+        "user_agent",
+        "status",
+        "failure_reason",
+        "mfa_required",
+        "risk_score",
+        "created_at"
+      ],
+      "generated_rows": 20000,
+      "domain": "Security and Observability"
+    },
+    {
+      "table": "notifications",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "notification_type",
+        "title",
+        "body",
+        "payload",
+        "read_at",
+        "created_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Conversations and Collaboration"
+    },
+    {
+      "table": "password_reset_requests",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "email",
+        "token_hash",
+        "status",
+        "requested_ip",
+        "expires_at",
+        "used_at",
+        "created_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Security and Observability"
+    },
+    {
+      "table": "permissions",
+      "columns": [
+        "id",
+        "resource",
+        "action",
+        "description",
+        "created_at"
+      ],
+      "generated_rows": 96,
+      "domain": "Identity and Tenancy"
+    },
+    {
+      "table": "projects",
+      "columns": [
+        "id",
+        "tenant_id",
+        "owner_user_id",
+        "agent_id",
+        "name",
+        "description",
+        "status",
+        "priority",
+        "budget_usd",
+        "starts_at",
+        "due_at",
+        "completed_at",
+        "deleted_at",
+        "metadata",
+        "created_at",
+        "updated_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "AI Workforce and Workflow"
+    },
+    {
+      "table": "refresh_tokens",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "token_hash",
+        "revoked_at",
+        "expires_at",
+        "created_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Identity and Tenancy"
+    },
+    {
+      "table": "reports",
+      "columns": [
+        "id",
+        "tenant_id",
+        "created_by",
+        "project_id",
+        "report_type",
+        "title",
+        "status",
+        "period_start",
+        "period_end",
+        "metrics",
+        "file_url",
+        "generated_at",
+        "deleted_at",
+        "created_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Analytics and Reporting"
+    },
+    {
+      "table": "roles",
+      "columns": [
+        "id",
+        "tenant_id",
+        "name",
+        "description",
+        "created_at",
+        "updated_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Identity and Tenancy"
+    },
+    {
+      "table": "tenant_api_keys",
+      "columns": [
+        "id",
+        "tenant_id",
+        "name",
+        "key_hash",
+        "scopes",
+        "last_used_at",
+        "expires_at",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Identity and Tenancy"
+    },
+    {
+      "table": "tenants",
+      "columns": [
+        "id",
+        "name",
+        "domain",
+        "created_at",
+        "slug",
+        "industry",
+        "plan",
+        "status",
+        "trial_ends_at",
+        "is_active",
+        "updated_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Identity and Tenancy"
+    },
+    {
+      "table": "token_usage",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "agent_id",
+        "model",
+        "token_type",
+        "quantity",
+        "created_at"
+      ],
+      "generated_rows": 10000,
+      "domain": "Analytics and Reporting"
+    },
+    {
+      "table": "user_auth",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "password_hash",
+        "totp_secret",
+        "failed_attempts",
+        "locked_until",
+        "created_at",
+        "updated_at"
+      ],
+      "generated_rows": 20000,
+      "domain": "Identity and Tenancy"
+    },
+    {
+      "table": "user_roles",
+      "columns": [
+        "user_id",
+        "role_id",
+        "created_at"
+      ],
+      "generated_rows": 20000,
+      "domain": "Identity and Tenancy"
+    },
+    {
+      "table": "user_sessions",
+      "columns": [
+        "id",
+        "tenant_id",
+        "user_id",
+        "device",
+        "browser",
+        "ip_address",
+        "user_agent",
+        "expires_at",
+        "created_at",
+        "updated_at"
+      ],
+      "generated_rows": 20000,
+      "domain": "Identity and Tenancy"
+    },
+    {
+      "table": "users",
+      "columns": [
+        "id",
+        "tenant_id",
+        "email",
+        "hashed_password",
+        "first_name",
+        "last_name",
+        "role",
+        "is_active",
+        "created_at",
+        "full_name",
+        "status",
+        "last_login_at",
+        "updated_at"
+      ],
+      "generated_rows": 20000,
+      "domain": "Identity and Tenancy"
+    }
+  ],
+  "edges": [
+    {
+      "from": "agent_actions.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_actions.task_id",
+      "to": "agent_tasks.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_actions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_analytics.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_analytics.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_confidence_scores.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_confidence_scores.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_confidence_scores.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_errors.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_errors.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_feedback.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_feedback.created_by",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_feedback.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_feedback.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_learning_events.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_learning_events.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_memories.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_memories.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_plans.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_plans.task_id",
+      "to": "agent_tasks.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_plans.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_prompt_versions.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_prompt_versions.created_by",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_prompt_versions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_sessions.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_sessions.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_sessions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_tasks.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_tasks.assigned_by",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_tasks.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_tool_calls.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_tool_calls.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_versions.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agent_versions.created_by",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "agent_versions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "agents.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "analytics_daily.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "analytics_monthly.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "api_request_logs.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "api_request_logs.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "audit_logs.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "audit_logs.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "background_jobs.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "billing_events.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "chunk_citations.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "chunk_embeddings.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "competitor_features.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "competitors.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "connector_logs.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_actions.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_actions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_analytics.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_analytics.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_buying_signals.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_buying_signals.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_citations.document_id",
+      "to": "documents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "conversation_citations.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_citations.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_emotions.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_emotions.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_emotions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_entities.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_entities.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_feedback.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_feedback.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "conversation_feedback.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_intents.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_intents.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_messages.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_messages.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_metrics.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_metrics.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_objections.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_objections.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_participants.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_participants.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_sentiments.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_sentiments.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_sentiments.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_summaries.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_summaries.created_by",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "conversation_summaries.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_transcripts.conversation_id",
+      "to": "conversations.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversation_transcripts.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "conversations.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "conversations.customer_id",
+      "to": "customers.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "conversations.lead_id",
+      "to": "leads.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "conversations.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "cost_tracking.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "credit_transactions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "credits.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "customer_accounts.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "customer_analytics.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "customer_churn_scores.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "customer_contacts.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "customer_events.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "customer_expansion_scores.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "customer_health_scores.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "customer_segments.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "customer_usage_metrics.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "customers.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "document_chunks.document_id",
+      "to": "documents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "document_chunks.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "document_pages.document_id",
+      "to": "documents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "document_pages.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "document_versions.document_id",
+      "to": "documents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "document_versions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "documents.source_id",
+      "to": "knowledge_sources.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "documents.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "entities.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "entity_aliases.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "entity_attributes.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "entity_relations.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "evaluation_results.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "events.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "faqs.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "feature_flags.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "forecasts.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "hallucination_checks.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "hallucination_checks.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "integration_connections.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "integration_sync_jobs.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "integration_webhooks.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "invoices.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "knowledge_feedback.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "knowledge_feedback.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "knowledge_sources.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "knowledge_tags.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "latency_metrics.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "lead_activities.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "lead_analytics.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "lead_intents.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "lead_qualifications.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "lead_scores.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "lead_sources.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "leads.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "llm_requests.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "llm_requests.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "llm_responses.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "meeting_notes.created_by",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "meeting_notes.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "meetings.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "message_attachments.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "message_attachments.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "message_delivery_status.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "message_delivery_status.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "message_reactions.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "message_reactions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "message_reactions.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "model_usage.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "notification_templates.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "notifications.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "notifications.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "opportunities.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "opportunity_stages.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "payment_attempts.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "payment_methods.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "payments.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "policies.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "pricing_models.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "pricing_rules.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "procedures.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "products.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "prompt_experiments.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "prompt_versions.created_by",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "prompt_versions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "proposals.document_id",
+      "to": "documents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "proposals.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "qualification_answers.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "qualification_frameworks.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "quotes.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "rate_limits.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "refresh_tokens.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "refresh_tokens.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "renewals.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "reranking_logs.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "response_metrics.message_id",
+      "to": "conversation_messages.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "response_metrics.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "retrieval_logs.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "role_permissions.permission_id",
+      "to": "permissions.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "role_permissions.role_id",
+      "to": "roles.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "roles.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "scheduled_tasks.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "services.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "source_connections.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "source_sync_jobs.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "subscription_items.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "subscriptions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "tenant_api_keys.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "tenant_settings.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "tenant_usage.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "token_usage.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "token_usage.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "token_usage.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "tool_executions.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "tool_executions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "tool_permissions.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "tool_permissions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "usage_events.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "usage_events.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "usage_events.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "usage_records.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "user_auth.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "user_auth.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "user_roles.role_id",
+      "to": "roles.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "user_roles.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "user_sessions.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "user_sessions.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "users.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "webhook_events.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "projects.tenant_id",
+      "to": "tenants.id",
+      "relationship": "many-to-one",
+      "delete_rule": "CASCADE"
+    },
+    {
+      "from": "projects.owner_user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "projects.agent_id",
+      "to": "agents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "activities.project_id",
+      "to": "projects.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "activities.task_id",
+      "to": "agent_tasks.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "file_uploads.project_id",
+      "to": "projects.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "file_uploads.document_id",
+      "to": "documents.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "reports.project_id",
+      "to": "projects.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "reports.created_by",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "login_attempts.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    },
+    {
+      "from": "password_reset_requests.user_id",
+      "to": "users.id",
+      "relationship": "many-to-one",
+      "delete_rule": "SET NULL"
+    }
+  ],
+  "logical_mappings": {
+    "Organizations/Tenants": "tenants",
+    "Projects": "projects",
+    "Tasks": "agent_tasks",
+    "Activities": "activities",
+    "Chat Messages": "conversation_messages",
+    "File Uploads": "file_uploads plus documents",
+    "Reports": "reports",
+    "Security Dataset": "login_attempts, user_sessions, refresh_tokens, password_reset_requests, token_usage"
+  }
+}

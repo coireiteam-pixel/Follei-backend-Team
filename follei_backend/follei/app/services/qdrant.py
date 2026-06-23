@@ -1,8 +1,7 @@
 import os
-from uuid import UUID
 
 
-def delete_document_vectors(tenant_id: UUID, document_id: UUID) -> None:
+def delete_document_vectors(tenant_id: str, document_id: str) -> None:
     """
     Best-effort cleanup for document vectors.
 

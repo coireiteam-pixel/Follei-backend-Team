@@ -1,7 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -47,7 +46,7 @@ def _serialize(value: Any) -> Any:
         return value.isoformat()
     if isinstance(value, Decimal):
         return float(value)
-    if isinstance(value, UUID):
+    if isinstance(value, str):
         return str(value)
     return value
 
@@ -76,8 +75,8 @@ def _coerce_value(value: Any, column: Any) -> Any:
     if isinstance(column_type, ARRAY):
         return value
 
-    if column_type.__class__.__name__ == "UUID":
-        return UUID(value) if isinstance(value, str) else value
+    if column_type.__class__.__name__ == "str":
+        return str(value) if isinstance(value, str) else value
 
     return value
 
@@ -172,7 +171,7 @@ def create_record(
 @router.get("/{table_name}/records/{record_id}")
 def get_record(
     table_name: str,
-    record_id: UUID,
+    record_id: str,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     table = _get_table(table_name)
@@ -185,7 +184,7 @@ def get_record(
 @router.patch("/{table_name}/records/{record_id}")
 def update_record(
     table_name: str,
-    record_id: UUID,
+    record_id: str,
     payload: RecordPayload,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
@@ -211,7 +210,7 @@ def update_record(
 @router.delete("/{table_name}/records/{record_id}")
 def delete_record(
     table_name: str,
-    record_id: UUID,
+    record_id: str,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     table = _get_table(table_name)

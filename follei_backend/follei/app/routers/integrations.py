@@ -1,13 +1,13 @@
 from datetime import datetime, timezone
-from uuid import uuid4
+from app.core.ids import short_id
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 
 from app.schemas.integration import (
-    CreateIntegrationConnectionRequest,
     InboundWebhookRequest,
     InboundWebhookResponse,
     IntegrationConnectionListResponse,
+    IntegrationConnectionRequest,
     IntegrationConnectionResponse,
     IntegrationConnectionSummary,
     IntegrationListResponse,
@@ -34,10 +34,10 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-SALESFORCE_ID = "11111111-1111-4111-8111-111111111111"
-HUBSPOT_ID = "22222222-2222-4222-8222-222222222222"
-GMAIL_ID = "33333333-3333-4333-8333-333333333333"
-WHATSAPP_ID = "44444444-4444-4444-8444-444444444444"
+SALESFORCE_ID = "alpha123beta456gamma789"
+HUBSPOT_ID = "delta789echo123foxtrot456"
+GMAIL_ID = "golf123hotel456india789"
+WHATSAPP_ID = "juliet789kilo123lima456"
 
 INTEGRATIONS: dict[str, IntegrationResponse] = {
     SALESFORCE_ID: IntegrationResponse(
@@ -131,9 +131,9 @@ def get_integration(integration_id: str) -> IntegrationResponse:
 
 
 @connections_router.post("", response_model=IntegrationConnectionSummary, status_code=status.HTTP_201_CREATED)
-def create_connection(payload: CreateIntegrationConnectionRequest) -> IntegrationConnectionSummary:
+def create_connection(payload: IntegrationConnectionRequest) -> IntegrationConnectionSummary:
     integration = _get_integration_or_404(payload.integration_id)
-    connection_id = str(uuid4())
+    connection_id = str(short_id())
     now = _now()
     connection = IntegrationConnectionResponse(
         id=connection_id,
@@ -144,7 +144,7 @@ def create_connection(payload: CreateIntegrationConnectionRequest) -> Integratio
         connected_at=now,
         last_sync=None,
         integration={"id": integration.id, "name": integration.name},
-        auth_type=payload.auth_type,
+        auth_type=payload.auth_type or integration.auth_type,
         settings=payload.settings,
         sync_jobs=[],
     )
@@ -197,7 +197,7 @@ def delete_connection(connection_id: str) -> Response:
 @connections_router.post("/{connection_id}/sync", response_model=SyncJobResponse, status_code=status.HTTP_202_ACCEPTED)
 def trigger_sync(connection_id: str, payload: SyncRequest) -> SyncJobResponse:
     connection = _get_connection_or_404(connection_id)
-    job_id = str(uuid4())
+    job_id = str(short_id())
     job = SyncJobResponse(
         id=job_id,
         job_id=job_id,
@@ -231,7 +231,7 @@ def list_sync_jobs(
 @connections_router.post("/{connection_id}/webhooks", response_model=WebhookResponse, status_code=status.HTTP_201_CREATED)
 def create_webhook(connection_id: str, payload: WebhookRequest) -> WebhookResponse:
     _get_connection_or_404(connection_id)
-    webhook_id = str(uuid4())
+    webhook_id = str(short_id())
     webhook = WebhookResponse(
         id=webhook_id,
         connection_id=connection_id,
@@ -272,7 +272,7 @@ def delete_webhook(connection_id: str, webhook_id: str) -> Response:
 @webhooks_receive_router.post("/receive/{integration_id}", response_model=InboundWebhookResponse)
 def receive_webhook(integration_id: str, payload: InboundWebhookRequest) -> InboundWebhookResponse:
     _get_integration_or_404(integration_id)
-    event_id = str(uuid4())
+    event_id = str(short_id())
     event = WebhookEventResponse(
         id=event_id,
         integration_id=integration_id,

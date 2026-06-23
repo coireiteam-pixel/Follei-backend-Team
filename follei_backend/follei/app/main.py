@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 
 from app.database.init_db import init_db
 from app.routers import (
@@ -38,10 +40,42 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Follei API",
-    description="APIs for Vignesh domains: conversations, messages, leads, revenue, customers, and customer success.",
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
+def _remove_swagger_placeholder_props(schema_node: Any) -> None:
+    if isinstance(schema_node, dict):
+        for key in list(schema_node):
+            if key.startswith("additionalProp"):
+                schema_node.pop(key, None)
+
+        if schema_node.get("additionalProperties") is True:
+            schema_node.pop("additionalProperties", None)
+
+        for value in schema_node.values():
+            _remove_swagger_placeholder_props(value)
+    elif isinstance(schema_node, list):
+        for item in schema_node:
+            _remove_swagger_placeholder_props(item)
+
+
+def custom_openapi() -> dict[str, Any]:
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        routes=app.routes,
+    )
+    _remove_swagger_placeholder_props(openapi_schema)
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 app.add_middleware(
     CORSMiddleware,

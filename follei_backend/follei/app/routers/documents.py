@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Any, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import func
@@ -29,12 +28,12 @@ from app.services.qdrant import delete_document_vectors
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
 
-def _ensure_tenant(current_user: User, tenant_id: UUID) -> None:
+def _ensure_tenant(current_user: User, tenant_id: str) -> None:
     if tenant_id != current_user.tenant_id:
         raise HTTPException(status_code=403, detail="Tenant mismatch")
 
 
-def _get_document_or_404(db: Session, current_user: User, document_id: UUID) -> Document:
+def _get_document_or_404(db: Session, current_user: User, document_id: str) -> Document:
     document = (
         db.query(Document)
         .options(selectinload(Document.chunks), selectinload(Document.pages))
@@ -46,7 +45,7 @@ def _get_document_or_404(db: Session, current_user: User, document_id: UUID) -> 
     return document
 
 
-def _validate_source(db: Session, tenant_id: UUID, source_id: Optional[UUID]) -> None:
+def _validate_source(db: Session, tenant_id: str, source_id: Optional[str]) -> None:
     if source_id is None:
         return
 
@@ -129,8 +128,8 @@ def create_document(
 
 @router.get("", response_model=DocumentListResponse)
 def list_documents(
-    tenant_id: Optional[UUID] = None,
-    source_id: Optional[UUID] = None,
+    tenant_id: Optional[str] = None,
+    source_id: Optional[str] = None,
     status: Optional[str] = None,
     page: int = 1,
     current_user: User = Depends(get_current_user),
@@ -172,7 +171,7 @@ def list_documents(
 
 @router.get("/{document_id}", response_model=DocumentRead)
 def get_document(
-    document_id: UUID,
+    document_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> DocumentRead:
@@ -190,7 +189,7 @@ def get_document(
 
 @router.patch("/{document_id}", response_model=DocumentRead)
 def update_document(
-    document_id: UUID,
+    document_id: str,
     payload: DocumentUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -213,7 +212,7 @@ def update_document(
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_document(
-    document_id: UUID,
+    document_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Response:
@@ -231,7 +230,7 @@ def delete_document(
     tags=["Chunks"],
 )
 def create_document_chunks(
-    document_id: UUID,
+    document_id: str,
     payload: DocumentChunksCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -315,7 +314,7 @@ def create_document_chunks(
 
 @router.get("/{document_id}/chunks", response_model=DocumentChunksListResponse, tags=["Chunks"])
 def list_document_chunks(
-    document_id: UUID,
+    document_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> DocumentChunksListResponse:

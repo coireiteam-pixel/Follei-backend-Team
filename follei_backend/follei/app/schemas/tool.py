@@ -8,7 +8,7 @@ class CreateToolRequest(BaseModel):
     display_name: str = Field(examples=["Search Contacts"])
     description: str | None = Field(default=None, examples=["Search for contacts in the CRM"])
     category: str = Field(examples=["crm"])
-    tenant_id: str = Field(examples=["11111111-1111-4111-8111-111111111111"])
+    tenant_id: str = Field(examples=["T001"])
     input_schema: dict[str, Any] = Field(default_factory=dict)
     output_schema: dict[str, Any] = Field(default_factory=dict)
     auth_required: bool = True
@@ -43,10 +43,10 @@ class ToolListResponse(BaseModel):
 
 
 class ExecuteToolRequest(BaseModel):
-    agent_id: str = Field(examples=["22222222-2222-4222-8222-222222222222"])
-    conversation_id: str | None = Field(default=None, examples=["33333333-3333-4333-8333-333333333333"])
+    agent_id: str = Field(examples=["A001"])
+    conversation_id: str | None = Field(default=None, examples=["C001"])
     parameters: dict[str, Any] = Field(default_factory=dict, examples=[{"query": "Acme Corp", "limit": 5}])
-    context: dict[str, Any] = Field(default_factory=dict, examples=[{"tenant_id": "11111111-1111-4111-8111-111111111111"}])
+    context: dict[str, Any] = Field(default_factory=dict, examples=[{"tenant_id": "T001"}])
 
 
 class ToolExecutionResponse(BaseModel):
@@ -70,7 +70,7 @@ class ToolExecutionListResponse(BaseModel):
 
 
 class ToolPermissionRequest(BaseModel):
-    agent_id: str = Field(examples=["22222222-2222-4222-8222-222222222222"])
+    agent_id: str = Field(examples=["A001"])
     permission: str = Field(default="execute", examples=["execute"])
     constraints: dict[str, Any] = Field(default_factory=dict, examples=[{"max_per_day": 100}])
 

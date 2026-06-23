@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from uuid import uuid4
+from app.core.ids import short_id
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 
@@ -51,7 +51,7 @@ def _get_customer_or_404(customer_id: str) -> CustomerResponse:
 @router.post("", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(payload: CreateCustomerRequest) -> CustomerResponse:
     now = _now()
-    customer_id = str(uuid4())
+    customer_id = str(short_id())
     customer = CustomerResponse(
         id=customer_id,
         name=payload.name,
@@ -133,13 +133,13 @@ def _get_renewal_or_404(renewal_id: str) -> RenewalResponse:
 @router.post("/{customer_id}/contacts", response_model=CustomerContactResponse, status_code=status.HTTP_201_CREATED)
 def create_contact(customer_id: str, payload: CustomerContactRequest) -> CustomerContactResponse:
     _get_customer_or_404(customer_id)
-    contact_id = str(uuid4())
+    contact_id = str(short_id())
     contact = CustomerContactResponse(
         id=contact_id,
         customer_id=customer_id,
         email=str(payload.email) if payload.email else None,
         created_at=_now(),
-        **payload.model_dump(exclude={"email"}),
+        **payload.model_dump(exclude={"customer_id", "email"}),
     )
     CONTACTS[contact_id] = contact
     CUSTOMER_CONTACTS.setdefault(customer_id, []).append(contact_id)
@@ -163,7 +163,7 @@ def list_contacts(
 def create_health_score(customer_id: str, payload: HealthScoreRequest) -> HealthScoreResponse:
     customer = _get_customer_or_404(customer_id)
     score_value = 88 if payload.force_recalculate else max(customer.health_score, 75)
-    score_id = str(uuid4())
+    score_id = str(short_id())
     score = HealthScoreResponse(
         id=score_id,
         customer_id=customer_id,
@@ -196,7 +196,7 @@ def list_health_scores(
 @router.post("/{customer_id}/events", response_model=CustomerEventResponse, status_code=status.HTTP_201_CREATED)
 def create_event(customer_id: str, payload: CustomerEventRequest) -> CustomerEventResponse:
     _get_customer_or_404(customer_id)
-    event_id = str(uuid4())
+    event_id = str(short_id())
     event = CustomerEventResponse(
         id=event_id,
         customer_id=customer_id,
@@ -228,7 +228,7 @@ def list_events(
 def create_renewal(customer_id: str, payload: RenewalRequest) -> RenewalResponse:
     _get_customer_or_404(customer_id)
     now = _now()
-    renewal_id = str(uuid4())
+    renewal_id = str(short_id())
     renewal = RenewalResponse(
         id=renewal_id,
         customer_id=customer_id,

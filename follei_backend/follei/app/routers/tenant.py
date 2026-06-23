@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from uuid import UUID, uuid4
+from app.core.ids import short_id
 
 from app.database import get_db
 from app.models.tenancy import Tenant
@@ -23,7 +23,7 @@ def create_tenant(payload: TenantCreate, db: Session = Depends(get_db)):
             ) 
 
     tenant = Tenant(
-        id=uuid4(),
+        id=short_id(),
         **payload.model_dump()
     )
 
@@ -36,7 +36,7 @@ def create_tenant(payload: TenantCreate, db: Session = Depends(get_db)):
 
 @router.get("/{tenant_id}", response_model=TenantRead)
 def get_tenant(
-    tenant_id: UUID,
+    tenant_id: str,
     db: Session = Depends(get_db)
 ):
     tenant = db.get(Tenant, tenant_id)
@@ -57,7 +57,7 @@ def list_tenants(db: Session = Depends(get_db)):
 
 @router.delete("/{tenant_id}")
 def delete_tenant(
-    tenant_id: UUID,
+    tenant_id: str,
     db: Session = Depends(get_db)
 ):
     tenant = db.get(Tenant, tenant_id)

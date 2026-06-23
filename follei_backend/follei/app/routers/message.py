@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from uuid import uuid4
+from app.core.ids import short_id
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 
@@ -42,8 +42,8 @@ def get_message(message_id: str) -> MessageResponse:
 def update_message(message_id: str, payload: UpdateMessageRequest) -> MessageResponse:
     message = _get_message_or_404(message_id)
     data = payload.model_dump(exclude_unset=True)
-    if "metadata" in data and data["metadata"] is not None:
-        data["metadata"] = {**message.metadata, **data["metadata"]}
+    if "metadata" in data:
+        data["metadata"] = {**(message.metadata or {}), **(data["metadata"] or {})}
     updated = message.model_copy(update=data)
     MESSAGES[message_id] = updated
     return updated
@@ -65,7 +65,7 @@ def delete_message(message_id: str) -> Response:
 @router.post("/{message_id}/attachments", response_model=AttachmentResponse, status_code=status.HTTP_201_CREATED)
 def create_attachment(message_id: str, payload: AttachmentRequest) -> AttachmentResponse:
     _get_message_or_404(message_id)
-    attachment_id = str(uuid4())
+    attachment_id = str(short_id())
     attachment = AttachmentResponse(
         id=attachment_id,
         message_id=message_id,
@@ -98,7 +98,7 @@ def list_attachments(
 @router.post("/{message_id}/reactions", response_model=ReactionResponse, status_code=status.HTTP_201_CREATED)
 def create_reaction(message_id: str, payload: ReactionRequest) -> ReactionResponse:
     _get_message_or_404(message_id)
-    reaction_id = str(uuid4())
+    reaction_id = str(short_id())
     reaction = ReactionResponse(
         id=reaction_id,
         message_id=message_id,

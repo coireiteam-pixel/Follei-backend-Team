@@ -6,9 +6,13 @@ pydantic-settings
 email-validator
 alembic
 pytest
+httpx<0.28
 anthropic
 # AI and Vector Store dependencies
 langchain
 sentence-transformers
 chromadb
 qdrant-client
+datasets
+pyarrow
+pandas

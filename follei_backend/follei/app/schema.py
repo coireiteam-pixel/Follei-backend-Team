@@ -1,7 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import List, Optional
 from datetime import datetime
-from uuid import UUID
 
 # --- TENANCY & IDENTITY ---
 
@@ -15,7 +14,7 @@ class TenantCreate(TenantBase):
 class Tenant(TenantBase):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
+    id: str
     created_at: datetime
 
 class UserBase(BaseModel):
@@ -30,8 +29,8 @@ class UserCreate(UserBase):
 class User(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
-    tenant_id: UUID
+    id: str
+    tenant_id: str
     is_active: bool
     created_at: datetime
 
@@ -62,8 +61,8 @@ class DocumentCreate(DocumentBase):
 class Document(DocumentBase):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
-    tenant_id: UUID
+    id: str
+    tenant_id: str
     status: str
     created_at: datetime
 
@@ -75,14 +74,14 @@ class AgentBase(BaseModel):
     system_prompt: str
 
 class AgentCreate(AgentBase):
-    tenant_id: Optional[UUID] = None
+    tenant_id: Optional[str] = None
     tools: List[str] = []
 
 class Agent(AgentBase):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
-    tenant_id: UUID
+    id: str
+    tenant_id: str
     tools: List[str] = []
     created_at: datetime
 

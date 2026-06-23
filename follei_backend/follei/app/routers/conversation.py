@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from uuid import uuid4
+from app.core.ids import short_id
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 
@@ -77,7 +77,7 @@ def _check_optional_message(message_id: str | None) -> None:
 @router.post("", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)
 def create_conversation(payload: CreateConversationRequest) -> ConversationResponse:
     now = _now()
-    conversation_id = str(uuid4())
+    conversation_id = str(short_id())
     conversation = ConversationResponse(
         id=conversation_id,
         title=payload.title,
@@ -152,7 +152,7 @@ def delete_conversation(conversation_id: str) -> Response:
 @router.post("/{conversation_id}/participants", response_model=ParticipantResponse, status_code=status.HTTP_201_CREATED)
 def add_participant(conversation_id: str, payload: ConversationParticipantRequest) -> ParticipantResponse:
     _get_conversation_or_404(conversation_id)
-    participant_id = str(uuid4())
+    participant_id = str(short_id())
     participant = ParticipantResponse(
         id=participant_id,
         conversation_id=conversation_id,
@@ -203,7 +203,7 @@ def create_conversation_message(conversation_id: str, payload: CreateMessageRequ
     _get_conversation_or_404(conversation_id)
     metadata = {**payload.metadata}
     metadata.setdefault("rag_used", bool(payload.citations or payload.tool_calls or payload.confidence is not None))
-    message_id = str(uuid4())
+    message_id = str(short_id())
     message = MessageResponse(
         id=message_id,
         conversation_id=conversation_id,
@@ -247,7 +247,7 @@ def create_summary(conversation_id: str, payload: SummaryRequest) -> SummaryResp
     conversation = _get_conversation_or_404(conversation_id)
     message_count = len(CONVERSATION_MESSAGES.get(conversation_id, []))
     summary_text = f"{conversation.title or 'Conversation'} summary with {message_count} messages."
-    summary_id = str(uuid4())
+    summary_id = str(short_id())
     summary = SummaryResponse(
         id=summary_id,
         conversation_id=conversation_id,
@@ -294,7 +294,7 @@ def get_metrics(conversation_id: str) -> ConversationMetricsResponse:
         reaction_count=sum(len(MESSAGE_REACTIONS.get(message_id, [])) for message_id in message_ids),
         summary_count=len(CONVERSATION_SUMMARIES.get(conversation_id, [])),
         avg_confidence=round(sum(confidences) / len(confidences), 2) if confidences else None,
-        rag_used_count=len([message for message in messages if message.metadata.get("rag_used")]),
+        rag_used_count=len([message for message in messages if (message.metadata or {}).get("rag_used")]),
         updated_at=_now(),
     )
 
@@ -303,7 +303,7 @@ def get_metrics(conversation_id: str) -> ConversationMetricsResponse:
 def create_intent(conversation_id: str, payload: IntentRequest) -> IntentResponse:
     _get_conversation_or_404(conversation_id)
     _check_optional_message(payload.message_id)
-    item_id = str(uuid4())
+    item_id = str(short_id())
     item = IntentResponse(id=item_id, conversation_id=conversation_id, created_at=_now(), **payload.model_dump())
     INTENTS[item_id] = item
     return item
@@ -313,7 +313,7 @@ def create_intent(conversation_id: str, payload: IntentRequest) -> IntentRespons
 def create_sentiment(conversation_id: str, payload: SentimentRequest) -> SentimentResponse:
     _get_conversation_or_404(conversation_id)
     _check_optional_message(payload.message_id)
-    item_id = str(uuid4())
+    item_id = str(short_id())
     item = SentimentResponse(id=item_id, conversation_id=conversation_id, created_at=_now(), **payload.model_dump())
     SENTIMENTS[item_id] = item
     return item
@@ -323,7 +323,7 @@ def create_sentiment(conversation_id: str, payload: SentimentRequest) -> Sentime
 def create_emotion(conversation_id: str, payload: EmotionRequest) -> EmotionResponse:
     _get_conversation_or_404(conversation_id)
     _check_optional_message(payload.message_id)
-    item_id = str(uuid4())
+    item_id = str(short_id())
     item = EmotionResponse(id=item_id, conversation_id=conversation_id, created_at=_now(), **payload.model_dump())
     EMOTIONS[item_id] = item
     return item
@@ -333,7 +333,7 @@ def create_emotion(conversation_id: str, payload: EmotionRequest) -> EmotionResp
 def create_objection(conversation_id: str, payload: ObjectionRequest) -> ObjectionResponse:
     _get_conversation_or_404(conversation_id)
     _check_optional_message(payload.message_id)
-    item_id = str(uuid4())
+    item_id = str(short_id())
     item = ObjectionResponse(id=item_id, conversation_id=conversation_id, created_at=_now(), **payload.model_dump())
     OBJECTIONS[item_id] = item
     return item
@@ -343,7 +343,7 @@ def create_objection(conversation_id: str, payload: ObjectionRequest) -> Objecti
 def create_buying_signal(conversation_id: str, payload: BuyingSignalRequest) -> BuyingSignalResponse:
     _get_conversation_or_404(conversation_id)
     _check_optional_message(payload.message_id)
-    item_id = str(uuid4())
+    item_id = str(short_id())
     item = BuyingSignalResponse(id=item_id, conversation_id=conversation_id, created_at=_now(), **payload.model_dump())
     BUYING_SIGNALS[item_id] = item
     return item

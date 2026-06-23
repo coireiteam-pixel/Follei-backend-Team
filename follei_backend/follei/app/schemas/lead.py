@@ -1,53 +1,62 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 
-class CreateLeadRequest(BaseModel):
-    email: EmailStr = Field(examples=["lead@example.com"])
-    full_name: str | None = Field(default=None, examples=["Ravi Sharma"])
-    company: str | None = Field(default=None, examples=["Acme Inc"])
-    phone: str | None = Field(default=None, examples=["9876543210"])
+class LeadBase(BaseModel):
+    email: str | None = Field(default=None, examples=["lead@example.com"])
+    phone: str | None = Field(default=None, examples=["+1-555-0200"])
+    full_name: str | None = Field(default=None, examples=["Jane Lead"])
+    company: str | None = Field(default=None, examples=["Acme Corp"])
+    job_title: str | None = Field(default=None, examples=["CTO"])
+    industry: str | None = Field(default=None, examples=["Technology"])
+    website: str | None = Field(default=None, examples=["https://acme.com"])
     source: str | None = Field(default=None, examples=["website"])
-    tenant_id: str = Field(examples=["11111111-1111-4111-8111-111111111111"])
-    status: str = Field(default="new", examples=["new"])
-    priority: str | None = Field(default=None, examples=["high"])
-    tags: list[str] = Field(default_factory=list, examples=[["demo", "pricing"]])
-    custom_fields: dict[str, Any] = Field(default_factory=dict, examples=[{"budget": "5000"}])
-    assigned_to: str | None = Field(default=None, examples=["66666666-6666-4666-8666-666666666666"])
-
-
-class UpdateLeadRequest(BaseModel):
-    email: EmailStr | None = Field(default=None, examples=["lead.updated@example.com"])
-    full_name: str | None = Field(default=None, examples=["Ravi Sharma"])
-    company: str | None = Field(default=None, examples=["Acme Inc"])
-    phone: str | None = Field(default=None, examples=["9876543210"])
-    source: str | None = Field(default=None, examples=["referral"])
-    status: str | None = Field(default=None, examples=["qualified"])
-    priority: str | None = Field(default=None, examples=["medium"])
-    tags: list[str] | None = Field(default=None, examples=[["qualified"]])
-    custom_fields: dict[str, Any] | None = Field(default=None, examples=[{"budget": "10000"}])
-    assigned_to: str | None = Field(default=None, examples=["66666666-6666-4666-8666-666666666666"])
-    score: int | None = Field(default=None, examples=[82])
-
-
-class LeadResponse(BaseModel):
-    id: str
-    email: str
-    full_name: str | None = None
-    company: str | None = None
-    phone: str | None = None
-    source: str | None = None
-    tenant_id: str
-    status: str
-    priority: str | None = None
+    status: str = Field(default="new", examples=["qualified"])
+    priority: str = Field(default="medium", examples=["high"])
     tags: list[str] = Field(default_factory=list)
     custom_fields: dict[str, Any] = Field(default_factory=dict)
+    score: float | None = Field(default=None, examples=[85.5])
+    assigned_to: str | None = Field(default=None, examples=["U001"])
+    metadata_: dict[str, Any] = Field(default_factory=dict, alias="metadata")
+
+
+class LeadCreate(LeadBase):
+    tenant_id: str = Field(examples=["T001"])
+
+
+CreateLeadRequest = LeadCreate
+
+
+class LeadUpdate(BaseModel):
+    email: str | None = None
+    phone: str | None = None
+    full_name: str | None = None
+    company: str | None = None
+    job_title: str | None = None
+    industry: str | None = None
+    website: str | None = None
+    source: str | None = None
+    status: str | None = None
+    priority: str | None = None
+    tags: list[str] | None = None
+    custom_fields: dict[str, Any] | None = None
+    score: float | None = None
     assigned_to: str | None = None
-    score: int = 0
-    created_at: str
-    updated_at: str
+    metadata_: dict[str, Any] | None = Field(default=None, alias="metadata")
+
+
+UpdateLeadRequest = LeadUpdate
+
+
+class LeadResponse(LeadBase):
+    id: str
+    tenant_id: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 class LeadListResponse(BaseModel):
@@ -57,21 +66,26 @@ class LeadListResponse(BaseModel):
     page_size: int
 
 
-class LeadActivityRequest(BaseModel):
-    type: str = Field(examples=["call"])
-    description: str | None = Field(default=None, examples=["Discovery call completed"])
-    outcome: str | None = Field(default=None, examples=["interested"])
-    metadata: dict[str, Any] = Field(default_factory=dict, examples=[{"duration_minutes": 30}])
+class LeadActivityBase(BaseModel):
+    activity_type: str | None = Field(default=None, examples=["call"])
+    type: str | None = Field(default=None, examples=["call"])
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
-class LeadActivityResponse(BaseModel):
+class LeadActivityCreate(LeadActivityBase):
+    lead_id: str | None = Field(default=None, examples=["L001"])
+
+
+LeadActivityRequest = LeadActivityCreate
+
+
+class LeadActivityResponse(LeadActivityBase):
     id: str
     lead_id: str
-    type: str
-    description: str | None = None
-    outcome: str | None = None
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    created_at: str
+    tenant_id: str | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 class LeadActivityListResponse(BaseModel):
@@ -81,68 +95,26 @@ class LeadActivityListResponse(BaseModel):
     page_size: int
 
 
-class LeadScoreRequest(BaseModel):
-    model: str = Field(default="default", examples=["default"])
-    force_recalculate: bool = Field(default=False, examples=[True])
-    metadata: dict[str, Any] = Field(default_factory=dict, examples=[{"reason": "new activity"}])
-
-
-class LeadScoreResponse(BaseModel):
-    id: str
-    lead_id: str
-    score: int
-    model: str
-    factors: dict[str, Any] = Field(default_factory=dict)
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    calculated_at: str
-
-
-class LeadScoreListResponse(BaseModel):
-    items: list[LeadScoreResponse]
-    total: int
-    page: int
-    page_size: int
-
-
-class QualificationFrameworkRequest(BaseModel):
-    name: str = Field(examples=["BANT"])
-    description: str | None = Field(default=None, examples=["Budget, Authority, Need, Timeline framework"])
-    criteria: list[dict[str, Any]] = Field(default_factory=list, examples=[[{"name": "budget", "weight": 25}]])
-    metadata: dict[str, Any] = Field(default_factory=dict)
-
-
-class QualificationFrameworkResponse(BaseModel):
-    id: str
-    name: str
-    description: str | None = None
-    criteria: list[dict[str, Any]] = Field(default_factory=list)
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    created_at: str
-
-
-class QualificationFrameworkListResponse(BaseModel):
-    items: list[QualificationFrameworkResponse]
-    total: int
-    page: int
-    page_size: int
-
-
-class LeadQualificationRequest(BaseModel):
-    framework_id: str = Field(examples=["99999999-9999-4999-8999-999999999999"])
-    answers: list[dict[str, Any]] = Field(default_factory=list, examples=[[{"question": "Budget?", "answer": "Yes"}]])
-    status: str = Field(default="completed", examples=["completed"])
-    metadata: dict[str, Any] = Field(default_factory=dict)
-
-
-class LeadQualificationResponse(BaseModel):
-    id: str
-    lead_id: str
-    framework_id: str
+class LeadQualificationBase(BaseModel):
+    framework_id: str | None = Field(default=None, examples=["F001"])
     answers: list[dict[str, Any]] = Field(default_factory=list)
-    score: int
-    status: str
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    created_at: str
+    score: float | None = Field(default=None, examples=[75.0])
+
+
+class LeadQualificationCreate(LeadQualificationBase):
+    lead_id: str | None = Field(default=None, examples=["L001"])
+
+
+LeadQualificationRequest = LeadQualificationCreate
+
+
+class LeadQualificationResponse(LeadQualificationBase):
+    id: str
+    lead_id: str
+    tenant_id: str | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 class LeadQualificationListResponse(BaseModel):
@@ -152,128 +124,210 @@ class LeadQualificationListResponse(BaseModel):
     page_size: int
 
 
-class OpportunityRequest(BaseModel):
-    lead_id: str | None = Field(default=None, examples=["22222222-2222-4222-8222-222222222222"])
-    name: str = Field(examples=["Acme annual subscription"])
-    value: float = Field(default=0, examples=[25000])
-    currency: str = Field(default="USD", examples=["USD"])
-    stage: str = Field(default="discovery", examples=["proposal"])
-    probability: float = Field(default=0, examples=[0.65])
-    expected_close_date: date | None = Field(default=None, examples=["2026-07-30"])
-    tenant_id: str = Field(examples=["11111111-1111-4111-8111-111111111111"])
-    metadata: dict[str, Any] = Field(default_factory=dict)
-
-
-class UpdateOpportunityRequest(BaseModel):
-    name: str | None = Field(default=None, examples=["Acme annual expansion"])
-    value: float | None = Field(default=None, examples=[30000])
-    currency: str | None = Field(default=None, examples=["USD"])
-    stage: str | None = Field(default=None, examples=["negotiation"])
-    probability: float | None = Field(default=None, examples=[0.75])
-    expected_close_date: date | None = Field(default=None, examples=["2026-08-15"])
-    metadata: dict[str, Any] | None = Field(default=None, examples=[{"next_step": "legal review"}])
-
-
-class OpportunityResponse(BaseModel):
+class LeadScoreResponse(BaseModel):
     id: str
-    lead_id: str | None = None
-    name: str
-    value: float
-    currency: str
-    stage: str
-    probability: float
-    expected_close_date: date | None = None
-    tenant_id: str
+    lead_id: str
+    tenant_id: str | None = None
+    model: str
+    score: float
+    factors: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
-    created_at: str
-    updated_at: str
+    calculated_at: datetime | None = None
+    created_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
 
 
-class OpportunityListResponse(BaseModel):
-    items: list[OpportunityResponse]
-    total: int
-    page: int
-    page_size: int
+LeadScoreListResponse = LeadScoreResponse
 
 
-class ProposalRequest(BaseModel):
-    template_id: str | None = Field(default=None, examples=["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"])
-    title: str | None = Field(default=None, examples=["Acme proposal"])
-    customizations: dict[str, Any] = Field(default_factory=dict, examples=[{"discount": "10%"}])
+class LeadScoreRequest(BaseModel):
+    model: str = Field(examples=["default"])
+    force_recalculate: bool = False
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class ProposalResponse(BaseModel):
+class QualificationFrameworkBase(BaseModel):
+    name: str = Field(examples=["BANT"])
+    description: str | None = None
+    criteria: list[dict[str, Any]] = Field(default_factory=list)
+    tenant_id: str | None = Field(default=None, examples=["T001"])
+
+
+class QualificationFrameworkCreate(QualificationFrameworkBase):
+    pass
+
+
+class QualificationFrameworkResponse(QualificationFrameworkBase):
     id: str
-    opportunity_id: str
-    document_id: str
-    template_id: str | None = None
-    title: str | None = None
-    status: str
-    customizations: dict[str, Any] = Field(default_factory=dict)
-    created_at: str
+    created_at: datetime
+    updated_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
 
 
-class QuoteRequest(BaseModel):
-    items: list[dict[str, Any]] = Field(default_factory=list, examples=[[{"name": "Pro plan", "quantity": 10, "price": 99}]])
-    valid_until: date | None = Field(default=None, examples=["2026-07-31"])
-    terms: str | None = Field(default=None, examples=["Net 30"])
-    metadata: dict[str, Any] = Field(default_factory=dict)
+QualificationFrameworkListResponse = QualificationFrameworkResponse
+QualificationFrameworkRequest = QualificationFrameworkCreate
 
 
-class QuoteResponse(BaseModel):
+class OpportunityBase(BaseModel):
+    lead_id: str = Field(examples=["L001"])
+    name: str = Field(examples=["Acme deal"])
+    value: float = Field(examples=[25000])
+    stage: str = Field(default="qualification", examples=["proposal"])
+    probability: float = Field(default=0.0, examples=[0.7])
+    expected_close_date: str | None = None
+    tenant_id: str = Field(examples=["T001"])
+    metadata_: dict[str, Any] = Field(default_factory=dict, alias="metadata")
+
+
+class OpportunityCreate(OpportunityBase):
+    pass
+
+
+class OpportunityUpdate(BaseModel):
+    name: str | None = None
+    value: float | None = None
+    stage: str | None = None
+    probability: float | None = None
+    expected_close_date: str | None = None
+    metadata_: dict[str, Any] | None = Field(default=None, alias="metadata")
+
+
+UpdateOpportunityRequest = OpportunityUpdate
+
+
+class OpportunityResponse(OpportunityBase):
     id: str
-    opportunity_id: str
-    status: str
-    items: list[dict[str, Any]] = Field(default_factory=list)
-    valid_until: date | None = None
-    terms: str | None = None
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    total: float
-    created_at: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
-class MeetingRequest(BaseModel):
-    lead_id: str | None = Field(default=None, examples=["22222222-2222-4222-8222-222222222222"])
-    opportunity_id: str | None = Field(default=None, examples=["bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"])
-    title: str = Field(examples=["Product demo"])
-    start_time: datetime = Field(examples=["2026-07-01T10:00:00+00:00"])
-    end_time: datetime = Field(examples=["2026-07-01T10:30:00+00:00"])
-    timezone: str | None = Field(default=None, examples=["Asia/Kolkata"])
-    attendees: list[dict[str, Any]] = Field(default_factory=list, examples=[[{"email": "lead@example.com"}]])
-    location: str | None = Field(default=None, examples=["Google Meet"])
-    calendar_event_id: str | None = Field(default=None, examples=["cccccccc-cccc-4ccc-8ccc-cccccccccccc"])
-    metadata: dict[str, Any] = Field(default_factory=dict)
+OpportunityListResponse = OpportunityResponse
+OpportunityRequest = OpportunityCreate
 
 
-class UpdateMeetingRequest(BaseModel):
-    title: str | None = Field(default=None, examples=["Updated product demo"])
-    start_time: datetime | None = Field(default=None, examples=["2026-07-01T11:00:00+00:00"])
-    end_time: datetime | None = Field(default=None, examples=["2026-07-01T11:30:00+00:00"])
-    status: str | None = Field(default=None, examples=["completed"])
-    notes: str | None = Field(default=None, examples=["Customer wants pricing"])
-    metadata: dict[str, Any] | None = Field(default=None, examples=[{"recording_url": "https://example.com/recording"}])
-
-
-class MeetingResponse(BaseModel):
-    id: str
-    lead_id: str | None = None
+class MeetingBase(BaseModel):
+    lead_id: str = Field(examples=["L001"])
     opportunity_id: str | None = None
-    title: str
-    start_time: datetime
-    end_time: datetime
-    timezone: str | None = None
-    attendees: list[dict[str, Any]] = Field(default_factory=list)
+    title: str = Field(examples=["Demo"])
+    meeting_type: str = Field(default="demo", examples=["demo"])
+    start_time: str = Field(examples=["2026-07-01T10:00:00+00:00"])
+    end_time: str = Field(examples=["2026-07-01T10:30:00+00:00"])
     location: str | None = None
-    calendar_event_id: str | None = None
-    status: str
     notes: str | None = None
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    created_at: str
-    updated_at: str
+    status: str = Field(default="scheduled", examples=["completed"])
+    tenant_id: str | None = Field(default=None, examples=["T001"])
 
 
-class MeetingListResponse(BaseModel):
-    items: list[MeetingResponse]
-    total: int
-    page: int
-    page_size: int
+class MeetingCreate(MeetingBase):
+    pass
+
+
+class MeetingUpdate(BaseModel):
+    title: str | None = None
+    meeting_type: str | None = None
+    start_time: str | None = None
+    end_time: str | None = None
+    location: str | None = None
+    notes: str | None = None
+    status: str | None = None
+
+
+UpdateMeetingRequest = MeetingUpdate
+
+
+class MeetingResponse(MeetingBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+MeetingListResponse = MeetingResponse
+MeetingRequest = MeetingCreate
+
+
+class ProposalBase(BaseModel):
+    opportunity_id: str | None = Field(default=None, examples=["O001"])
+    title: str = Field(examples=["Acme proposal"])
+    content: str | None = None
+    document_id: str | None = None
+    amount: float = Field(default=0.0, examples=[25000])
+    currency: str = Field(default="USD", examples=["USD"])
+    status: str = Field(default="draft", examples=["sent"])
+    tenant_id: str | None = Field(default=None, examples=["T001"])
+
+
+class ProposalCreate(ProposalBase):
+    pass
+
+
+class ProposalUpdate(BaseModel):
+    title: str | None = None
+    content: str | None = None
+    amount: float | None = None
+    currency: str | None = None
+    status: str | None = None
+
+
+class ProposalResponse(ProposalBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+ProposalListResponse = ProposalResponse
+ProposalRequest = ProposalCreate
+
+
+class QuoteItem(BaseModel):
+    name: str = Field(examples=["Pro plan"])
+    quantity: int = Field(examples=[10])
+    price: float = Field(examples=[99])
+    metadata_: dict[str, Any] = Field(default_factory=dict, alias="metadata")
+
+
+class QuoteBase(BaseModel):
+    opportunity_id: str | None = Field(default=None, examples=["O001"])
+    title: str = Field(default="Quote", examples=["Acme quote"])
+    items: list[dict[str, Any]] = Field(default_factory=list)
+    subtotal: float = Field(default=0.0, examples=[990])
+    tax: float = Field(default=0.0, examples=[99])
+    total: float = Field(default=0.0, examples=[1089])
+    currency: str = Field(default="USD", examples=["USD"])
+    status: str = Field(default="draft", examples=["sent"])
+    valid_until: str | None = None
+    tenant_id: str | None = Field(default=None, examples=["T001"])
+
+
+class QuoteCreate(QuoteBase):
+    pass
+
+
+class QuoteUpdate(BaseModel):
+    title: str | None = None
+    items: list[dict[str, Any]] | None = None
+    subtotal: float | None = None
+    tax: float | None = None
+    total: float | None = None
+    currency: str | None = None
+    status: str | None = None
+    valid_until: str | None = None
+
+
+class QuoteResponse(QuoteBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+QuoteListResponse = QuoteResponse
+QuoteRequest = QuoteCreate

@@ -1,5 +1,4 @@
 import os
-import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Any
@@ -62,7 +61,7 @@ def list_agents(
 
 @router.post("/{agent_id}/chat", response_model=schema.AIChatResponse)
 def chat_with_agent(
-    agent_id: uuid.UUID,
+    agent_id: str,
     chat_request: schema.AIChatRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
