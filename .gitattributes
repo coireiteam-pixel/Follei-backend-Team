@@ -1,0 +1,2 @@
+*.arrow filter=lfs diff=lfs merge=lfs -text
+generated_dataset/sql_insert_scripts.sql filter=lfs diff=lfs merge=lfs -text
