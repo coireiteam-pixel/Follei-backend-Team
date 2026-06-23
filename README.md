@@ -29,7 +29,8 @@ docker compose up -d postgres
 $env:DATABASE_URL="postgresql://admin:secret@127.0.0.1:55589/follei_db"
 ```
 
-If `DATABASE_URL` is not set, the app uses the local SQLite fallback at `follei.db`.
+If `DATABASE_URL` is not set, the app uses the local Docker PostgreSQL URL:
+`postgresql://admin:secret@127.0.0.1:55589/follei_db`.
 
 4. Run the backend:
 
@@ -92,9 +93,7 @@ http://localhost:8000/docs
 
 ### Notes
 
-- Local Python uses SQLite by default:
-  `sqlite:///./follei.db`
-- Local Python can use Docker PostgreSQL with:
+- Local Python uses Docker PostgreSQL by default:
   `postgresql://admin:secret@127.0.0.1:55589/follei_db`
 - Docker backend connects to PostgreSQL using:
   `postgresql://admin:secret@postgres:5432/follei_db`

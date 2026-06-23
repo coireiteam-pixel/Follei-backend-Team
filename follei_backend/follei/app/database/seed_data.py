@@ -1,481 +1,332 @@
-"""
-Realistic sample data seeder for Follei API.
-Populates all domains with production-like data.
-"""
-from app.core.ids import short_id
-from datetime import datetime, timedelta
-from random import choice, randint, uniform
-from typing import List
+"""Load Follei seed data from generated CSV datasets.
 
+This module intentionally avoids hardcoded sample records. It imports rows from
+``generated_dataset/csv`` and converts generated UUID keys into the app's short
+4-character IDs while preserving foreign-key relationships.
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import json
+import os
+from datetime import datetime
+from decimal import Decimal
+from pathlib import Path
+from typing import Any
+
+from sqlalchemy import Boolean, Date, DateTime, Integer, JSON, Numeric, String, func, select
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Session
 
-from app.database.session import SessionLocal
-from app.models.tenancy import Tenant, User
-from app.models.agents.agent import Agent, AgentVersion, AgentSession, AgentTask
-from app.models.conversations.conversation import (
-    Conversation,
-    Message,
-    ConversationParticipant,
-)
-from app.models.customers.customer import Customer
-from app.models.leads.lead import Lead
-from app.models.knowledge.document import Document, DocumentChunk
-from app.models.integrations.integration import Integration, IntegrationConnection
-from app.models.domain import Plan, Subscription, Event
+from app.database.base import Base
+from app.database.init_db import init_db
+from app.database.session import SessionLocal, engine
 
 
-# Realistic sample data constants
-TENANTS = [
-    {
-        "name": "TechCorp Solutions",
-        "domain": "techcorp.com",
-        "plan": "enterprise",
-    },
-    {
-        "name": "GreenLeaf Retail",
-        "domain": "greenleaf.co",
-        "plan": "professional",
-    },
-    {
-        "name": "FinEdge Banking",
-        "domain": "finedge.io",
-        "plan": "enterprise",
-    },
+DEFAULT_LIMIT = 1000
+ID_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+COLUMN_ALIASES = {
+    ("documents", "filename"): "title",
+    ("documents", "file_path"): "path",
+    ("documents", "file_type"): "mime_type",
+}
+
+TABLE_LOAD_ORDER = [
+    "tenants",
+    "users",
+    "agents",
+    "agent_tasks",
+    "conversations",
+    "conversation_messages",
+    "documents",
+    "analytics_daily",
+    "analytics_monthly",
 ]
 
-USERS_PER_TENANT = [
-    {"email": "admin@techcorp.com", "first_name": "Raj", "last_name": "Kumar", "role": "admin"},
-    {"email": "support@techcorp.com", "first_name": "Priya", "last_name": "Sharma", "role": "agent"},
-    {"email": "sales@techcorp.com", "first_name": "Arun", "last_name": "Verma", "role": "sales"},
-]
 
-AGENTS = [
-    {"name": "Support Bot", "role": "support", "tools": ["knowledge_search", "ticket_create"]},
-    {"name": "SDR Bot", "role": "sdr", "tools": ["lead_score", "crm_update"]},
-    {"name": "CS Bot", "role": "customer_success", "tools": ["health_check", "renewal_alert"]},
-]
+def run_seed(
+    dataset_dir: Path | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    reset: bool = False,
+    recreate: bool = False,
+) -> dict[str, int]:
+    """Load app-compatible records from generated dataset CSV files."""
+    if recreate:
+        Base.metadata.drop_all(bind=engine)
+        Base.metadata.create_all(bind=engine)
+    else:
+        init_db()
 
-LEAD_FIRST_NAMES = ["Vikram", "Anita", "Rahul", "Sneha", "Karthik", "Meera", "Aditya", "Pooja"]
-LEAD_LAST_NAMES = ["Patel", "Singh", "Reddy", "Nair", "Gupta", "Joshi", "Rao", "Iyer"]
-LEAD_COMPANIES = ["Infosys", "TCS", "Wipro", "HCL", "Tech Mahindra", "LTI", "Mphasis", "Cognizant"]
-LEAD_SOURCES = ["website", "referral", "linkedin", "google_ads", "webinar", "cold_outreach"]
-LEAD_STATUSES = ["new", "contacted", "qualified", "proposal", "negotiation", "won", "lost"]
+    csv_dir = _resolve_csv_dir(dataset_dir)
+    if not csv_dir.exists():
+        raise FileNotFoundError(f"Dataset CSV directory not found: {csv_dir}")
 
-CUSTOMER_NAMES = ["TechCorp Solutions", "GreenLeaf Retail", "FinEdge Banking", "HealthFirst Inc", "EduSmart Labs"]
-
-CONVERSATION_CHANNELS = ["web", "whatsapp", "email", "sms", "voice"]
-CONVERSATION_STATUSES = ["open", "active", "resolved", "closed"]
-
-MESSAGE_ROLES = ["user", "assistant", "system"]
-MESSAGE_CONTENTS = [
-    "Hi, I need help with my subscription.",
-    "Can you tell me about your pricing plans?",
-    "I'm interested in the enterprise features.",
-    "How do I integrate with my CRM?",
-    "What's the uptime SLA?",
-    "Can I schedule a demo?",
-    "I have a question about billing.",
-    "Thanks for the quick response!",
-    "Let me check with my team and get back to you.",
-    "That sounds good, let's proceed.",
-]
-
-DOCUMENT_TITLES = [
-    "Q4 2024 Product Roadmap",
-    "Enterprise Security Whitepaper",
-    "API Integration Guide",
-    "Customer Success Playbook",
-    "Sales Training Manual",
-    "Onboarding Checklist",
-    "Compliance Policy v2.1",
-    "Feature Release Notes",
-]
-
-INTEGRATION_NAMES = ["salesforce", "hubspot", "zendesk", "slack", "gmail", "google_calendar"]
-
-
-def seed_tenants(db: Session) -> List[Tenant]:
-    tenants = []
-    for data in TENANTS:
-        tenant = Tenant(
-            id=short_id(),
-            name=data["name"],
-            domain=data["domain"],
-            is_active=True,
-            created_at=datetime.utcnow() - timedelta(days=randint(30, 365)),
-            updated_at=datetime.utcnow() - timedelta(days=randint(1, 30)),
-        )
-        db.add(tenant)
-        tenants.append(tenant)
-    db.flush()
-    return tenants
-
-
-def seed_users(db: Session, tenants: List[Tenant]) -> List[User]:
-    users = []
-    for tenant in tenants:
-        for user_data in USERS_PER_TENANT:
-            user = User(
-                id=short_id(),
-                tenant_id=tenant.id,
-                email=user_data["email"],
-                hashed_password="$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj8J5z4rG7qG",  # 'password123'
-                first_name=user_data["first_name"],
-                last_name=user_data["last_name"],
-                role=user_data["role"],
-                is_active=True,
-                created_at=datetime.utcnow() - timedelta(days=randint(30, 365)),
-                updated_at=datetime.utcnow() - timedelta(days=randint(1, 30)),
-            )
-            db.add(user)
-            users.append(user)
-    db.flush()
-    return users
-
-
-def seed_agents(db: Session, tenants: List[Tenant]) -> List[Agent]:
-    agents = []
-    for tenant in tenants:
-        for agent_data in AGENTS:
-            agent = Agent(
-                id=short_id(),
-                tenant_id=tenant.id,
-                name=agent_data["name"],
-                role=agent_data["role"],
-                system_prompt=f"You are a helpful {agent_data['role']} assistant for {tenant.name}.",
-                tools=agent_data["tools"],
-                is_active=True,
-                created_at=datetime.utcnow() - timedelta(days=randint(30, 180)),
-                updated_at=datetime.utcnow() - timedelta(days=randint(1, 30)),
-            )
-            db.add(agent)
-            agents.append(agent)
-    db.flush()
-    return agents
-
-
-def seed_leads(db: Session, tenants: List[Tenant]) -> List[Lead]:
-    leads = []
-    for tenant in tenants:
-        for _ in range(15):
-            lead = Lead(
-                id=short_id(),
-                tenant_id=tenant.id,
-                email=f"{choice(LEAD_FIRST_NAMES).lower()}.{choice(LEAD_LAST_NAMES).lower()}@{choice(LEAD_COMPANIES).lower()}.com",
-                first_name=choice(LEAD_FIRST_NAMES),
-                last_name=choice(LEAD_LAST_NAMES),
-                company=choice(LEAD_COMPANIES),
-                status=choice(LEAD_STATUSES),
-                revenue_score=randint(0, 100),
-                source=choice(LEAD_SOURCES),
-                metadata={"campaign": f"campaign_{randint(1, 10)}", "utm_source": choice(LEAD_SOURCES)},
-                created_at=datetime.utcnow() - timedelta(days=randint(1, 90)),
-                updated_at=datetime.utcnow() - timedelta(days=randint(1, 30)),
-            )
-            db.add(lead)
-            leads.append(lead)
-    db.flush()
-    return leads
-
-
-def seed_customers(db: Session, tenants: List[Tenant], leads: List[Lead]) -> List[Customer]:
-    customers = []
-    for tenant in tenants:
-        tenant_leads = [l for l in leads if l.tenant_id == tenant.id][:5]
-        for lead in tenant_leads:
-            customer = Customer(
-                id=short_id(),
-                tenant_id=tenant.id,
-                lead_id=lead.id,
-                name=lead.company,
-                health_score=randint(60, 100),
-                churn_risk=choice(["low", "medium", "high"]),
-                metadata={"industry": "technology", "employees": randint(50, 5000)},
-                created_at=datetime.utcnow() - timedelta(days=randint(30, 180)),
-                updated_at=datetime.utcnow() - timedelta(days=randint(1, 30)),
-            )
-            db.add(customer)
-            customers.append(customer)
-    db.flush()
-    return customers
-
-
-def seed_conversations(db: Session, tenants: List[Tenant], agents: List[Agent], leads: List[Lead], customers: List[Customer]) -> List[Conversation]:
-    conversations = []
-    for tenant in tenants:
-        tenant_agents = [a for a in agents if a.tenant_id == tenant.id]
-        tenant_leads = [l for l in leads if l.tenant_id == tenant.id]
-        tenant_customers = [c for c in customers if c.tenant_id == tenant.id]
-
-        for _ in range(20):
-            agent = choice(tenant_agents) if len(tenant_agents) > 0 else None
-            lead = choice(tenant_leads) if len(tenant_leads) > 0 else None
-            customer = choice(tenant_customers) if len(tenant_customers) > 0 else None
-
-            conversation = Conversation(
-                id=short_id(),
-                tenant_id=tenant.id,
-                agent_id=agent.id if agent else None,
-                lead_id=lead.id if lead else None,
-                customer_id=customer.id if customer else None,
-                title=f"Conversation with {lead.first_name if lead else 'Customer'}",
-                channel=choice(CONVERSATION_CHANNELS),
-                status=choice(CONVERSATION_STATUSES),
-                created_at=datetime.utcnow() - timedelta(days=randint(1, 60)),
-                updated_at=datetime.utcnow() - timedelta(days=randint(0, 30)),
-            )
-            db.add(conversation)
-            conversations.append(conversation)
-    db.flush()
-    return conversations
-
-
-def seed_messages(db: Session, conversations: List[Conversation]) -> List[Message]:
-    messages = []
-    for conversation in conversations:
-        num_messages = randint(3, 15)
-        for i in range(num_messages):
-            message = Message(
-                id=short_id(),
-                tenant_id=conversation.tenant_id,
-                conversation_id=conversation.id,
-                role=choice(MESSAGE_ROLES),
-                content=choice(MESSAGE_CONTENTS),
-                metadata={"message_index": i},
-                created_at=conversation.created_at + timedelta(minutes=i * randint(1, 5)),
-            )
-            db.add(message)
-            messages.append(message)
-    db.flush()
-    return messages
-
-
-def seed_documents(db: Session, tenants: List[Tenant]) -> List[Document]:
-    documents = []
-    for tenant in tenants:
-        for title in DOCUMENT_TITLES:
-            doc = Document(
-                id=short_id(),
-                tenant_id=tenant.id,
-                title=title,
-                source_type="upload",
-                mime_type="application/pdf",
-                status="indexed",
-                tags=["knowledge_base", "documentation"],
-                summary=f"This document contains information about {title.lower()}.",
-                keywords=["product", "policy", "guide"],
-                metadata={"author": "System", "version": "1.0"},
-                created_at=datetime.utcnow() - timedelta(days=randint(30, 180)),
-                updated_at=datetime.utcnow() - timedelta(days=randint(1, 30)),
-                indexed_at=datetime.utcnow() - timedelta(days=randint(1, 30)),
-            )
-            db.add(doc)
-            documents.append(doc)
-    db.flush()
-    return documents
-
-
-def seed_document_chunks(db: Session, documents: List[Document]) -> List[DocumentChunk]:
-    chunks = []
-    for doc in documents:
-        num_chunks = randint(5, 20)
-        for i in range(num_chunks):
-            chunk = DocumentChunk(
-                id=short_id(),
-                tenant_id=doc.tenant_id,
-                document_id=doc.id,
-                chunk_index=i,
-                content=f"This is chunk {i} of document '{doc.title}'. It contains relevant information for RAG retrieval.",
-                token_count=randint(50, 200),
-                metadata={"page": i + 1},
-                created_at=doc.created_at,
-            )
-            db.add(chunk)
-            chunks.append(chunk)
-    db.flush()
-    return chunks
-
-
-def seed_integrations(db: Session, tenants: List[Tenant]) -> List[IntegrationConnection]:
-    connections = []
-    for tenant in tenants:
-        for integration_name in INTEGRATION_NAMES[:3]:  # First 3 integrations per tenant
-            integration = Integration(
-                id=short_id(),
-                name=integration_name,
-                description=f"{integration_name.title()} integration for {tenant.name}",
-                is_active=True,
-                created_at=datetime.utcnow() - timedelta(days=randint(30, 180)),
-            )
-            db.add(integration)
-            db.flush()
-
-            connection = IntegrationConnection(
-                id=short_id(),
-                tenant_id=tenant.id,
-                integration_id=integration.id,
-                status="active",
-                config={"api_key": f"key_{short_id()}", "sync_enabled": True},
-                created_at=datetime.utcnow() - timedelta(days=randint(30, 180)),
-                updated_at=datetime.utcnow() - timedelta(days=randint(1, 30)),
-            )
-            db.add(connection)
-            connections.append(connection)
-    db.flush()
-    return connections
-
-
-def seed_plans_and_subscriptions(db: Session, tenants: List[Tenant]) -> List[Subscription]:
-    plans = [
-        {"name": "starter", "price": 29, "features": ["basic_support", "1000_messages"]},
-        {"name": "professional", "price": 99, "features": ["priority_support", "10000_messages", "analytics"]},
-        {"name": "enterprise", "price": 299, "features": ["dedicated_support", "unlimited", "custom_integrations"]},
-    ]
-
-    subscriptions = []
-    for tenant in tenants:
-        plan_data = next(p for p in plans if p["name"] == tenant.plan)
-        plan = Plan(
-            id=short_id(),
-            name=plan_data["name"],
-            price=plan_data["price"],
-            features=plan_data["features"],
-            is_active=True,
-            created_at=datetime.utcnow() - timedelta(days=randint(30, 180)),
-        )
-        db.add(plan)
-        db.flush()
-
-        subscription = Subscription(
-            id=short_id(),
-            tenant_id=tenant.id,
-            plan_name=plan.name,
-            status="active",
-            current_period_start=datetime.utcnow() - timedelta(days=30),
-            current_period_end=datetime.utcnow() + timedelta(days=30),
-            metadata={"price": plan.price, "features": plan.features},
-            created_at=datetime.utcnow() - timedelta(days=randint(30, 180)),
-            updated_at=datetime.utcnow() - timedelta(days=randint(1, 30)),
-        )
-        db.add(subscription)
-        subscriptions.append(subscription)
-    db.flush()
-    return subscriptions
-
-
-def seed_events(db: Session, tenants: List[Tenant]) -> List[Event]:
-    events = []
-    event_types = ["message.received", "response.generated", "document.ingested", "lead.created", "ticket.created"]
-
-    for tenant in tenants:
-        for _ in range(50):
-            event = Event(
-                id=short_id(),
-                tenant_id=tenant.id,
-                event_type=choice(event_types),
-                payload={"source": "api", "user_agent": "Mozilla/5.0"},
-                created_at=datetime.utcnow() - timedelta(days=randint(1, 30), hours=randint(0, 23)),
-            )
-            db.add(event)
-            events.append(event)
-    db.flush()
-    return events
-
-
-def seed_usage_events(db: Session, tenants: List[Tenant], agents: List[Agent]) -> List[Event]:
-    usage_events = []
-    event_names = ["message_sent", "api_call", "document_processed", "tool_executed"]
-
-    for tenant in tenants:
-        tenant_agents = [a for a in agents if a.tenant_id == tenant.id]
-        for _ in range(100):
-            usage_event = Event(
-                id=short_id(),
-                tenant_id=tenant.id,
-                event_type=choice(event_names),
-                payload={
-                    "user_id": None,
-                    "agent_id": choice(tenant_agents).id if len(tenant_agents) > 0 else None,
-                    "quantity": randint(1, 10),
-                    "endpoint": "/api/v1/chat",
-                    "latency_ms": randint(50, 500),
-                },
-                created_at=datetime.utcnow() - timedelta(days=randint(1, 30), hours=randint(0, 23)),
-            )
-            db.add(usage_event)
-            usage_events.append(usage_event)
-    db.flush()
-    return usage_events
-
-
-def run_seed():
-    """Main seed function to populate database with realistic data."""
     db: Session = SessionLocal()
+    loader = DatasetSeeder(csv_dir=csv_dir, db=db, limit=limit)
     try:
-        print("Starting database seeding...")
+        if reset:
+            loader.reset_loaded_tables()
 
-        print("Seeding tenants...")
-        tenants = seed_tenants(db)
-
-        print("Seeding users...")
-        users = seed_users(db, tenants)
-
-        print("Seeding agents...")
-        agents = seed_agents(db, tenants)
-
-        print("Seeding leads...")
-        leads = seed_leads(db, tenants)
-
-        print("Seeding customers...")
-        customers = seed_customers(db, tenants, leads)
-
-        print("Seeding conversations...")
-        conversations = seed_conversations(db, tenants, agents, leads, customers)
-
-        print("Seeding messages...")
-        messages = seed_messages(db, conversations)
-
-        print("Seeding documents...")
-        documents = seed_documents(db, tenants)
-
-        print("Seeding document chunks...")
-        chunks = seed_document_chunks(db, documents)
-
-        print("Seeding integrations...")
-        connections = seed_integrations(db, tenants)
-
-        print("Seeding plans and subscriptions...")
-        subscriptions = seed_plans_and_subscriptions(db, tenants)
-
-        print("Seeding events...")
-        events = seed_events(db, tenants)
-
-        print("Seeding usage events...")
-        usage_events = seed_usage_events(db, tenants, agents)
-
+        counts = loader.load()
         db.commit()
-        print(f"\n✅ Seeding completed successfully!")
-        print(f"   Tenants: {len(tenants)}")
-        print(f"   Users: {len(users)}")
-        print(f"   Agents: {len(agents)}")
-        print(f"   Leads: {len(leads)}")
-        print(f"   Customers: {len(customers)}")
-        print(f"   Conversations: {len(conversations)}")
-        print(f"   Messages: {len(messages)}")
-        print(f"   Documents: {len(documents)}")
-        print(f"   Document Chunks: {len(chunks)}")
-        print(f"   Integration Connections: {len(connections)}")
-        print(f"   Subscriptions: {len(subscriptions)}")
-        print(f"   Events: {len(events)}")
-        print(f"   Usage Events: {len(usage_events)}")
-
-    except Exception as e:
+        _print_summary(counts, csv_dir)
+        return counts
+    except Exception:
         db.rollback()
-        print(f"\n❌ Seeding failed: {e}")
         raise
     finally:
         db.close()
 
 
+class DatasetSeeder:
+    def __init__(self, csv_dir: Path, db: Session, limit: int | None) -> None:
+        self.csv_dir = csv_dir
+        self.db = db
+        self.limit = limit
+        self.id_map: dict[str, str] = {}
+        self.used_ids: set[str] = set()
+        self.inserted_original_ids: dict[str, set[str]] = {
+            table_name: set() for table_name in Base.metadata.tables
+        }
+
+    def load(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for table_name in self._ordered_table_names():
+            table = Base.metadata.tables[table_name]
+            csv_path = self.csv_dir / f"{table_name}.csv"
+            if not csv_path.exists():
+                continue
+
+            if self._table_has_rows(table):
+                counts[table_name] = 0
+                continue
+
+            counts[table_name] = self._load_table(table_name)
+
+        return counts
+
+    def reset_loaded_tables(self) -> None:
+        for table_name in reversed(self._ordered_table_names()):
+            table = Base.metadata.tables[table_name]
+            if (self.csv_dir / f"{table_name}.csv").exists():
+                self.db.execute(table.delete())
+        self.db.flush()
+
+    def _ordered_table_names(self) -> list[str]:
+        known_tables = set(Base.metadata.tables)
+        ordered = [name for name in TABLE_LOAD_ORDER if name in known_tables]
+        remaining = sorted(
+            name
+            for name in known_tables
+            if name not in ordered and (self.csv_dir / f"{name}.csv").exists()
+        )
+        return ordered + remaining
+
+    def _load_table(self, table_name: str) -> int:
+        table = Base.metadata.tables[table_name]
+        csv_path = self.csv_dir / f"{table_name}.csv"
+        inserted = 0
+
+        with csv_path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            for source_row in reader:
+                if self.limit is not None and inserted >= self.limit:
+                    break
+
+                row = self._prepare_row(table_name, source_row)
+                if row is None:
+                    continue
+
+                self.db.execute(table.insert().values(**row))
+                inserted += 1
+
+                original_id = source_row.get("id")
+                if original_id:
+                    self.inserted_original_ids[table_name].add(original_id)
+
+                if inserted % 500 == 0:
+                    self.db.flush()
+
+        self.db.flush()
+        return inserted
+
+    def _prepare_row(self, table_name: str, source_row: dict[str, str]) -> dict[str, Any] | None:
+        table = Base.metadata.tables[table_name]
+        row: dict[str, Any] = {}
+
+        for column in table.columns:
+            source_column = COLUMN_ALIASES.get((table_name, column.name), column.name)
+            if source_column not in source_row:
+                continue
+
+            raw_value = source_row[source_column]
+            value = self._convert_value(raw_value, column)
+            if value is _SKIP_ROW:
+                return None
+
+            row[column.name] = value
+
+        return row
+
+    def _convert_value(self, raw_value: str, column: Any) -> Any:
+        if raw_value == "":
+            return None
+
+        if self._is_short_id_column(column):
+            return self._convert_id_value(raw_value, column)
+
+        column_type = column.type
+        if isinstance(column_type, Boolean):
+            return raw_value.lower() in {"1", "true", "yes", "y"}
+        if isinstance(column_type, Date) and not isinstance(column_type, DateTime):
+            return datetime.fromisoformat(raw_value).date()
+        if isinstance(column_type, DateTime):
+            return datetime.fromisoformat(raw_value)
+        if isinstance(column_type, Integer):
+            return int(raw_value)
+        if isinstance(column_type, Numeric):
+            return Decimal(raw_value)
+        if isinstance(column_type, (JSON, ARRAY)):
+            return json.loads(raw_value)
+
+        return raw_value
+
+    def _convert_id_value(self, raw_value: str, column: Any) -> str | None | object:
+        if raw_value == "":
+            return None
+
+        if column.foreign_keys:
+            foreign_key = next(iter(column.foreign_keys))
+            target_table = foreign_key.column.table.name
+            if raw_value not in self.inserted_original_ids.get(target_table, set()):
+                return None if column.nullable else _SKIP_ROW
+
+        return self._small_id(raw_value, prefix=_prefix_for_column(column))
+
+    def _is_short_id_column(self, column: Any) -> bool:
+        return isinstance(column.type, String) and column.type.length == 4 and (
+            column.name == "id"
+            or column.name.endswith("_id")
+            or bool(column.foreign_keys)
+        )
+
+    def _small_id(self, source_id: str, prefix: str) -> str:
+        if source_id in self.id_map:
+            return self.id_map[source_id]
+
+        digest = hashlib.sha1(source_id.encode("utf-8")).hexdigest()
+        number = int(digest[:12], 16)
+        suffix_space = len(ID_ALPHABET) ** 3
+
+        for offset in range(suffix_space):
+            candidate = prefix + _to_base36((number + offset) % suffix_space).rjust(3, "0")
+            if candidate not in self.used_ids:
+                self.id_map[source_id] = candidate
+                self.used_ids.add(candidate)
+                return candidate
+
+        raise RuntimeError(f"No available short IDs for prefix {prefix!r}")
+
+    def _table_has_rows(self, table: Any) -> bool:
+        return bool(self.db.execute(select(func.count()).select_from(table)).scalar_one())
+
+
+class _SkipRow:
+    pass
+
+
+_SKIP_ROW = _SkipRow()
+
+
+def _resolve_csv_dir(dataset_dir: Path | None) -> Path:
+    if dataset_dir is None:
+        configured = os.getenv("FOLLEI_DATASET_DIR")
+        dataset_dir = Path(configured) if configured else _project_root() / "generated_dataset"
+
+    dataset_dir = dataset_dir.resolve()
+    return dataset_dir / "csv" if dataset_dir.name != "csv" else dataset_dir
+
+
+def _project_root() -> Path:
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "generated_dataset").exists():
+            return parent
+    return current.parents[4]
+
+
+def _prefix_for_column(column: Any) -> str:
+    if column.name == "tenant_id" or column.table.name == "tenants":
+        return "T"
+    if column.name == "agent_id" or column.table.name.startswith("agent"):
+        return "A"
+    if column.name == "conversation_id" or column.table.name.startswith("conversation"):
+        return "C"
+    if column.name == "customer_id" or column.table.name.startswith("customer"):
+        return "U"
+    if column.name == "lead_id" or column.table.name.startswith("lead"):
+        return "L"
+    if column.name in {"document_id", "chunk_id"} or "document" in column.table.name:
+        return "D"
+    if column.name == "user_id" or column.table.name == "users":
+        return "U"
+    return "X"
+
+
+def _to_base36(value: int) -> str:
+    if value == 0:
+        return "0"
+
+    chars: list[str] = []
+    while value:
+        value, remainder = divmod(value, len(ID_ALPHABET))
+        chars.append(ID_ALPHABET[remainder])
+    return "".join(reversed(chars))
+
+
+def _print_summary(counts: dict[str, int], csv_dir: Path) -> None:
+    print(f"Loaded dataset CSVs from {csv_dir}")
+    for table_name, count in counts.items():
+        status = "skipped existing rows" if count == 0 else f"{count} rows"
+        print(f"  {table_name}: {status}")
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Seed the Follei database from generated dataset CSV files.")
+    parser.add_argument(
+        "--dataset-dir",
+        type=Path,
+        default=None,
+        help="Path to generated_dataset or generated_dataset/csv. Defaults to FOLLEI_DATASET_DIR or repo generated_dataset.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=DEFAULT_LIMIT,
+        help="Max rows per table. Use 0 for no limit.",
+    )
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Delete existing rows from dataset-backed tables before importing.",
+    )
+    parser.add_argument(
+        "--recreate",
+        action="store_true",
+        help="Drop and recreate all ORM tables before importing. Use when the local SQLite schema is outdated.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    run_seed()
+    args = _parse_args()
+    run_seed(
+        dataset_dir=args.dataset_dir,
+        limit=None if args.limit == 0 else args.limit,
+        reset=args.reset,
+        recreate=args.recreate,
+    )
