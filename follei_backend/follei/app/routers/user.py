@@ -21,7 +21,10 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
 
     data = payload.model_dump()
     password = data.pop("password")
-    user = User(id=short_id(), hashed_password=hash_password(password), **data)
+    user_id = short_id()
+    while db.get(User, user_id) is not None:
+        user_id = short_id()
+    user = User(id=user_id, hashed_password=hash_password(password), **data)
     db.add(user)
     db.commit()
     db.refresh(user)

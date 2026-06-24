@@ -1,5 +1,6 @@
 fastapi
 uvicorn[standard]
+python-multipart
 sqlalchemy>=2.0.0
 psycopg2-binary
 pydantic-settings
@@ -7,6 +8,11 @@ email-validator
 alembic
 pytest
 httpx<0.28
+python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
+twilio
 anthropic
 # AI and Vector Store dependencies
 langchain

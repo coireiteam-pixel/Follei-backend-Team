@@ -1,10 +1,12 @@
 import json
 import re
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core.ids import short_id
 from app.main import app
+from app.routers import documents, leads, sms
 
 
 client = TestClient(app)
@@ -28,7 +30,7 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
         and path.startswith("/api")
     }
 
-    assert len(methods) == 209
+    assert len(methods) == 229
     assert "POST /api/messages/{message_id}/attachments" in methods
     assert "POST /api/conversations/{conversation_id}/buying-signals" in methods
     assert "POST /api/qualification-frameworks" in methods
@@ -39,12 +41,21 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
     assert "POST /api/webhooks/receive/{integration_id}" in methods
     assert "POST /api/tools/{tool_id}/execute" in methods
     assert "GET /api/connector-logs" in methods
+    assert "POST /api/auth/register" in methods
+    assert "POST /api/auth/login" in methods
+    assert "GET /api/auth/me" in methods
+    assert "POST /api/sms/mistral-send" in methods
     assert "POST /api/v1/auth/register" in methods
+    assert "POST /api/leads/{lead_id}/reply" in methods
+    assert "GET /api/leads/{lead_id}/messages" in methods
     assert "GET /api/documents" in methods
+    assert "POST /api/documents/upload" in methods
     assert "POST /api/knowledge/search" in methods
     assert "GET /api/products" in methods
     assert "GET /api/plans" in methods
     assert "GET /api/events" in methods
+    assert "GET /api/campaigns" in methods
+    assert "POST /api/campaigns/{campaign_id}/send" in methods
     assert "GET /api/agents" not in methods
 
 
@@ -56,10 +67,88 @@ def test_openapi_schema_does_not_expose_swagger_placeholder_props():
     assert '"additionalProperties": true' not in openapi_json
 
 
+@pytest.mark.parametrize(
+    ("filename", "content", "content_type", "upload_type"),
+    [
+        ("pricing.pdf", b"sample pdf bytes", "application/pdf", "document"),
+        ("leads.csv", b"name,email\nJane,jane@example.com\n", "text/csv", "csv"),
+        (
+            "pipeline.xlsx",
+            b"fake xlsx bytes for upload smoke test",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "excel",
+        ),
+        (
+            "proposal.docx",
+            b"fake docx bytes for upload smoke test",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "document",
+        ),
+    ],
+)
+def test_document_upload_accepts_supported_file_types(tmp_path, filename, content, content_type, upload_type):
+    suffix = short_id()
+    register_response = client.post(
+        "/api/auth/register",
+        json={
+            "name": f"Upload Tenant {suffix}",
+            "domain": f"upload-{suffix}.example.com",
+            "admin_email": f"upload-{suffix}@example.com",
+            "admin_password": "password123",
+            "admin_first_name": "Upload",
+            "admin_last_name": "User",
+        },
+    )
+    token = register_response.json()["access_token"]
+    documents.UPLOAD_ROOT = tmp_path
+
+    response = client.post(
+        "/api/documents/upload",
+        headers={"Authorization": f"Bearer {token}"},
+        data={"metadata": '{"tags":["pricing"]}'},
+        files={"file": (filename, content, content_type)},
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["filename"] == filename
+    assert body["file_type"] == content_type
+    assert body["status"] == "uploaded"
+
+    detail_response = client.get(f"/api/documents/{body['id']}", headers={"Authorization": f"Bearer {token}"})
+    assert detail_response.status_code == 200
+    assert detail_response.json()["metadata"]["upload_type"] == upload_type
+
+
+def test_document_upload_rejects_unsupported_file_type(tmp_path):
+    suffix = short_id()
+    register_response = client.post(
+        "/api/auth/register",
+        json={
+            "name": f"Upload Reject Tenant {suffix}",
+            "domain": f"upload-reject-{suffix}.example.com",
+            "admin_email": f"upload-reject-{suffix}@example.com",
+            "admin_password": "password123",
+            "admin_first_name": "Upload",
+            "admin_last_name": "User",
+        },
+    )
+    token = register_response.json()["access_token"]
+    documents.UPLOAD_ROOT = tmp_path
+
+    response = client.post(
+        "/api/documents/upload",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"file": ("script.exe", b"not allowed", "application/octet-stream")},
+    )
+
+    assert response.status_code == 415
+
+
 def test_auth_register_creates_short_alphanumeric_ids():
     suffix = short_id()
     response = client.post(
-        "/auth/register",
+        "/api/auth/register",
         json={
             "name": f"Short ID Tenant {suffix}",
             "domain": f"short-{suffix}.example.com",
@@ -72,12 +161,235 @@ def test_auth_register_creates_short_alphanumeric_ids():
     assert response.status_code == 201
 
     token = response.json()["access_token"]
-    profile_response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    profile_response = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     profile = profile_response.json()
 
     assert profile_response.status_code == 200
     assert re.fullmatch(r"[A-Z][0-9]{3}", profile["id"])
     assert re.fullmatch(r"[A-Z][0-9]{3}", profile["tenant_id"])
+
+
+def test_api_auth_register_login_and_me_return_user_and_tenant():
+    suffix = short_id()
+    register_response = client.post(
+        "/api/auth/register",
+        json={
+            "tenant_name": f"API Auth Tenant {suffix}",
+            "domain": f"api-auth-{suffix}",
+            "admin_email": f"api-auth-{suffix}@example.com",
+            "admin_password": "Admin@123",
+            "admin_first_name": "API",
+            "admin_last_name": "Admin",
+        },
+    )
+
+    assert register_response.status_code == 201
+    register_body = register_response.json()
+    assert register_body["access_token"]
+    assert register_body["token_type"] == "bearer"
+    assert register_body["user"]["email"] == f"api-auth-{suffix}@example.com"
+    assert register_body["user"]["role"] == "admin"
+    assert register_body["tenant"]["domain"] == f"api-auth-{suffix}"
+
+    login_response = client.post(
+        "/api/auth/login",
+        json={"email": f"api-auth-{suffix}@example.com", "password": "Admin@123"},
+    )
+
+    assert login_response.status_code == 200
+    login_body = login_response.json()
+    assert login_body["access_token"]
+    assert login_body["user"]["tenant_id"] == register_body["tenant"]["id"]
+    assert login_body["tenant"]["name"] == f"API Auth Tenant {suffix}"
+
+    me_response = client.get(
+        "/api/auth/me",
+        headers={"Authorization": f"Bearer {login_body['access_token']}"},
+    )
+
+    assert me_response.status_code == 200
+    me_body = me_response.json()
+    assert me_body["email"] == f"api-auth-{suffix}@example.com"
+    assert me_body["tenant"]["id"] == register_body["tenant"]["id"]
+
+
+def test_tenant_create_creates_admin_user_and_user_create_works():
+    suffix = short_id()
+    tenant_response = client.post(
+        "/tenants/",
+        json={
+            "name": f"Tenant CRUD {suffix}",
+            "domain": f"tenant-crud-{suffix}.example.com",
+            "admin_email": f"tenant-admin-{suffix}@example.com",
+            "admin_password": "password123",
+            "admin_first_name": "Tenant",
+            "admin_last_name": "Admin",
+        },
+    )
+
+    assert tenant_response.status_code == 200
+    tenant_id = tenant_response.json()["id"]
+
+    login_response = client.post(
+        "/api/auth/login",
+        json={"email": f"tenant-admin-{suffix}@example.com", "password": "password123"},
+    )
+    assert login_response.status_code == 200
+    assert login_response.json()["access_token"]
+
+    user_response = client.post(
+        "/users/",
+        json={
+            "tenant_id": tenant_id,
+            "email": f"tenant-user-{suffix}@example.com",
+            "password": "password123",
+            "first_name": "Tenant",
+            "last_name": "User",
+            "role": "member",
+            "is_active": True,
+        },
+    )
+
+    assert user_response.status_code == 200
+    body = user_response.json()
+    assert body["tenant_id"] == tenant_id
+    assert body["email"] == f"tenant-user-{suffix}@example.com"
+
+
+def test_lead_reply_uses_mistral_and_persists_history(monkeypatch):
+    captured_messages = []
+
+    async def fake_mistral_reply(messages: list[dict]) -> str:
+        captured_messages.extend(messages)
+        return "Thanks for your interest. I can help you choose the right plan."
+
+    monkeypatch.setattr(leads, "get_mistral_reply", fake_mistral_reply)
+
+    lead_response = client.post(
+        "/api/leads",
+        json={
+            "email": "reply-lead@example.com",
+            "full_name": "Reply Lead",
+            "company": "Acme",
+            "phone": "+15551234567",
+            "source": "website",
+            "tenant_id": TENANT_ID,
+            "priority": "high",
+        },
+    )
+    lead_id = lead_response.json()["id"]
+
+    reply_response = client.post(
+        f"/api/leads/{lead_id}/reply",
+        json={"message": "Hi, I am interested in your product"},
+    )
+
+    assert reply_response.status_code == 200
+    body = reply_response.json()
+    assert body["lead_id"] == lead_id
+    assert body["user_message"] == "Hi, I am interested in your product"
+    assert body["ai_response"] == "Thanks for your interest. I can help you choose the right plan."
+    assert [item["role"] for item in body["history"]] == ["user", "assistant"]
+    assert "Reply Lead" in captured_messages[1]["content"]
+    assert captured_messages[-1]["content"] == "Hi, I am interested in your product"
+
+    messages_response = client.get(f"/api/leads/{lead_id}/messages")
+    assert messages_response.status_code == 200
+    assert len(messages_response.json()["messages"]) == 2
+
+
+def test_create_lead_without_tenant_id_does_not_return_422():
+    response = client.post(
+        "/api/leads",
+        json={
+            "email": "no-tenant-lead@example.com",
+            "full_name": "No Tenant Lead",
+            "phone": "+15550000000",
+            "source": "website",
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["tenant_id"] == "T001"
+    assert body["email"] == "no-tenant-lead@example.com"
+
+
+def test_sms_mistral_send_uses_tenant_phone(monkeypatch):
+    suffix = short_id()
+    tenant_response = client.post(
+        "/tenants/",
+        json={
+            "name": f"SMS Tenant {suffix}",
+            "domain": f"sms-tenant-{suffix}.example.com",
+            "phone": "+15551230000",
+            "admin_email": f"sms-tenant-{suffix}@example.com",
+            "admin_password": "password123",
+            "admin_first_name": "Sms",
+            "admin_last_name": "Admin",
+        },
+    )
+    tenant_id = tenant_response.json()["id"]
+    sent = {}
+
+    async def fake_mistral_reply(messages: list[dict]) -> str:
+        assert messages[-1]["content"] == "Hi"
+        return "Hello from Mistral"
+
+    def fake_send_sms(to_phone: str, message: str) -> dict:
+        sent["to_phone"] = to_phone
+        sent["message"] = message
+        return {"sid": "SM123", "status": "queued"}
+
+    monkeypatch.setattr(sms, "get_mistral_reply", fake_mistral_reply)
+    monkeypatch.setattr(sms, "send_sms", fake_send_sms)
+
+    response = client.post(
+        "/api/sms/mistral-send",
+        json={"tenant_id": tenant_id, "message": "Hi"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tenant_id"] == tenant_id
+    assert body["tenant_phone"] == "+15551230000"
+    assert body["user_message"] == "Hi"
+    assert body["mistral_reply"] == "Hello from Mistral"
+    assert body["sms_status"] == "queued"
+    assert body["sms_sid"] == "SM123"
+    assert sent == {"to_phone": "+15551230000", "message": "Hello from Mistral"}
+
+
+def test_sms_mistral_send_requires_existing_tenant_and_phone(monkeypatch):
+    missing_response = client.post(
+        "/api/sms/mistral-send",
+        json={"tenant_id": "NOPE", "message": "Hi"},
+    )
+    assert missing_response.status_code == 404
+
+    suffix = short_id()
+    tenant_response = client.post(
+        "/tenants/",
+        json={
+            "name": f"No Phone Tenant {suffix}",
+            "domain": f"no-phone-{suffix}.example.com",
+            "admin_email": f"no-phone-{suffix}@example.com",
+            "admin_password": "password123",
+            "admin_first_name": "No",
+            "admin_last_name": "Phone",
+        },
+    )
+    tenant_id = tenant_response.json()["id"]
+
+    async def fail_mistral_reply(messages: list[dict]) -> str:
+        raise AssertionError("Mistral should not be called when phone is missing")
+
+    monkeypatch.setattr(sms, "get_mistral_reply", fail_mistral_reply)
+    phone_response = client.post(
+        "/api/sms/mistral-send",
+        json={"tenant_id": tenant_id, "message": "Hi"},
+    )
+    assert phone_response.status_code == 400
 
 
 def test_conversation_message_p2_p3_flow_does_not_return_422():

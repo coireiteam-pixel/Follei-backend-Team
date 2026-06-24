@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from sqlalchemy import inspect, text
+
 from app.database.base import Base
 from app.database.session import engine
 
@@ -91,6 +93,39 @@ from app.models.tenancy import Tenant, User  # noqa: F401
 def init_db() -> None:
     _apply_complete_domain_schema()
     Base.metadata.create_all(bind=engine)
+    _ensure_identity_columns()
+
+
+def _ensure_identity_columns() -> None:
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    if "tenants" not in existing_tables or "users" not in existing_tables:
+        return
+
+    is_postgres = engine.url.get_backend_name() == "postgresql"
+    timestamp_spec = (
+        "TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP"
+        if is_postgres
+        else "DATETIME"
+    )
+    column_specs = {
+        "tenants": {
+            "phone": "VARCHAR",
+            "status": "VARCHAR NOT NULL DEFAULT 'active'",
+            "updated_at": timestamp_spec,
+        },
+        "users": {
+            "status": "VARCHAR NOT NULL DEFAULT 'active'",
+            "updated_at": timestamp_spec,
+        },
+    }
+
+    with engine.begin() as connection:
+        for table_name, specs in column_specs.items():
+            existing_columns = {column["name"] for column in inspector.get_columns(table_name)}
+            for column_name, column_spec in specs.items():
+                if column_name not in existing_columns:
+                    connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_spec}"))
 
 
 def _apply_complete_domain_schema() -> None:

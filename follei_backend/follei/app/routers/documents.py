@@ -1,11 +1,16 @@
+import json
+import os
+import re
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from app.database.session import get_db
+from app.core.ids import short_id
 from app.models.knowledge.document import Document, DocumentChunk, DocumentPage, KnowledgeSource
 from app.models.tenancy import User
 from app.routers.auth import get_current_user
@@ -26,6 +31,130 @@ from app.schemas.document import (
 from app.services.qdrant import delete_document_vectors
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
+
+UPLOAD_ROOT = Path(os.getenv("FOLLEI_UPLOAD_DIR", "uploads/documents"))
+SUPPORTED_UPLOAD_TYPES = {
+    ".csv": {"text/csv", "application/csv", "application/vnd.ms-excel", "text/plain"},
+    ".doc": {"application/msword", "application/octet-stream"},
+    ".docx": {"application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/octet-stream"},
+    ".pdf": {"application/pdf", "application/octet-stream"},
+    ".txt": {"text/plain", "application/octet-stream"},
+    ".xls": {"application/vnd.ms-excel", "application/octet-stream"},
+    ".xlsx": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/octet-stream"},
+}
+UPLOAD_TYPE_LABELS = {
+    ".csv": "csv",
+    ".doc": "document",
+    ".docx": "document",
+    ".pdf": "document",
+    ".txt": "document",
+    ".xls": "excel",
+    ".xlsx": "excel",
+}
+
+
+def _unique_document_id(db: Session) -> str:
+    for _ in range(100):
+        document_id = short_id()
+        if db.get(Document, document_id) is None:
+            return document_id
+    raise HTTPException(status_code=500, detail="Unable to generate unique document id")
+
+
+def _document_value(document: Document, *names: str) -> Any:
+    for name in names:
+        if hasattr(document, name):
+            value = getattr(document, name)
+            if value is not None:
+                return value
+    return None
+
+
+def _chunk_text(chunk: DocumentChunk) -> str:
+    return _document_value(chunk, "text", "content") or ""
+
+
+def _safe_filename(filename: str) -> str:
+    cleaned = Path(filename).name.strip()
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", cleaned)
+    return cleaned or "upload.bin"
+
+
+def _validate_upload_type(filename: str, content_type: str) -> tuple[str, str]:
+    extension = Path(filename).suffix.lower()
+    allowed_content_types = SUPPORTED_UPLOAD_TYPES.get(extension)
+    if allowed_content_types is None:
+        supported = ", ".join(sorted(SUPPORTED_UPLOAD_TYPES))
+        raise HTTPException(status_code=415, detail=f"Unsupported file type. Supported extensions: {supported}")
+
+    if content_type not in allowed_content_types:
+        raise HTTPException(
+            status_code=415,
+            detail=f"Unsupported content type '{content_type}' for {extension} files",
+        )
+
+    return extension, UPLOAD_TYPE_LABELS[extension]
+
+
+def _parse_upload_metadata(metadata: Optional[str]) -> dict[str, Any]:
+    if not metadata:
+        return {}
+
+    try:
+        parsed = json.loads(metadata)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail="metadata must be valid JSON") from exc
+
+    if not isinstance(parsed, dict):
+        raise HTTPException(status_code=422, detail="metadata must be a JSON object")
+    return parsed
+
+
+def _document_create_kwargs(
+    *,
+    tenant_id: str,
+    source_id: Optional[str],
+    filename: str,
+    file_path: Optional[str],
+    file_type: str,
+    file_size: Optional[int],
+    status_value: str,
+    metadata: dict[str, Any],
+) -> dict[str, Any]:
+    tags = metadata.get("tags") if isinstance(metadata.get("tags"), list) else []
+    kwargs: dict[str, Any] = {
+        "tenant_id": tenant_id,
+        "source_id": source_id,
+        "status": status_value,
+        "metadata_": metadata,
+    }
+
+    if hasattr(Document, "filename"):
+        kwargs.update(filename=filename, file_path=file_path, file_type=file_type, file_size=file_size)
+    else:
+        kwargs.update(title=filename, path=file_path, source_type=file_type, mime_type=file_type, tags=tags)
+    return kwargs
+
+
+def _chunk_create_kwargs(
+    *,
+    tenant_id: str,
+    document_id: str,
+    chunk_index: int,
+    text: str,
+    metadata: dict[str, Any],
+) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {
+        "tenant_id": tenant_id,
+        "document_id": document_id,
+        "chunk_index": chunk_index,
+        "metadata_": metadata,
+    }
+    if hasattr(DocumentChunk, "text"):
+        kwargs["text"] = text
+    else:
+        kwargs["content"] = text
+    return kwargs
 
 
 def _ensure_tenant(current_user: User, tenant_id: str) -> None:
@@ -62,8 +191,8 @@ def _document_response(document: Document) -> DocumentCreateResponse:
     return DocumentCreateResponse(
         id=document.id,
         source_id=document.source_id,
-        filename=document.title,
-        file_type=document.source_type,
+        filename=_document_value(document, "filename", "title"),
+        file_type=_document_value(document, "file_type", "source_type", "mime_type") or "application/octet-stream",
         status=document.status,
         total_pages=len(document.pages or []),
         total_chunks=len(document.chunks or []),
@@ -77,23 +206,26 @@ def _chunk_response(chunk: DocumentChunk) -> DocumentChunkRead:
     return DocumentChunkRead(
         id=chunk.id,
         index=chunk.chunk_index,
-        page=metadata.get("page") or metadata.get("page_number"),
+        page=_document_value(chunk, "page") or metadata.get("page") or metadata.get("page_number"),
         heading=metadata.get("heading"),
     )
 
 
 def _chunk_list_item(chunk: DocumentChunk) -> DocumentChunkListItem:
     metadata: dict[str, Any] = chunk.metadata_ or {}
+    tags = _document_value(chunk, "tags")
+    if tags is None:
+        tags = metadata.get("tags") if isinstance(metadata.get("tags"), list) else []
     return DocumentChunkListItem(
         id=chunk.id,
         index=chunk.chunk_index,
-        page=metadata.get("page") or metadata.get("page_number"),
-        heading=metadata.get("heading"),
-        text=chunk.content,
-        section=metadata.get("section"),
-        tags=metadata.get("tags") if isinstance(metadata.get("tags"), list) else [],
-        embedding_hash=metadata.get("embedding_hash"),
-        vector_id=metadata.get("vector_id"),
+        page=_document_value(chunk, "page") or metadata.get("page") or metadata.get("page_number"),
+        heading=_document_value(chunk, "heading") or metadata.get("heading"),
+        text=_chunk_text(chunk),
+        section=_document_value(chunk, "section") or metadata.get("section"),
+        tags=tags,
+        embedding_hash=_document_value(chunk, "embedding_hash") or metadata.get("embedding_hash"),
+        vector_id=_document_value(chunk, "vector_id") or metadata.get("vector_id"),
     )
 
 
@@ -106,21 +238,86 @@ def create_document(
     _ensure_tenant(current_user, payload.tenant_id)
     _validate_source(db, current_user.tenant_id, payload.source_id)
 
-    metadata = dict(payload.metadata)
-    tags = metadata.get("tags") if isinstance(metadata.get("tags"), list) else []
     document = Document(
-        tenant_id=current_user.tenant_id,
-        source_id=payload.source_id,
-        title=payload.filename,
-        source_type=payload.file_type,
-        mime_type=payload.file_type,
-        path=payload.file_path,
-        file_size=payload.file_size,
-        status="pending",
-        tags=tags,
-        metadata_=metadata,
+        id=_unique_document_id(db),
+        **_document_create_kwargs(
+            tenant_id=current_user.tenant_id,
+            source_id=payload.source_id,
+            filename=payload.filename,
+            file_path=payload.file_path,
+            file_type=payload.file_type,
+            file_size=payload.file_size,
+            status_value="pending",
+            metadata=dict(payload.metadata),
+        )
     )
     db.add(document)
+    db.commit()
+    db.refresh(document)
+    return _document_response(document)
+
+
+@router.post("/upload", response_model=DocumentCreateResponse, status_code=status.HTTP_201_CREATED)
+def upload_document(
+    file: UploadFile = File(..., description="Upload CSV, Excel, PDF, Word, or text documents"),
+    tenant_id: Optional[str] = Form(default=None),
+    source_id: Optional[str] = Form(default=None),
+    metadata: Optional[str] = Form(default=None, description='Optional JSON object, for example {"tags":["pricing"]}'),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DocumentCreateResponse:
+    if tenant_id is not None:
+        _ensure_tenant(current_user, tenant_id)
+    _validate_source(db, current_user.tenant_id, source_id)
+
+    filename = _safe_filename(file.filename or "")
+    parsed_metadata = _parse_upload_metadata(metadata)
+    content_type = file.content_type or "application/octet-stream"
+    extension, upload_type = _validate_upload_type(filename, content_type)
+
+    document = Document(
+        id=_unique_document_id(db),
+        **_document_create_kwargs(
+            tenant_id=current_user.tenant_id,
+            source_id=source_id,
+            filename=filename,
+            file_path=None,
+            file_type=content_type,
+            file_size=None,
+            status_value="uploaded",
+            metadata={
+                **parsed_metadata,
+                "file_extension": extension,
+                "upload_type": upload_type,
+                "original_filename": file.filename,
+                "upload_content_type": content_type,
+            },
+        )
+    )
+    db.add(document)
+    db.flush()
+
+    document_dir = UPLOAD_ROOT / current_user.tenant_id / document.id
+    document_dir.mkdir(parents=True, exist_ok=True)
+    destination = document_dir / filename
+
+    size = 0
+    with destination.open("wb") as output:
+        while chunk := file.file.read(1024 * 1024):
+            size += len(chunk)
+            output.write(chunk)
+
+    if hasattr(document, "file_path"):
+        document.file_path = str(destination)
+    else:
+        document.path = str(destination)
+    if hasattr(document, "file_size"):
+        document.file_size = size
+
+    metadata_value = dict(document.metadata_ or {})
+    metadata_value["stored_path"] = str(destination)
+    metadata_value["size_bytes"] = size
+    document.metadata_ = metadata_value
     db.commit()
     db.refresh(document)
     return _document_response(document)
@@ -160,7 +357,7 @@ def list_documents(
         items=[
             DocumentListItem(
                 id=document.id,
-                filename=document.title,
+                filename=_document_value(document, "filename", "title"),
                 status=document.status,
                 total_chunks=total_chunks,
             )
@@ -200,7 +397,7 @@ def update_document(
     if "metadata" in update_data:
         document.metadata_ = update_data["metadata"] or {}
         tags = document.metadata_.get("tags")
-        if isinstance(tags, list):
+        if hasattr(document, "tags") and isinstance(tags, list):
             document.tags = tags
     if "status" in update_data:
         document.status = update_data["status"]
@@ -262,11 +459,13 @@ def create_document_chunks(
         }
         metadata = {key: value for key, value in metadata.items() if value is not None}
         chunk = DocumentChunk(
-            tenant_id=current_user.tenant_id,
-            document_id=document.id,
-            chunk_index=chunk_in.index,
-            content=chunk_in.text,
-            metadata_=metadata,
+            **_chunk_create_kwargs(
+                tenant_id=current_user.tenant_id,
+                document_id=document.id,
+                chunk_index=chunk_in.index,
+                text=chunk_in.text,
+                metadata=metadata,
+            ),
         )
         db.add(chunk)
         created_chunks.append(chunk)

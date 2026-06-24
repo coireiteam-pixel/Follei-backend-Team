@@ -12,7 +12,10 @@ class Tenant(Base):
     id = Column(String(4), primary_key=True, default=short_id, index=True)
     name = Column(String, index=True, nullable=False)
     domain = Column(String, unique=True, index=True, nullable=True)
+    phone = Column(String, nullable=True)
+    status = Column(String, default="active", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
     users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
@@ -39,8 +42,10 @@ class User(Base):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     role = Column(String, nullable=False)
+    status = Column(String, default="active", nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
     tenant = relationship("Tenant", back_populates="users")

@@ -5,6 +5,7 @@ from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
+
 from app.database.init_db import init_db
 from app.routers import (
     agents,
@@ -24,6 +25,7 @@ from app.routers import (
     leads,
     message,
     observability,
+    sms,
     tenant,
     tools,
     user,
@@ -71,6 +73,7 @@ app = FastAPI(
     lifespan=lifespan,
     openapi_tags=OPENAPI_TAGS,
 )
+init_db()
 
 
 def _remove_swagger_placeholder_props(schema_node: Any) -> None:
@@ -114,7 +117,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
+app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(api_v1.router)
 app.include_router(agents.router)
 app.include_router(tenant.router)
@@ -123,6 +126,7 @@ app.include_router(database_crud.router)
 
 app.include_router(conversation.router, prefix=API_PREFIX)
 app.include_router(message.router, prefix=API_PREFIX)
+app.include_router(sms.router, prefix=API_PREFIX)
 app.include_router(leads.router, prefix=API_PREFIX)
 app.include_router(leads.frameworks_router, prefix=API_PREFIX)
 app.include_router(leads.opportunities_router, prefix=API_PREFIX)

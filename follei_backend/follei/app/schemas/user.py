@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     first_name: str = Field(examples=["John"])
     last_name: str = Field(examples=["Doe"])
     role: str = Field(examples=["admin"])
+    status: str = Field(default="active", examples=["active"])
     is_active: bool = True
 
 
@@ -22,6 +23,7 @@ class UserUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     role: str | None = None
+    status: str | None = None
     is_active: bool | None = None
 
 
@@ -29,6 +31,7 @@ class UserResponse(UserBase):
     id: str
     tenant_id: str
     created_at: datetime
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

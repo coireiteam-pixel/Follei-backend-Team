@@ -23,7 +23,7 @@ class LeadBase(BaseModel):
 
 
 class LeadCreate(LeadBase):
-    tenant_id: str = Field(examples=["T001"])
+    tenant_id: str | None = Field(default=None, examples=["T001"])
 
 
 CreateLeadRequest = LeadCreate
@@ -138,7 +138,11 @@ class LeadScoreResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-LeadScoreListResponse = LeadScoreResponse
+class LeadScoreListResponse(BaseModel):
+    items: list[LeadScoreResponse]
+    total: int
+    page: int
+    page_size: int
 
 
 class LeadScoreRequest(BaseModel):
@@ -166,8 +170,14 @@ class QualificationFrameworkResponse(QualificationFrameworkBase):
     model_config = {"from_attributes": True}
 
 
-QualificationFrameworkListResponse = QualificationFrameworkResponse
 QualificationFrameworkRequest = QualificationFrameworkCreate
+
+
+class QualificationFrameworkListResponse(BaseModel):
+    items: list[QualificationFrameworkResponse]
+    total: int
+    page: int
+    page_size: int
 
 
 class OpportunityBase(BaseModel):
@@ -205,8 +215,14 @@ class OpportunityResponse(OpportunityBase):
     model_config = {"from_attributes": True}
 
 
-OpportunityListResponse = OpportunityResponse
 OpportunityRequest = OpportunityCreate
+
+
+class OpportunityListResponse(BaseModel):
+    items: list[OpportunityResponse]
+    total: int
+    page: int
+    page_size: int
 
 
 class MeetingBase(BaseModel):
@@ -247,8 +263,14 @@ class MeetingResponse(MeetingBase):
     model_config = {"from_attributes": True}
 
 
-MeetingListResponse = MeetingResponse
 MeetingRequest = MeetingCreate
+
+
+class MeetingListResponse(BaseModel):
+    items: list[MeetingResponse]
+    total: int
+    page: int
+    page_size: int
 
 
 class ProposalBase(BaseModel):

@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 class TenantBase(BaseModel):
     name: str = Field(examples=["Acme Corp"])
     domain: str | None = Field(default=None, examples=["acme.example.com"])
+    phone: str | None = Field(default=None, examples=["+15551234567"])
+    status: str = Field(default="active", examples=["active"])
 
 
 class TenantCreate(TenantBase):
@@ -19,11 +21,14 @@ class TenantCreate(TenantBase):
 class TenantUpdate(BaseModel):
     name: str | None = None
     domain: str | None = None
+    phone: str | None = None
+    status: str | None = None
 
 
 class TenantResponse(TenantBase):
     id: str
     created_at: datetime
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
