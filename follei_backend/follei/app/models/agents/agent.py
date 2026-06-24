@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, Uuid
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
 from app.database.base import Base
+from app.database.types import StringList
 from app.core.ids import short_id
 
 class Agent(Base):
@@ -19,7 +19,7 @@ class Agent(Base):
     name = Column(String, nullable=False)
     role = Column(String, nullable=False) # e.g., 'SDR', 'Support'
     system_prompt = Column(String, nullable=False)
-    tools = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list) # Assigned MCP tool names
+    tools = Column(StringList, default=list) # Assigned MCP tool names
     
     created_at = Column(DateTime, default=datetime.utcnow)
 

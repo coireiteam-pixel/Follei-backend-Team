@@ -2,10 +2,10 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, Uuid
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
 from app.database.base import Base
+from app.database.types import StringList
 from app.core.ids import short_id
 
 
@@ -17,7 +17,7 @@ class FAQ(Base):
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
     embedding_vector_id = Column(String(4), nullable=True)
-    tags = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list, nullable=False)
+    tags = Column(StringList, default=list, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

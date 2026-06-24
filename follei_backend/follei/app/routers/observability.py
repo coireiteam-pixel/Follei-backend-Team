@@ -170,6 +170,16 @@ def create_retrieval_log(payload: RetrievalLogIn, user: User = Depends(get_curre
     return {"id": log.id, **results}
 
 
+
+@evaluation_router.post("", status_code=201)
+def create_evaluation(payload: EvaluationIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    result = payload.model_dump(mode='json')
+    evaluation = EvaluationResult(tenant_id=user.tenant_id, subject_type="rag", evaluator=payload.evaluator, score=payload.relevance_score, result=result)
+    db.add(evaluation)
+    db.commit()
+    db.refresh(evaluation)
+    return {"id": evaluation.id, **result}
+
 @retrieval_router.get("")
 def list_retrieval_logs(tenant_id: Optional[str] = None, agent_id: Optional[str] = None, from_date: Optional[date] = Query(default=None, alias="from"), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if tenant_id:
@@ -181,14 +191,6 @@ def list_retrieval_logs(tenant_id: Optional[str] = None, agent_id: Optional[str]
     return {"items": [{"id": item.id, "query": item.query, "latency_ms": item.latency_ms, "created_at": item.created_at, **(item.results or {})} for item in logs if not agent_id or (item.results or {}).get("agent_id") == str(agent_id)]}
 
 
-@evaluation_router.post("", status_code=201)
-def create_evaluation(payload: EvaluationIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    result = payload.model_dump(mode='json')
-    evaluation = EvaluationResult(tenant_id=user.tenant_id, subject_type="rag", evaluator=payload.evaluator, score=payload.relevance_score, result=result)
-    db.add(evaluation)
-    db.commit()
-    db.refresh(evaluation)
-    return {"id": evaluation.id, **result}
 
 
 @evaluation_router.get("")

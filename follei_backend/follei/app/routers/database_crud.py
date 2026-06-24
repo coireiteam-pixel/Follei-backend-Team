@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.sqltypes import Boolean, Date, DateTime, Integer, Numeric, String, Text
 
 from app.database.session import engine, get_db
+from app.database.types import StringList
 
 
 router = APIRouter(prefix="/database", tags=["Database CRUD"])
@@ -30,7 +31,8 @@ class RecordPayload(BaseModel):
 
 
 def _table_names() -> set[str]:
-    return set(inspect(engine).get_table_names(schema="public"))
+    schema = "public" if engine.url.get_backend_name() == "postgresql" else None
+    return set(inspect(engine).get_table_names(schema=schema))
 
 
 def _get_table(table_name: str) -> Table:
@@ -72,7 +74,7 @@ def _coerce_value(value: Any, column: Any) -> Any:
         return datetime.fromisoformat(value) if isinstance(value, str) else value
     if isinstance(column_type, Date):
         return date.fromisoformat(value) if isinstance(value, str) else value
-    if isinstance(column_type, ARRAY):
+    if isinstance(column_type, ARRAY | StringList):
         return value
 
     if column_type.__class__.__name__ == "str":

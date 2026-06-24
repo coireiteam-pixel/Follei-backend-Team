@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, Uuid
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
 from app.database.base import Base
+from app.database.types import StringList
 from app.core.ids import short_id
 
 class KnowledgeSource(Base):
@@ -38,7 +38,7 @@ class Document(Base):
     total_pages = Column(Integer, default=0, nullable=False)
     total_chunks = Column(Integer, default=0, nullable=False)
     summary = Column(Text, nullable=True)
-    keywords = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list, nullable=False)
+    keywords = Column(StringList, default=list, nullable=False)
     metadata_ = Column("metadata", JSON, default=dict, nullable=False)
     indexed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -63,7 +63,7 @@ class DocumentChunk(Base):
     page = Column(Integer, nullable=True)
     section = Column(String, nullable=True)
     heading = Column(String, nullable=True)
-    tags = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list, nullable=False)
+    tags = Column(StringList, default=list, nullable=False)
     embedding_hash = Column(String, nullable=True)
     vector_id = Column(String, nullable=True)
     metadata_ = Column("metadata", JSON, default=dict, nullable=False)
