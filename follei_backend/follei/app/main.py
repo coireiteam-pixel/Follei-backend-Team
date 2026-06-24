@@ -72,17 +72,13 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
     openapi_tags=OPENAPI_TAGS,
-<<<<<<< HEAD
-=======
     swagger_ui_parameters={
         "docExpansion": "none",
         "defaultModelsExpandDepth": -1,
         "displayRequestDuration": True,
         "filter": False,
     },
->>>>>>> a0e9f77 (saravanan commit)
 )
-init_db()
 
 
 def _remove_swagger_placeholder_props(schema_node: Any) -> None:
@@ -109,11 +105,7 @@ def custom_openapi() -> dict[str, Any]:
         title=app.title,
         version=app.version,
         routes=app.routes,
-<<<<<<< HEAD
         tags=app.openapi_tags,
-=======
-        tags=OPENAPI_TAGS,
->>>>>>> a0e9f77 (saravanan commit)
     )
     _remove_swagger_placeholder_props(openapi_schema)
     app.openapi_schema = openapi_schema

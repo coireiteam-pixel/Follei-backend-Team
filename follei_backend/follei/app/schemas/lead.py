@@ -216,16 +216,6 @@ class OpportunityResponse(OpportunityBase):
     model_config = {"from_attributes": True}
 
 
-<<<<<<< HEAD
-OpportunityRequest = OpportunityCreate
-
-
-class OpportunityListResponse(BaseModel):
-    items: list[OpportunityResponse]
-    total: int
-    page: int
-    page_size: int
-=======
 class OpportunityListResponse(BaseModel):
     items: list[OpportunityResponse]
     total: int
@@ -248,7 +238,6 @@ class CSVImportResponse(BaseModel):
     updated: int
     failed: int
     errors: list[CSVImportError] = Field(default_factory=list)
->>>>>>> a0e9f77 (saravanan commit)
 
 
 class MeetingBase(BaseModel):

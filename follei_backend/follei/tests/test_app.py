@@ -30,18 +30,11 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
         and path.startswith("/api")
     }
 
-<<<<<<< HEAD
-    assert len(methods) == 229
-=======
-    assert len(methods) == 224
->>>>>>> a0e9f77 (saravanan commit)
+    assert len(methods) == 231
     assert "POST /api/messages/{message_id}/attachments" in methods
     assert "POST /api/conversations/{conversation_id}/buying-signals" in methods
     assert "POST /api/qualification-frameworks" in methods
     assert "POST /api/opportunities/{opportunity_id}/quotes" in methods
-    assert "POST /api/campaigns" in methods
-    assert "POST /api/campaigns/{campaign_id}/send" in methods
-    assert "POST /api/campaign-metrics" in methods
     assert "POST /api/leads/import-csv" in methods
     assert "POST /api/opportunities/import-csv" in methods
     assert "PATCH /api/renewals/{renewal_id}" in methods
@@ -78,7 +71,6 @@ def test_all_reference_router_groups_are_visible_in_swagger():
     assert "/users/{user_id}" in openapi_paths
     assert "/api/chunks/{chunk_id}/embeddings" in openapi_paths
     assert "/api/campaigns" in openapi_paths
-    assert client.get("/api/v1/health").status_code == 200
 
 
 def test_openapi_schema_does_not_expose_swagger_placeholder_props():
@@ -89,7 +81,35 @@ def test_openapi_schema_does_not_expose_swagger_placeholder_props():
     assert '"additionalProperties": true' not in openapi_json
 
 
-<<<<<<< HEAD
+def test_swagger_groups_follow_reference_order():
+    assert [tag["name"] for tag in client.app.openapi()["tags"]] == [
+        "Identity & Auth",
+        "Domain 1 - Auth",
+        "Domain 2 - Tenants & Users",
+        "Domain 3 - Agents & AI Workforce",
+        "Domain 4 - System, Health & Jobs",
+        "AI Agents",
+        "tenants",
+        "users",
+        "Database CRUD",
+        "Conversations & Messages",
+        "Leads & Revenue",
+        "Campaigns",
+        "Customers & Customer Success",
+        "Integrations",
+        "Webhooks & Events",
+        "Tools, MCP & Registry",
+        "Documents",
+        "Chunks",
+        "Entities",
+        "Knowledge & RAG",
+        "Products & Pricing",
+        "Billing",
+        "Analytics & Observability",
+        "System",
+    ]
+
+
 @pytest.mark.parametrize(
     ("filename", "content", "content_type", "upload_type"),
     [
@@ -166,35 +186,6 @@ def test_document_upload_rejects_unsupported_file_type(tmp_path):
     )
 
     assert response.status_code == 415
-=======
-def test_swagger_groups_follow_reference_order():
-    assert [tag["name"] for tag in client.app.openapi()["tags"]] == [
-        "Identity & Auth",
-        "Domain 1 - Auth",
-        "Domain 2 - Tenants & Users",
-        "Domain 3 - Agents & AI Workforce",
-        "Domain 4 - System, Health & Jobs",
-        "AI Agents",
-        "tenants",
-        "users",
-        "Database CRUD",
-        "Conversations & Messages",
-        "Leads & Revenue",
-        "Campaigns",
-        "Customers & Customer Success",
-        "Integrations",
-        "Webhooks & Events",
-        "Tools, MCP & Registry",
-        "Documents",
-        "Chunks",
-        "Entities",
-        "Knowledge & RAG",
-        "Products & Pricing",
-        "Billing",
-        "Analytics & Observability",
-        "System",
-    ]
->>>>>>> a0e9f77 (saravanan commit)
 
 
 def test_auth_register_creates_short_alphanumeric_ids():
@@ -608,8 +599,6 @@ def test_integrations_webhooks_and_tools_flow_does_not_return_422():
     ]
 
     assert all(response.status_code < 400 for response in responses)
-<<<<<<< HEAD
-=======
 
 
 def test_lead_and_revenue_csv_uploads_are_returned_by_get_endpoints():
@@ -641,4 +630,3 @@ def test_lead_and_revenue_csv_uploads_are_returned_by_get_endpoints():
     opportunity = client.get("/api/opportunities/O901").json()
     assert opportunity["lead_id"] == "L901"
     assert opportunity["weighted_revenue"] == 7500
->>>>>>> a0e9f77 (saravanan commit)

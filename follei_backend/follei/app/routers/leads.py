@@ -4,10 +4,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any
 
-<<<<<<< HEAD
 from pydantic import BaseModel
-=======
->>>>>>> a0e9f77 (saravanan commit)
 from app.core.ids import short_id
 from app.services.mistral import get_mistral_reply
 
@@ -526,25 +523,14 @@ def create_opportunity(payload: OpportunityRequest) -> OpportunityResponse:
         _get_lead_or_404(payload.lead_id)
 
     now = _now()
-<<<<<<< HEAD
-    opportunity_id = str(short_id())
-
-    opportunity = OpportunityResponse(
-        id=opportunity_id,
-=======
     opportunity_id = _unique_id("O", OPPORTUNITIES)
     opportunity = OpportunityResponse(
         id=opportunity_id,
         weighted_revenue=round(payload.value * payload.probability, 2),
->>>>>>> a0e9f77 (saravanan commit)
         created_at=now,
         updated_at=now,
         **payload.model_dump(),
     )
-<<<<<<< HEAD
-
-=======
->>>>>>> a0e9f77 (saravanan commit)
     OPPORTUNITIES[opportunity_id] = opportunity
     return opportunity
 
@@ -629,13 +615,6 @@ def get_opportunity(opportunity_id: str) -> OpportunityResponse:
 @opportunities_router.patch("/{opportunity_id}", response_model=OpportunityResponse)
 def update_opportunity(opportunity_id: str, payload: UpdateOpportunityRequest) -> OpportunityResponse:
     opportunity = _get_opportunity_or_404(opportunity_id)
-<<<<<<< HEAD
-
-    updated = opportunity.model_copy(
-        update={**payload.model_dump(exclude_unset=True), "updated_at": _now()}
-    )
-
-=======
     changes = payload.model_dump(exclude_unset=True)
     value = changes.get("value", opportunity.value)
     probability = changes.get("probability", opportunity.probability)
@@ -646,7 +625,6 @@ def update_opportunity(opportunity_id: str, payload: UpdateOpportunityRequest) -
             "updated_at": _now(),
         }
     )
->>>>>>> a0e9f77 (saravanan commit)
     OPPORTUNITIES[opportunity_id] = updated
     return updated
 
