@@ -14,7 +14,7 @@ from app.schemas.campaign import (
     CampaignSendResponse,
     CampaignUpdate,
 )
-from app.services.mcp.email import gmail_send, mailjet_send, outlook_send
+from app.services.mcp.email import brevo_send, gmail_send, mailjet_send, outlook_send
 
 router = APIRouter(prefix="/campaigns", tags=["Campaigns"])
 metrics_router = APIRouter(prefix="/campaign-metrics", tags=["Campaigns"])
@@ -139,8 +139,11 @@ def remove_lead_from_campaign(campaign_id: str, lead_id: str) -> Response:
 def send_campaign(campaign_id: str, payload: CampaignSendRequest) -> CampaignSendResponse:
     campaign = _get_campaign_or_404(campaign_id)
     provider = payload.provider.lower()
-    if provider not in {"gmail", "mailjet", "outlook"}:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Provider must be gmail, mailjet, or outlook")
+    if provider not in {"brevo", "gmail", "mailjet", "outlook"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provider must be brevo, gmail, mailjet, or outlook",
+        )
 
     # The current app stores leads in memory, so use that source until campaign persistence is wired in.
     from app.routers.leads import LEADS
@@ -172,7 +175,9 @@ def send_campaign(campaign_id: str, payload: CampaignSendRequest) -> CampaignSen
             recipients.append(CampaignSendRecipient(lead_id=lead_id, email=lead.email, status="dry_run"))
             continue
 
-        if provider == "gmail":
+        if provider == "brevo":
+            result = brevo_send(to=lead.email, subject=payload.subject, body=payload.body)
+        elif provider == "gmail":
             result = gmail_send(to=lead.email, subject=payload.subject, body=payload.body)
         elif provider == "mailjet":
             result = mailjet_send(to=lead.email, subject=payload.subject, body=payload.body)

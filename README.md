@@ -97,13 +97,12 @@ http://localhost:8000/docs
 
 By default, local development uses a mock sender so Swagger tests can run without email credentials.
 
-Configure Mailjet environment variables to send real email with `provider: "mailjet"`:
+Configure Brevo environment variables to send real email with `provider: "brevo"`:
 
 ```powershell
-$env:MAILJET_API_KEY="your-mailjet-api-key"
-$env:MAILJET_API_SECRET="your-mailjet-api-secret"
-$env:MAILJET_FROM_EMAIL="verified-sender@example.com"
-$env:MAILJET_FROM_NAME="Follei"
+$env:BREVO_API_KEY="your-brevo-api-key"
+$env:BREVO_FROM_EMAIL="verified-sender@example.com"
+$env:BREVO_FROM_NAME="Follei"
 ```
 
 Alternatively, configure SMTP environment variables:
@@ -117,7 +116,7 @@ $env:SMTP_FROM="noreply@example.com"
 $env:SMTP_TLS="true"
 ```
 
-Without Mailjet or SMTP credentials, the API returns successful mock message IDs but does not deliver to inboxes.
+Without Brevo or SMTP credentials, the API returns successful mock message IDs but does not deliver to inboxes.
 
 ### Notes
 

@@ -65,6 +65,41 @@ def mailjet_send(to: str, subject: str, body: str) -> dict:
     return {"message_id": str(message_id), "to": to, "subject": subject, "sent": True, "provider": "mailjet"}
 
 
+def brevo_send(to: str, subject: str, body: str) -> dict:
+    api_key = os.getenv("BREVO_API_KEY")
+    from_email = os.getenv("BREVO_FROM_EMAIL")
+    from_name = os.getenv("BREVO_FROM_NAME", "Follei")
+
+    if not api_key or not from_email:
+        return {"message_id": str(short_id()), "to": to, "subject": subject, "sent": True, "mock": True}
+
+    response = requests.post(
+        "https://api.brevo.com/v3/smtp/email",
+        headers={
+            "accept": "application/json",
+            "api-key": api_key,
+            "content-type": "application/json",
+        },
+        json={
+            "sender": {"email": from_email, "name": from_name},
+            "to": [{"email": to}],
+            "subject": subject,
+            "textContent": body,
+        },
+        timeout=20,
+    )
+    response.raise_for_status()
+
+    payload = response.json()
+    return {
+        "message_id": str(payload.get("messageId") or short_id()),
+        "to": to,
+        "subject": subject,
+        "sent": True,
+        "provider": "brevo",
+    }
+
+
 def gmail_send(to: str, subject: str, body: str, attachments: list | None = None) -> dict:
     result = _smtp_send(to=to, subject=subject, body=body)
     if result is not None:
