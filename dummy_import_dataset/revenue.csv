@@ -1,0 +1,6 @@
+id,lead_id,name,value,stage,probability,weighted_revenue,expected_close_date,tenant_id,metadata,created_at,updated_at
+O001,L001,PeopleFirst Solutions - Employee Handbook,33325.0,qualification,0.7,23327.5,2026-08-07,T001,"{""document_id"":""D001"",""source"":""document.csv"",""currency"":""USD""}",2026-01-10T09:00:00Z,2026-01-10T09:00:00Z
+O002,L002,Acme Corp - Sales Report Q1,30725.0,discovery,0.55,16898.75,2026-08-21,T001,"{""document_id"":""D002"",""source"":""document.csv"",""currency"":""USD""}",2026-01-15T10:30:00Z,2026-01-16T12:00:00Z
+O003,L003,Nova Projects - Project Proposal,25830.0,proposal,0.35,9040.5,2026-09-04,T001,"{""document_id"":""D003"",""source"":""document.csv"",""currency"":""USD""}",2026-01-20T11:00:00Z,2026-01-22T15:45:00Z
+O004,L004,Lexora Legal - Customer Contract,47200.0,negotiation,0.85,40120.0,2026-09-18,T001,"{""document_id"":""D004"",""source"":""document.csv"",""currency"":""USD""}",2026-02-01T08:30:00Z,2026-02-02T09:15:00Z
+O005,L005,BrightWave Media - Marketing Plan,57350.0,proposal,0.65,37277.5,2026-10-02,T001,"{""document_id"":""D005"",""source"":""document.csv"",""currency"":""USD""}",2026-02-05T14:20:00Z,2026-02-05T14:20:00Z

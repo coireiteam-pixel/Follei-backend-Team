@@ -1,10 +1,18 @@
+<<<<<<< HEAD
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+=======
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+>>>>>>> a0e9f77 (saravanan commit)
 
 
 class CampaignBase(BaseModel):
     name: str
+<<<<<<< HEAD
     description: Optional[str] = None
     campaign_type: str
     status: str = "draft"
@@ -14,10 +22,22 @@ class CampaignBase(BaseModel):
     target_audience: Optional[Dict[str, Any]] = None
     channels: Optional[List[str]] = None
     metadata_: Optional[Dict[str, Any]] = None
+=======
+    description: str | None = None
+    campaign_type: str
+    status: str = "draft"
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    budget: float | None = None
+    target_audience: dict[str, Any] | None = None
+    channels: list[str] | None = None
+    metadata_: dict[str, Any] | None = None
+>>>>>>> a0e9f77 (saravanan commit)
 
 
 class CampaignCreate(CampaignBase):
     tenant_id: str
+<<<<<<< HEAD
     created_by: Optional[str] = None
 
 
@@ -33,6 +53,23 @@ class CampaignUpdate(BaseModel):
     target_audience: Optional[Dict[str, Any]] = None
     channels: Optional[List[str]] = None
     metadata_: Optional[Dict[str, Any]] = None
+=======
+    created_by: str | None = None
+
+
+class CampaignUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    campaign_type: str | None = None
+    status: str | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    budget: float | None = None
+    spent: float | None = None
+    target_audience: dict[str, Any] | None = None
+    channels: list[str] | None = None
+    metadata_: dict[str, Any] | None = None
+>>>>>>> a0e9f77 (saravanan commit)
 
 
 class CampaignResponse(CampaignBase):
@@ -41,13 +78,21 @@ class CampaignResponse(CampaignBase):
     id: str
     tenant_id: str
     spent: float
+<<<<<<< HEAD
     created_by: Optional[str] = None
+=======
+    created_by: str | None = None
+>>>>>>> a0e9f77 (saravanan commit)
     created_at: datetime
     updated_at: datetime
 
 
 class CampaignListResponse(BaseModel):
+<<<<<<< HEAD
     items: List[CampaignResponse]
+=======
+    items: list[CampaignResponse]
+>>>>>>> a0e9f77 (saravanan commit)
     total: int
     page: int
     page_size: int
@@ -62,10 +107,17 @@ class CampaignSendRequest(BaseModel):
 
 class CampaignSendRecipient(BaseModel):
     lead_id: str
+<<<<<<< HEAD
     email: Optional[str] = None
     status: str
     message_id: Optional[str] = None
     detail: Optional[str] = None
+=======
+    email: str | None = None
+    status: str
+    message_id: str | None = None
+    detail: str | None = None
+>>>>>>> a0e9f77 (saravanan commit)
 
 
 class CampaignSendResponse(BaseModel):
@@ -75,6 +127,7 @@ class CampaignSendResponse(BaseModel):
     dry_run: bool
     sent: int
     skipped: int
+<<<<<<< HEAD
     recipients: List[CampaignSendRecipient]
     sent_at: datetime
 
@@ -128,11 +181,21 @@ class CampaignLeadResponse(CampaignLeadBase):
     metadata_: Optional[Dict[str, Any]] = None
 
 
+=======
+    recipients: list[CampaignSendRecipient]
+    sent_at: datetime
+
+
+>>>>>>> a0e9f77 (saravanan commit)
 class CampaignMetricBase(BaseModel):
     campaign_id: str
     metric_type: str
     value: float = 0
+<<<<<<< HEAD
     metadata_: Optional[Dict[str, Any]] = None
+=======
+    metadata_: dict[str, Any] | None = None
+>>>>>>> a0e9f77 (saravanan commit)
 
 
 class CampaignMetricCreate(CampaignMetricBase):

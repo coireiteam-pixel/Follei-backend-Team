@@ -1,0 +1,314 @@
+{
+  "documents": [
+    {
+      "source_id": null,
+      "filename": "employee_handbook.pdf",
+      "file_path": "/uploads/employee_handbook.pdf",
+      "file_type": "application/pdf",
+      "file_size": 2508800,
+      "tenant_id": "T001",
+      "metadata": {
+        "title": "Employee Handbook",
+        "owner": "Arun Kumar",
+        "department": "HR",
+        "tags": [
+          "hr",
+          "policy"
+        ],
+        "original_document_type": "PDF"
+      }
+    },
+    {
+      "source_id": null,
+      "filename": "sales_q1.xlsx",
+      "file_path": "/uploads/sales_q1.xlsx",
+      "file_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "file_size": 1894400,
+      "tenant_id": "T001",
+      "metadata": {
+        "title": "Sales Report Q1",
+        "owner": "Priya Sharma",
+        "department": "Sales",
+        "tags": [
+          "sales",
+          "report"
+        ],
+        "original_document_type": "XLSX"
+      }
+    },
+    {
+      "source_id": null,
+      "filename": "project_proposal.docx",
+      "file_path": "/uploads/project_proposal.docx",
+      "file_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "file_size": 1003520,
+      "tenant_id": "T001",
+      "metadata": {
+        "title": "Project Proposal",
+        "owner": "Rajesh Verma",
+        "department": "Projects",
+        "tags": [
+          "proposal",
+          "client"
+        ],
+        "original_document_type": "DOCX"
+      }
+    },
+    {
+      "source_id": null,
+      "filename": "customer_contract.pdf",
+      "file_path": "/uploads/customer_contract.pdf",
+      "file_type": "application/pdf",
+      "file_size": 3276800,
+      "tenant_id": "T001",
+      "metadata": {
+        "title": "Customer Contract",
+        "owner": "Neha Gupta",
+        "department": "Legal",
+        "tags": [
+          "legal",
+          "contract"
+        ],
+        "original_document_type": "PDF"
+      }
+    },
+    {
+      "source_id": null,
+      "filename": "marketing_plan.pptx",
+      "file_path": "/uploads/marketing_plan.pptx",
+      "file_type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "file_size": 4198400,
+      "tenant_id": "T001",
+      "metadata": {
+        "title": "Marketing Plan",
+        "owner": "Sneha Reddy",
+        "department": "Marketing",
+        "tags": [
+          "marketing",
+          "strategy"
+        ],
+        "original_document_type": "PPTX"
+      }
+    }
+  ],
+  "leads": [
+    {
+      "email": "arun.kumar@peoplefirstsolutions.com",
+      "phone": "+1-555-0201",
+      "full_name": "Arun Kumar",
+      "company": "PeopleFirst Solutions",
+      "job_title": "VP People",
+      "industry": "Human Resources",
+      "website": "https://peoplefirstsolutions.com",
+      "source": "website",
+      "status": "qualified",
+      "priority": "high",
+      "tags": [
+        "hr",
+        "policy",
+        "dummy-lead"
+      ],
+      "custom_fields": {
+        "document_id": "D001",
+        "document_title": "Employee Handbook",
+        "department": "HR"
+      },
+      "score": 85.5,
+      "assigned_to": "U001",
+      "metadata": {
+        "generated_from": "document.csv",
+        "document_status": "active"
+      },
+      "tenant_id": "T001"
+    },
+    {
+      "email": "priya.sharma@acmecorp.com",
+      "phone": "+1-555-0202",
+      "full_name": "Priya Sharma",
+      "company": "Acme Corp",
+      "job_title": "VP Sales",
+      "industry": "Technology",
+      "website": "https://acmecorp.com",
+      "source": "referral",
+      "status": "contacted",
+      "priority": "high",
+      "tags": [
+        "sales",
+        "report",
+        "dummy-lead"
+      ],
+      "custom_fields": {
+        "document_id": "D002",
+        "document_title": "Sales Report Q1",
+        "department": "Sales"
+      },
+      "score": 78.0,
+      "assigned_to": "U002",
+      "metadata": {
+        "generated_from": "document.csv",
+        "document_status": "active"
+      },
+      "tenant_id": "T001"
+    },
+    {
+      "email": "rajesh.verma@novaprojects.com",
+      "phone": "+1-555-0203",
+      "full_name": "Rajesh Verma",
+      "company": "Nova Projects",
+      "job_title": "CTO",
+      "industry": "Technology",
+      "website": "https://novaprojects.com",
+      "source": "event",
+      "status": "new",
+      "priority": "medium",
+      "tags": [
+        "proposal",
+        "client",
+        "projects",
+        "dummy-lead"
+      ],
+      "custom_fields": {
+        "document_id": "D003",
+        "document_title": "Project Proposal",
+        "department": "Projects"
+      },
+      "score": 64.5,
+      "assigned_to": "U003",
+      "metadata": {
+        "generated_from": "document.csv",
+        "document_status": "draft"
+      },
+      "tenant_id": "T001"
+    },
+    {
+      "email": "neha.gupta@lexoralegal.com",
+      "phone": "+1-555-0204",
+      "full_name": "Neha Gupta",
+      "company": "Lexora Legal",
+      "job_title": "General Counsel",
+      "industry": "Legal Services",
+      "website": "https://lexoralegal.com",
+      "source": "partner",
+      "status": "qualified",
+      "priority": "high",
+      "tags": [
+        "legal",
+        "contract",
+        "dummy-lead"
+      ],
+      "custom_fields": {
+        "document_id": "D004",
+        "document_title": "Customer Contract",
+        "department": "Legal"
+      },
+      "score": 91.0,
+      "assigned_to": "U004",
+      "metadata": {
+        "generated_from": "document.csv",
+        "document_status": "approved"
+      },
+      "tenant_id": "T001"
+    },
+    {
+      "email": "sneha.reddy@brightwavemedia.com",
+      "phone": "+1-555-0205",
+      "full_name": "Sneha Reddy",
+      "company": "BrightWave Media",
+      "job_title": "CMO",
+      "industry": "Marketing",
+      "website": "https://brightwavemedia.com",
+      "source": "campaign",
+      "status": "proposal",
+      "priority": "medium",
+      "tags": [
+        "marketing",
+        "strategy",
+        "dummy-lead"
+      ],
+      "custom_fields": {
+        "document_id": "D005",
+        "document_title": "Marketing Plan",
+        "department": "Marketing"
+      },
+      "score": 82.5,
+      "assigned_to": "U005",
+      "metadata": {
+        "generated_from": "document.csv",
+        "document_status": "active"
+      },
+      "tenant_id": "T001"
+    }
+  ],
+  "revenue": [
+    {
+      "lead_id": "L001",
+      "name": "PeopleFirst Solutions - Employee Handbook",
+      "value": 33325.0,
+      "stage": "qualification",
+      "probability": 0.7,
+      "expected_close_date": "2026-08-07",
+      "tenant_id": "T001",
+      "metadata": {
+        "document_id": "D001",
+        "source": "document.csv",
+        "currency": "USD"
+      }
+    },
+    {
+      "lead_id": "L002",
+      "name": "Acme Corp - Sales Report Q1",
+      "value": 30725.0,
+      "stage": "discovery",
+      "probability": 0.55,
+      "expected_close_date": "2026-08-21",
+      "tenant_id": "T001",
+      "metadata": {
+        "document_id": "D002",
+        "source": "document.csv",
+        "currency": "USD"
+      }
+    },
+    {
+      "lead_id": "L003",
+      "name": "Nova Projects - Project Proposal",
+      "value": 25830.0,
+      "stage": "proposal",
+      "probability": 0.35,
+      "expected_close_date": "2026-09-04",
+      "tenant_id": "T001",
+      "metadata": {
+        "document_id": "D003",
+        "source": "document.csv",
+        "currency": "USD"
+      }
+    },
+    {
+      "lead_id": "L004",
+      "name": "Lexora Legal - Customer Contract",
+      "value": 47200.0,
+      "stage": "negotiation",
+      "probability": 0.85,
+      "expected_close_date": "2026-09-18",
+      "tenant_id": "T001",
+      "metadata": {
+        "document_id": "D004",
+        "source": "document.csv",
+        "currency": "USD"
+      }
+    },
+    {
+      "lead_id": "L005",
+      "name": "BrightWave Media - Marketing Plan",
+      "value": 57350.0,
+      "stage": "proposal",
+      "probability": 0.65,
+      "expected_close_date": "2026-10-02",
+      "tenant_id": "T001",
+      "metadata": {
+        "document_id": "D005",
+        "source": "document.csv",
+        "currency": "USD"
+      }
+    }
+  ]
+}

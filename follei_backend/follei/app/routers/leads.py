@@ -1,13 +1,21 @@
+import csv
+import io
+import json
 from datetime import datetime, timezone
 from typing import Any
 
+<<<<<<< HEAD
 from pydantic import BaseModel
+=======
+>>>>>>> a0e9f77 (saravanan commit)
 from app.core.ids import short_id
 from app.services.mistral import get_mistral_reply
 
-from fastapi import APIRouter, HTTPException, Query, Response, status
+from fastapi import APIRouter, File, Form, HTTPException, Query, Response, UploadFile, status
 
 from app.schemas.lead import (
+    CSVImportError,
+    CSVImportResponse,
     CreateLeadRequest,
     LeadActivityListResponse,
     LeadActivityRequest,
@@ -79,6 +87,69 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+async def _read_csv_upload(file: UploadFile) -> list[dict[str, str]]:
+    filename = file.filename or "upload.csv"
+    if not filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only CSV files are supported")
+
+    raw_content = await file.read()
+    if not raw_content:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="CSV file is empty")
+
+    try:
+        content = raw_content.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSV file must use UTF-8 encoding",
+        ) from exc
+
+    reader = csv.DictReader(io.StringIO(content, newline=""))
+    if not reader.fieldnames:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="CSV file has no header row")
+
+    rows: list[dict[str, str]] = []
+    for row in reader:
+        if None in row:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"CSV row {reader.line_num} has more values than the header",
+            )
+        if any(str(value or "").strip() for value in row.values()):
+            rows.append({str(key).strip(): str(value or "").strip() for key, value in row.items()})
+    return rows
+
+
+def _json_cell(row: dict[str, str], field: str, default: Any, expected_type: type) -> Any:
+    value = row.get(field, "")
+    if not value:
+        return default
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{field} contains invalid JSON") from exc
+    if not isinstance(parsed, expected_type):
+        raise ValueError(f"{field} must be a JSON {expected_type.__name__}")
+    return parsed
+
+
+def _float_cell(row: dict[str, str], field: str, default: float | None = None) -> float | None:
+    value = row.get(field, "")
+    if not value:
+        return default
+    try:
+        return float(value)
+    except ValueError as exc:
+        raise ValueError(f"{field} must be a number") from exc
+
+
+def _unique_id(prefix: str, store: dict[str, Any]) -> str:
+    entity_id = short_id(prefix)
+    while entity_id in store:
+        entity_id = short_id(prefix)
+    return entity_id
+
+
 def _get_lead_or_404(lead_id: str) -> LeadResponse:
     lead = LEADS.get(lead_id)
     if lead is None:
@@ -89,13 +160,16 @@ def _get_lead_or_404(lead_id: str) -> LeadResponse:
 @router.post("", response_model=LeadResponse, status_code=status.HTTP_201_CREATED)
 def create_lead(payload: CreateLeadRequest) -> LeadResponse:
     now = _now()
-    lead_id = str(short_id())
+    lead_id = _unique_id("L", LEADS)
     lead = LeadResponse(
         id=lead_id,
-        email=str(payload.email),
+        email=payload.email,
+        phone=payload.phone,
         full_name=payload.full_name,
         company=payload.company,
-        phone=payload.phone,
+        job_title=payload.job_title,
+        industry=payload.industry,
+        website=payload.website,
         source=payload.source,
         tenant_id=payload.tenant_id or "T001",
         status=payload.status,
@@ -103,12 +177,67 @@ def create_lead(payload: CreateLeadRequest) -> LeadResponse:
         tags=payload.tags,
         custom_fields=payload.custom_fields,
         assigned_to=payload.assigned_to,
-        score=0,
+        score=payload.score,
+        metadata=payload.metadata_,
         created_at=now,
         updated_at=now,
     )
     LEADS[lead_id] = lead
     return lead
+
+
+@router.post("/import-csv", response_model=CSVImportResponse)
+async def import_leads_csv(
+    file: UploadFile = File(...),
+    default_tenant_id: str = Form(default="T001"),
+) -> CSVImportResponse:
+    rows = await _read_csv_upload(file)
+    imported = 0
+    updated = 0
+    errors: list[CSVImportError] = []
+
+    for row_number, row in enumerate(rows, start=2):
+        try:
+            now = _now()
+            lead_id = row.get("id") or _unique_id("L", LEADS)
+            existing = LEADS.get(lead_id)
+            lead = LeadResponse(
+                id=lead_id,
+                email=row.get("email") or None,
+                phone=row.get("phone") or None,
+                full_name=row.get("full_name") or None,
+                company=row.get("company") or None,
+                job_title=row.get("job_title") or None,
+                industry=row.get("industry") or None,
+                website=row.get("website") or None,
+                source=row.get("source") or "csv_upload",
+                status=row.get("status") or "new",
+                priority=row.get("priority") or "medium",
+                tags=_json_cell(row, "tags", [], list),
+                custom_fields=_json_cell(row, "custom_fields", {}, dict),
+                score=_float_cell(row, "score"),
+                assigned_to=row.get("assigned_to") or None,
+                metadata=_json_cell(row, "metadata", {}, dict),
+                tenant_id=row.get("tenant_id") or default_tenant_id,
+                created_at=row.get("created_at") or (existing.created_at if existing else now),
+                updated_at=row.get("updated_at") or now,
+            )
+            LEADS[lead_id] = lead
+            if existing:
+                updated += 1
+            else:
+                imported += 1
+        except (TypeError, ValueError) as exc:
+            errors.append(CSVImportError(row=row_number, message=str(exc)))
+
+    return CSVImportResponse(
+        filename=file.filename or "upload.csv",
+        total_rows=len(rows),
+        imported=imported,
+        updated=updated,
+        failed=len(errors),
+        errors=errors,
+    )
 
 
 @router.get("", response_model=LeadListResponse)
@@ -397,17 +526,88 @@ def create_opportunity(payload: OpportunityRequest) -> OpportunityResponse:
         _get_lead_or_404(payload.lead_id)
 
     now = _now()
+<<<<<<< HEAD
     opportunity_id = str(short_id())
 
     opportunity = OpportunityResponse(
         id=opportunity_id,
+=======
+    opportunity_id = _unique_id("O", OPPORTUNITIES)
+    opportunity = OpportunityResponse(
+        id=opportunity_id,
+        weighted_revenue=round(payload.value * payload.probability, 2),
+>>>>>>> a0e9f77 (saravanan commit)
         created_at=now,
         updated_at=now,
         **payload.model_dump(),
     )
+<<<<<<< HEAD
 
+=======
+>>>>>>> a0e9f77 (saravanan commit)
     OPPORTUNITIES[opportunity_id] = opportunity
     return opportunity
+
+
+@opportunities_router.post("/import-csv", response_model=CSVImportResponse)
+async def import_opportunities_csv(
+    file: UploadFile = File(...),
+    default_tenant_id: str = Form(default="T001"),
+) -> CSVImportResponse:
+    rows = await _read_csv_upload(file)
+    imported = 0
+    updated = 0
+    errors: list[CSVImportError] = []
+
+    for row_number, row in enumerate(rows, start=2):
+        try:
+            lead_id = row.get("lead_id", "")
+            if not lead_id:
+                raise ValueError("lead_id is required")
+            _get_lead_or_404(lead_id)
+
+            value = _float_cell(row, "value")
+            if value is None:
+                raise ValueError("value is required")
+            probability = _float_cell(row, "probability", 0.0) or 0.0
+            if not 0 <= probability <= 1:
+                raise ValueError("probability must be between 0 and 1")
+
+            now = _now()
+            opportunity_id = row.get("id") or _unique_id("O", OPPORTUNITIES)
+            existing = OPPORTUNITIES.get(opportunity_id)
+            opportunity = OpportunityResponse(
+                id=opportunity_id,
+                lead_id=lead_id,
+                name=row.get("name") or f"{lead_id} opportunity",
+                value=value,
+                stage=row.get("stage") or "qualification",
+                probability=probability,
+                weighted_revenue=round(value * probability, 2),
+                expected_close_date=row.get("expected_close_date") or None,
+                tenant_id=row.get("tenant_id") or default_tenant_id,
+                metadata=_json_cell(row, "metadata", {}, dict),
+                created_at=row.get("created_at") or (existing.created_at if existing else now),
+                updated_at=row.get("updated_at") or now,
+            )
+            OPPORTUNITIES[opportunity_id] = opportunity
+            if existing:
+                updated += 1
+            else:
+                imported += 1
+        except HTTPException as exc:
+            errors.append(CSVImportError(row=row_number, message=str(exc.detail)))
+        except (TypeError, ValueError) as exc:
+            errors.append(CSVImportError(row=row_number, message=str(exc)))
+
+    return CSVImportResponse(
+        filename=file.filename or "upload.csv",
+        total_rows=len(rows),
+        imported=imported,
+        updated=updated,
+        failed=len(errors),
+        errors=errors,
+    )
 
 
 @opportunities_router.get("", response_model=OpportunityListResponse)
@@ -429,11 +629,24 @@ def get_opportunity(opportunity_id: str) -> OpportunityResponse:
 @opportunities_router.patch("/{opportunity_id}", response_model=OpportunityResponse)
 def update_opportunity(opportunity_id: str, payload: UpdateOpportunityRequest) -> OpportunityResponse:
     opportunity = _get_opportunity_or_404(opportunity_id)
+<<<<<<< HEAD
 
     updated = opportunity.model_copy(
         update={**payload.model_dump(exclude_unset=True), "updated_at": _now()}
     )
 
+=======
+    changes = payload.model_dump(exclude_unset=True)
+    value = changes.get("value", opportunity.value)
+    probability = changes.get("probability", opportunity.probability)
+    updated = opportunity.model_copy(
+        update={
+            **changes,
+            "weighted_revenue": round(value * probability, 2),
+            "updated_at": _now(),
+        }
+    )
+>>>>>>> a0e9f77 (saravanan commit)
     OPPORTUNITIES[opportunity_id] = updated
     return updated
 

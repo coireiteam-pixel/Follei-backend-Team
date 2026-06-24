@@ -1,8 +1,15 @@
 from datetime import datetime, timezone
+<<<<<<< HEAD
 from app.core.ids import short_id
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 
+=======
+
+from fastapi import APIRouter, HTTPException, Query, Response, status
+
+from app.core.ids import short_id
+>>>>>>> a0e9f77 (saravanan commit)
 from app.schemas.campaign import (
     CampaignCreate,
     CampaignInboundEmailListResponse,
@@ -17,17 +24,30 @@ from app.schemas.campaign import (
     CampaignSendResponse,
     CampaignUpdate,
 )
+<<<<<<< HEAD
 from app.services.mcp.email import brevo_send, gmail_send, mailjet_send, outlook_send
+=======
+from app.services.mcp.email import gmail_send, mailjet_send, outlook_send
+>>>>>>> a0e9f77 (saravanan commit)
 
 router = APIRouter(prefix="/campaigns", tags=["Campaigns"])
 metrics_router = APIRouter(prefix="/campaign-metrics", tags=["Campaigns"])
 inbound_router = APIRouter(prefix="/email/inbound", tags=["Campaigns"])
 
 CAMPAIGNS: dict[str, CampaignResponse] = {}
+<<<<<<< HEAD
 CAMPAIGN_LEADS: dict[str, dict[str, str]] = {}  # campaign_id -> lead_id mapping
 METRICS: dict[str, CampaignMetricResponse] = {}
 CAMPAIGN_METRICS: dict[str, list[str]] = {}  # campaign_id -> metric_ids
+<<<<<<< HEAD
 INBOUND_EMAILS: dict[str, CampaignInboundEmailResponse] = {}
+=======
+=======
+CAMPAIGN_LEADS: dict[str, dict[str, str]] = {}
+METRICS: dict[str, CampaignMetricResponse] = {}
+CAMPAIGN_METRICS: dict[str, list[str]] = {}
+>>>>>>> a0e9f77 (saravanan commit)
+>>>>>>> 3f67e1f (saravanan commit)
 
 
 def _now() -> str:
@@ -124,6 +144,7 @@ def create_campaign(payload: CampaignCreate) -> CampaignResponse:
     campaign_id = str(short_id())
     campaign = CampaignResponse(
         id=campaign_id,
+<<<<<<< HEAD
         name=payload.name,
         description=payload.description,
         campaign_type=payload.campaign_type,
@@ -139,6 +160,12 @@ def create_campaign(payload: CampaignCreate) -> CampaignResponse:
         created_by=payload.created_by,
         created_at=now,
         updated_at=now,
+=======
+        spent=0,
+        created_at=now,
+        updated_at=now,
+        **payload.model_dump(),
+>>>>>>> a0e9f77 (saravanan commit)
     )
     CAMPAIGNS[campaign_id] = campaign
     CAMPAIGN_LEADS[campaign_id] = {}
@@ -161,7 +188,10 @@ def list_campaigns(
         items = [item for item in items if item.status == status_filter]
     if campaign_type is not None:
         items = [item for item in items if item.campaign_type == campaign_type]
+<<<<<<< HEAD
 
+=======
+>>>>>>> a0e9f77 (saravanan commit)
     total = len(items)
     start = (page - 1) * page_size
     return CampaignListResponse(items=items[start : start + page_size], total=total, page=page, page_size=page_size)
@@ -175,8 +205,12 @@ def get_campaign(campaign_id: str) -> CampaignResponse:
 @router.patch("/{campaign_id}", response_model=CampaignResponse)
 def update_campaign(campaign_id: str, payload: CampaignUpdate) -> CampaignResponse:
     campaign = _get_campaign_or_404(campaign_id)
+<<<<<<< HEAD
     data = payload.model_dump(exclude_unset=True)
     updated = campaign.model_copy(update={**data, "updated_at": _now()})
+=======
+    updated = campaign.model_copy(update={**payload.model_dump(exclude_unset=True), "updated_at": _now()})
+>>>>>>> a0e9f77 (saravanan commit)
     CAMPAIGNS[campaign_id] = updated
     return updated
 
@@ -186,9 +220,13 @@ def delete_campaign(campaign_id: str) -> Response:
     _get_campaign_or_404(campaign_id)
     CAMPAIGNS.pop(campaign_id, None)
     CAMPAIGN_LEADS.pop(campaign_id, None)
+<<<<<<< HEAD
     # Remove associated metrics
     metric_ids = CAMPAIGN_METRICS.pop(campaign_id, [])
     for metric_id in metric_ids:
+=======
+    for metric_id in CAMPAIGN_METRICS.pop(campaign_id, []):
+>>>>>>> a0e9f77 (saravanan commit)
         METRICS.pop(metric_id, None)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -196,9 +234,13 @@ def delete_campaign(campaign_id: str) -> Response:
 @router.post("/{campaign_id}/leads/{lead_id}", status_code=status.HTTP_201_CREATED)
 def add_lead_to_campaign(campaign_id: str, lead_id: str) -> dict:
     _get_campaign_or_404(campaign_id)
+<<<<<<< HEAD
     if campaign_id not in CAMPAIGN_LEADS:
         CAMPAIGN_LEADS[campaign_id] = {}
     CAMPAIGN_LEADS[campaign_id][lead_id] = "added"
+=======
+    CAMPAIGN_LEADS.setdefault(campaign_id, {})[lead_id] = "added"
+>>>>>>> a0e9f77 (saravanan commit)
     return {"message": "Lead added to campaign", "campaign_id": campaign_id, "lead_id": lead_id}
 
 
@@ -206,14 +248,22 @@ def add_lead_to_campaign(campaign_id: str, lead_id: str) -> dict:
 def list_campaign_leads(campaign_id: str) -> dict:
     _get_campaign_or_404(campaign_id)
     lead_ids = CAMPAIGN_LEADS.get(campaign_id, {})
+<<<<<<< HEAD
     return {"campaign_id": campaign_id, "leads": list(lead_ids.keys()), "total": len(lead_ids)}
+=======
+    return {"campaign_id": campaign_id, "leads": list(lead_ids), "total": len(lead_ids)}
+>>>>>>> a0e9f77 (saravanan commit)
 
 
 @router.delete("/{campaign_id}/leads/{lead_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_lead_from_campaign(campaign_id: str, lead_id: str) -> Response:
     _get_campaign_or_404(campaign_id)
+<<<<<<< HEAD
     if campaign_id in CAMPAIGN_LEADS:
         CAMPAIGN_LEADS[campaign_id].pop(lead_id, None)
+=======
+    CAMPAIGN_LEADS.get(campaign_id, {}).pop(lead_id, None)
+>>>>>>> a0e9f77 (saravanan commit)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -221,6 +271,7 @@ def remove_lead_from_campaign(campaign_id: str, lead_id: str) -> Response:
 def send_campaign(campaign_id: str, payload: CampaignSendRequest) -> CampaignSendResponse:
     campaign = _get_campaign_or_404(campaign_id)
     provider = payload.provider.lower()
+<<<<<<< HEAD
     if provider not in {"brevo", "gmail", "mailjet", "outlook"}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -235,10 +286,22 @@ def send_campaign(campaign_id: str, payload: CampaignSendRequest) -> CampaignSen
     sent_count = 0
 
     for lead_id in lead_ids:
+=======
+    senders = {"gmail": gmail_send, "mailjet": mailjet_send, "outlook": outlook_send}
+    if provider not in senders:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Provider must be gmail, mailjet, or outlook")
+
+    from app.routers.leads import LEADS
+
+    recipients: list[CampaignSendRecipient] = []
+    sent_count = 0
+    for lead_id in CAMPAIGN_LEADS.get(campaign_id, {}):
+>>>>>>> a0e9f77 (saravanan commit)
         lead = LEADS.get(lead_id)
         if lead is None:
             recipients.append(CampaignSendRecipient(lead_id=lead_id, status="skipped", detail="Lead not found"))
             continue
+<<<<<<< HEAD
         if lead.tenant_id != campaign.tenant_id:
             recipients.append(
                 CampaignSendRecipient(
@@ -265,6 +328,15 @@ def send_campaign(campaign_id: str, payload: CampaignSendRequest) -> CampaignSen
             result = mailjet_send(to=lead.email, subject=payload.subject, body=payload.body)
         else:
             result = outlook_send(to=lead.email, subject=payload.subject, body=payload.body)
+=======
+        if lead.tenant_id != campaign.tenant_id or not lead.email:
+            recipients.append(CampaignSendRecipient(lead_id=lead_id, email=lead.email, status="skipped"))
+            continue
+        if payload.dry_run:
+            recipients.append(CampaignSendRecipient(lead_id=lead_id, email=lead.email, status="dry_run"))
+            continue
+        result = senders[provider](to=lead.email, subject=payload.subject, body=payload.body)
+>>>>>>> a0e9f77 (saravanan commit)
         CAMPAIGN_LEADS[campaign_id][lead_id] = "contacted"
         sent_count += 1
         recipients.append(
@@ -289,7 +361,10 @@ def send_campaign(campaign_id: str, payload: CampaignSendRequest) -> CampaignSen
     )
     METRICS[metric_id] = metric
     CAMPAIGN_METRICS.setdefault(campaign_id, []).append(metric_id)
+<<<<<<< HEAD
 
+=======
+>>>>>>> a0e9f77 (saravanan commit)
     return CampaignSendResponse(
         campaign_id=campaign_id,
         tenant_id=campaign.tenant_id,
@@ -381,6 +456,7 @@ def list_inbound_emails(
 
 @metrics_router.post("", response_model=CampaignMetricResponse, status_code=status.HTTP_201_CREATED)
 def create_metric(payload: CampaignMetricCreate) -> CampaignMetricResponse:
+<<<<<<< HEAD
     # Verify campaign exists
     _get_campaign_or_404(payload.campaign_id)
     
@@ -395,6 +471,11 @@ def create_metric(payload: CampaignMetricCreate) -> CampaignMetricResponse:
         tenant_id=payload.tenant_id,
         recorded_at=now,
     )
+=======
+    _get_campaign_or_404(payload.campaign_id)
+    metric_id = str(short_id())
+    metric = CampaignMetricResponse(id=metric_id, recorded_at=_now(), **payload.model_dump())
+>>>>>>> a0e9f77 (saravanan commit)
     METRICS[metric_id] = metric
     CAMPAIGN_METRICS.setdefault(payload.campaign_id, []).append(metric_id)
     return metric
@@ -412,6 +493,7 @@ def list_metrics(
         items = [item for item in items if item.campaign_id == campaign_id]
     if metric_type is not None:
         items = [item for item in items if item.metric_type == metric_type]
+<<<<<<< HEAD
 
     total = len(items)
     start = (page - 1) * page_size
@@ -421,6 +503,11 @@ def list_metrics(
         "page": page,
         "page_size": page_size,
     }
+=======
+    total = len(items)
+    start = (page - 1) * page_size
+    return {"items": items[start : start + page_size], "total": total, "page": page, "page_size": page_size}
+>>>>>>> a0e9f77 (saravanan commit)
 
 
 @metrics_router.get("/{metric_id}", response_model=CampaignMetricResponse)
@@ -436,8 +523,15 @@ def delete_metric(metric_id: str) -> Response:
     metric = METRICS.get(metric_id)
     if metric is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Metric not found")
+<<<<<<< HEAD
     campaign_id = metric.campaign_id
     METRICS.pop(metric_id, None)
     if campaign_id in CAMPAIGN_METRICS:
         CAMPAIGN_METRICS[campaign_id] = [m for m in CAMPAIGN_METRICS[campaign_id] if m != metric_id]
+=======
+    METRICS.pop(metric_id)
+    CAMPAIGN_METRICS[metric.campaign_id] = [
+        item for item in CAMPAIGN_METRICS.get(metric.campaign_id, []) if item != metric_id
+    ]
+>>>>>>> a0e9f77 (saravanan commit)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -209,12 +209,14 @@ UpdateOpportunityRequest = OpportunityUpdate
 
 class OpportunityResponse(OpportunityBase):
     id: str
+    weighted_revenue: float = 0.0
     created_at: datetime
     updated_at: datetime
 
     model_config = {"from_attributes": True}
 
 
+<<<<<<< HEAD
 OpportunityRequest = OpportunityCreate
 
 
@@ -223,6 +225,30 @@ class OpportunityListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+=======
+class OpportunityListResponse(BaseModel):
+    items: list[OpportunityResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+OpportunityRequest = OpportunityCreate
+
+
+class CSVImportError(BaseModel):
+    row: int
+    message: str
+
+
+class CSVImportResponse(BaseModel):
+    filename: str
+    total_rows: int
+    imported: int
+    updated: int
+    failed: int
+    errors: list[CSVImportError] = Field(default_factory=list)
+>>>>>>> a0e9f77 (saravanan commit)
 
 
 class MeetingBase(BaseModel):

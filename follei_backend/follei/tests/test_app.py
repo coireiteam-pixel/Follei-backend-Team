@@ -30,11 +30,20 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
         and path.startswith("/api")
     }
 
+<<<<<<< HEAD
     assert len(methods) == 229
+=======
+    assert len(methods) == 224
+>>>>>>> a0e9f77 (saravanan commit)
     assert "POST /api/messages/{message_id}/attachments" in methods
     assert "POST /api/conversations/{conversation_id}/buying-signals" in methods
     assert "POST /api/qualification-frameworks" in methods
     assert "POST /api/opportunities/{opportunity_id}/quotes" in methods
+    assert "POST /api/campaigns" in methods
+    assert "POST /api/campaigns/{campaign_id}/send" in methods
+    assert "POST /api/campaign-metrics" in methods
+    assert "POST /api/leads/import-csv" in methods
+    assert "POST /api/opportunities/import-csv" in methods
     assert "PATCH /api/renewals/{renewal_id}" in methods
     assert "GET /api/integrations" in methods
     assert "POST /api/integration-connections/{connection_id}/sync" in methods
@@ -59,6 +68,19 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
     assert "GET /api/agents" not in methods
 
 
+def test_all_reference_router_groups_are_visible_in_swagger():
+    openapi_paths = client.app.openapi()["paths"]
+
+    assert "/api/v1/health" in openapi_paths
+    assert "/agents" in openapi_paths
+    assert "/database/tables" in openapi_paths
+    assert "/tenants/" in openapi_paths
+    assert "/users/{user_id}" in openapi_paths
+    assert "/api/chunks/{chunk_id}/embeddings" in openapi_paths
+    assert "/api/campaigns" in openapi_paths
+    assert client.get("/api/v1/health").status_code == 200
+
+
 def test_openapi_schema_does_not_expose_swagger_placeholder_props():
     openapi = client.app.openapi()
     openapi_json = json.dumps(openapi)
@@ -67,6 +89,7 @@ def test_openapi_schema_does_not_expose_swagger_placeholder_props():
     assert '"additionalProperties": true' not in openapi_json
 
 
+<<<<<<< HEAD
 @pytest.mark.parametrize(
     ("filename", "content", "content_type", "upload_type"),
     [
@@ -143,6 +166,35 @@ def test_document_upload_rejects_unsupported_file_type(tmp_path):
     )
 
     assert response.status_code == 415
+=======
+def test_swagger_groups_follow_reference_order():
+    assert [tag["name"] for tag in client.app.openapi()["tags"]] == [
+        "Identity & Auth",
+        "Domain 1 - Auth",
+        "Domain 2 - Tenants & Users",
+        "Domain 3 - Agents & AI Workforce",
+        "Domain 4 - System, Health & Jobs",
+        "AI Agents",
+        "tenants",
+        "users",
+        "Database CRUD",
+        "Conversations & Messages",
+        "Leads & Revenue",
+        "Campaigns",
+        "Customers & Customer Success",
+        "Integrations",
+        "Webhooks & Events",
+        "Tools, MCP & Registry",
+        "Documents",
+        "Chunks",
+        "Entities",
+        "Knowledge & RAG",
+        "Products & Pricing",
+        "Billing",
+        "Analytics & Observability",
+        "System",
+    ]
+>>>>>>> a0e9f77 (saravanan commit)
 
 
 def test_auth_register_creates_short_alphanumeric_ids():
@@ -556,3 +608,37 @@ def test_integrations_webhooks_and_tools_flow_does_not_return_422():
     ]
 
     assert all(response.status_code < 400 for response in responses)
+<<<<<<< HEAD
+=======
+
+
+def test_lead_and_revenue_csv_uploads_are_returned_by_get_endpoints():
+    leads_csv = (
+        "id,email,full_name,company,status,priority,tags,custom_fields,score,metadata,tenant_id\n"
+        'L901,csv@example.com,CSV Lead,CSV Corp,qualified,high,"[""csv""]","{}",88.5,"{}",T001\n'
+    )
+    lead_import = client.post(
+        "/api/leads/import-csv",
+        files={"file": ("leads.csv", leads_csv, "text/csv")},
+        data={"default_tenant_id": TENANT_ID},
+    )
+    assert lead_import.status_code == 200
+    assert lead_import.json()["imported"] == 1
+    assert client.get("/api/leads/L901").json()["email"] == "csv@example.com"
+
+    revenue_csv = (
+        "id,lead_id,name,value,stage,probability,expected_close_date,tenant_id,metadata\n"
+        'O901,L901,CSV annual deal,10000,proposal,0.75,2026-12-31,T001,"{}"\n'
+    )
+    revenue_import = client.post(
+        "/api/opportunities/import-csv",
+        files={"file": ("revenue.csv", revenue_csv, "text/csv")},
+        data={"default_tenant_id": TENANT_ID},
+    )
+    assert revenue_import.status_code == 200
+    assert revenue_import.json()["imported"] == 1
+
+    opportunity = client.get("/api/opportunities/O901").json()
+    assert opportunity["lead_id"] == "L901"
+    assert opportunity["weighted_revenue"] == 7500
+>>>>>>> a0e9f77 (saravanan commit)

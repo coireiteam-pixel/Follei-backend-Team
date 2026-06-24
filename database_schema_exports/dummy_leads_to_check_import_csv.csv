@@ -1,0 +1,11 @@
+lead_id,first_name,last_name,company,email,phone,source,status,priority,assignee,score,created_date
+L001,John,Anderson,PeopleFirst,john.anderson@peoplefirst.com,+1-555-1001,Website,new,high,Emma Wilson,85,2026-06-01
+L002,Sarah,Johnson,TechNova,sarah.johnson@technova.io,+1-555-1002,LinkedIn,contacted,medium,David Lee,72,2026-06-02
+L003,Michael,Brown,CloudWorks,michael.brown@cloudworks.ai,+1-555-1003,Referral,qualified,high,Emma Wilson,91,2026-06-03
+L004,Emily,Davis,NextGen Systems,emily.davis@nextgensystems.com,+1-555-1004,Website,new,medium,David Lee,65,2026-06-04
+L005,Daniel,Miller,SmartEdge,daniel.miller@smartedge.co,+1-555-1005,Conference,qualified,high,Emma Wilson,88,2026-06-05
+L006,Jessica,Taylor,VisionTech,jessica.taylor@visiontech.io,+1-555-1006,LinkedIn,contacted,medium,David Lee,70,2026-06-06
+L007,Christopher,Moore,DataBridge,christopher.moore@databridge.ai,+1-555-1007,Referral,qualified,high,Emma Wilson,93,2026-06-07
+L008,Amanda,White,FutureSoft,amanda.white@futuresoft.com,+1-555-1008,Website,new,low,David Lee,58,2026-06-08
+L009,Matthew,Harris,InnovaTech,matthew.harris@innovatech.io,+1-555-1009,LinkedIn,contacted,high,Emma Wilson,79,2026-06-09
+L010,Olivia,Martin,Quantum Solutions,olivia.martin@quantumsolutions.com,+1-555-1010,Conference,qualified,high,David Lee,95,2026-06-10
