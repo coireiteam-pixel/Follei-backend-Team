@@ -53,6 +53,32 @@ class CampaignListResponse(BaseModel):
     page_size: int
 
 
+class CampaignSendRequest(BaseModel):
+    subject: str
+    body: str
+    provider: str = "gmail"
+    dry_run: bool = False
+
+
+class CampaignSendRecipient(BaseModel):
+    lead_id: str
+    email: Optional[str] = None
+    status: str
+    message_id: Optional[str] = None
+    detail: Optional[str] = None
+
+
+class CampaignSendResponse(BaseModel):
+    campaign_id: str
+    tenant_id: str
+    provider: str
+    dry_run: bool
+    sent: int
+    skipped: int
+    recipients: List[CampaignSendRecipient]
+    sent_at: datetime
+
+
 class CampaignLeadBase(BaseModel):
     campaign_id: str
     lead_id: str

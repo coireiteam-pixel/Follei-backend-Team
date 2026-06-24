@@ -91,6 +91,23 @@ http://localhost:8000/docs
 - Swagger fully supports the "Authorize" button through FastAPI's `HTTPBearer` scheme. Just click Authorize and paste your JWT access token.
 - Secure endpoints (like `/api/agents`) are now successfully extracting your `tenant_id` from your token to safely isolate data.
 
+## Campaign Email Sending
+
+`POST /api/campaigns/{campaign_id}/send` sends a campaign to the email addresses on the campaign's attached leads.
+
+By default, local development uses a mock sender so Swagger tests can run without email credentials. Configure SMTP environment variables to send real email:
+
+```powershell
+$env:SMTP_HOST="smtp.example.com"
+$env:SMTP_PORT="587"
+$env:SMTP_USER="your-smtp-user"
+$env:SMTP_PASSWORD="your-smtp-password"
+$env:SMTP_FROM="noreply@example.com"
+$env:SMTP_TLS="true"
+```
+
+Without `SMTP_HOST`, the API returns successful mock message IDs but does not deliver to inboxes.
+
 ### Notes
 
 - Local Python uses Docker PostgreSQL by default:

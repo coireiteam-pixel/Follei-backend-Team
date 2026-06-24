@@ -9,8 +9,12 @@ from app.schemas.campaign import (
     CampaignMetricCreate,
     CampaignMetricResponse,
     CampaignResponse,
+    CampaignSendRecipient,
+    CampaignSendRequest,
+    CampaignSendResponse,
     CampaignUpdate,
 )
+from app.services.mcp.email import gmail_send, outlook_send
 
 router = APIRouter(prefix="/campaigns", tags=["Campaigns"])
 metrics_router = APIRouter(prefix="/campaign-metrics", tags=["Campaigns"])
@@ -129,6 +133,85 @@ def remove_lead_from_campaign(campaign_id: str, lead_id: str) -> Response:
     if campaign_id in CAMPAIGN_LEADS:
         CAMPAIGN_LEADS[campaign_id].pop(lead_id, None)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{campaign_id}/send", response_model=CampaignSendResponse)
+def send_campaign(campaign_id: str, payload: CampaignSendRequest) -> CampaignSendResponse:
+    campaign = _get_campaign_or_404(campaign_id)
+    provider = payload.provider.lower()
+    if provider not in {"gmail", "outlook"}:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Provider must be gmail or outlook")
+
+    # The current app stores leads in memory, so use that source until campaign persistence is wired in.
+    from app.routers.leads import LEADS
+
+    recipients: list[CampaignSendRecipient] = []
+    lead_ids = CAMPAIGN_LEADS.get(campaign_id, {})
+    sent_count = 0
+
+    for lead_id in lead_ids:
+        lead = LEADS.get(lead_id)
+        if lead is None:
+            recipients.append(CampaignSendRecipient(lead_id=lead_id, status="skipped", detail="Lead not found"))
+            continue
+        if lead.tenant_id != campaign.tenant_id:
+            recipients.append(
+                CampaignSendRecipient(
+                    lead_id=lead_id,
+                    email=lead.email,
+                    status="skipped",
+                    detail="Lead belongs to a different tenant",
+                )
+            )
+            continue
+        if not lead.email:
+            recipients.append(CampaignSendRecipient(lead_id=lead_id, status="skipped", detail="Lead has no email"))
+            continue
+
+        if payload.dry_run:
+            recipients.append(CampaignSendRecipient(lead_id=lead_id, email=lead.email, status="dry_run"))
+            continue
+
+        result = (
+            gmail_send(to=lead.email, subject=payload.subject, body=payload.body)
+            if provider == "gmail"
+            else outlook_send(to=lead.email, subject=payload.subject, body=payload.body)
+        )
+        CAMPAIGN_LEADS[campaign_id][lead_id] = "contacted"
+        sent_count += 1
+        recipients.append(
+            CampaignSendRecipient(
+                lead_id=lead_id,
+                email=lead.email,
+                status="sent",
+                message_id=result.get("message_id"),
+            )
+        )
+
+    sent_at = _now()
+    metric_id = str(short_id())
+    metric = CampaignMetricResponse(
+        id=metric_id,
+        campaign_id=campaign_id,
+        metric_type="sent",
+        value=sent_count,
+        metadata_={"provider": provider, "dry_run": payload.dry_run},
+        tenant_id=campaign.tenant_id,
+        recorded_at=sent_at,
+    )
+    METRICS[metric_id] = metric
+    CAMPAIGN_METRICS.setdefault(campaign_id, []).append(metric_id)
+
+    return CampaignSendResponse(
+        campaign_id=campaign_id,
+        tenant_id=campaign.tenant_id,
+        provider=provider,
+        dry_run=payload.dry_run,
+        sent=sent_count,
+        skipped=len(recipients) - sent_count,
+        recipients=recipients,
+        sent_at=sent_at,
+    )
 
 
 @metrics_router.post("", response_model=CampaignMetricResponse, status_code=status.HTTP_201_CREATED)
