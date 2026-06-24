@@ -11,6 +11,7 @@ from app.routers import (
     api_v1,
     auth,
     billing,
+    campaigns,
     chunks,
     commerce,
     conversation,
@@ -30,6 +31,32 @@ from app.routers import (
 
 API_PREFIX = "/api"
 FAVICON_SVG = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#111827"/><path d="M18 47V17h29v8H28v6h16v8H28v8z" fill="#22c55e"/></svg>"""
+OPENAPI_TAGS = [
+    {"name": "Identity & Auth"},
+    {"name": "Domain 1 - Auth"},
+    {"name": "Domain 2 - Tenants & Users"},
+    {"name": "Domain 3 - Agents & AI Workforce"},
+    {"name": "Domain 4 - System, Health & Jobs"},
+    {"name": "AI Agents"},
+    {"name": "tenants"},
+    {"name": "users"},
+    {"name": "Database CRUD"},
+    {"name": "Conversations & Messages"},
+    {"name": "Leads & Revenue"},
+    {"name": "Campaigns"},
+    {"name": "Customers & Customer Success"},
+    {"name": "Integrations"},
+    {"name": "Webhooks & Events"},
+    {"name": "Tools, MCP & Registry"},
+    {"name": "Documents"},
+    {"name": "Chunks"},
+    {"name": "Entities"},
+    {"name": "Knowledge & RAG"},
+    {"name": "Products & Pricing"},
+    {"name": "Billing"},
+    {"name": "Analytics & Observability"},
+    {"name": "System"},
+]
 
 
 @asynccontextmanager
@@ -42,6 +69,7 @@ app = FastAPI(
     title="Follei API",
     version="1.0.0",
     lifespan=lifespan,
+    openapi_tags=OPENAPI_TAGS,
 )
 
 
@@ -69,6 +97,7 @@ def custom_openapi() -> dict[str, Any]:
         title=app.title,
         version=app.version,
         routes=app.routes,
+        tags=app.openapi_tags,
     )
     _remove_swagger_placeholder_props(openapi_schema)
     app.openapi_schema = openapi_schema
@@ -98,6 +127,8 @@ app.include_router(leads.router, prefix=API_PREFIX)
 app.include_router(leads.frameworks_router, prefix=API_PREFIX)
 app.include_router(leads.opportunities_router, prefix=API_PREFIX)
 app.include_router(leads.meetings_router, prefix=API_PREFIX)
+app.include_router(campaigns.router, prefix=API_PREFIX)
+app.include_router(campaigns.metrics_router, prefix=API_PREFIX)
 app.include_router(customers.router, prefix=API_PREFIX)
 app.include_router(customers.renewals_router, prefix=API_PREFIX)
 app.include_router(integrations.integrations_router, prefix=API_PREFIX)
