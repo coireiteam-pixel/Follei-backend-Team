@@ -3,6 +3,8 @@ import os
 import smtplib
 from email.message import EmailMessage
 
+import requests
+
 
 def _smtp_send(to: str, subject: str, body: str) -> dict | None:
     host = os.getenv("SMTP_HOST")
@@ -28,6 +30,39 @@ def _smtp_send(to: str, subject: str, body: str) -> dict | None:
         smtp.send_message(message)
 
     return {"message_id": str(short_id()), "to": to, "subject": subject, "sent": True, "provider": "smtp"}
+
+
+def mailjet_send(to: str, subject: str, body: str) -> dict:
+    api_key = os.getenv("MAILJET_API_KEY")
+    api_secret = os.getenv("MAILJET_API_SECRET")
+    from_email = os.getenv("MAILJET_FROM_EMAIL")
+    from_name = os.getenv("MAILJET_FROM_NAME", "Follei")
+
+    if not api_key or not api_secret or not from_email:
+        return {"message_id": str(short_id()), "to": to, "subject": subject, "sent": True, "mock": True}
+
+    response = requests.post(
+        "https://api.mailjet.com/v3.1/send",
+        auth=(api_key, api_secret),
+        json={
+            "Messages": [
+                {
+                    "From": {"Email": from_email, "Name": from_name},
+                    "To": [{"Email": to}],
+                    "Subject": subject,
+                    "TextPart": body,
+                }
+            ]
+        },
+        timeout=20,
+    )
+    response.raise_for_status()
+
+    payload = response.json()
+    message = payload.get("Messages", [{}])[0]
+    recipient = message.get("To", [{}])[0]
+    message_id = recipient.get("MessageID") or recipient.get("MessageUUID") or str(short_id())
+    return {"message_id": str(message_id), "to": to, "subject": subject, "sent": True, "provider": "mailjet"}
 
 
 def gmail_send(to: str, subject: str, body: str, attachments: list | None = None) -> dict:

@@ -95,7 +95,18 @@ http://localhost:8000/docs
 
 `POST /api/campaigns/{campaign_id}/send` sends a campaign to the email addresses on the campaign's attached leads.
 
-By default, local development uses a mock sender so Swagger tests can run without email credentials. Configure SMTP environment variables to send real email:
+By default, local development uses a mock sender so Swagger tests can run without email credentials.
+
+Configure Mailjet environment variables to send real email with `provider: "mailjet"`:
+
+```powershell
+$env:MAILJET_API_KEY="your-mailjet-api-key"
+$env:MAILJET_API_SECRET="your-mailjet-api-secret"
+$env:MAILJET_FROM_EMAIL="verified-sender@example.com"
+$env:MAILJET_FROM_NAME="Follei"
+```
+
+Alternatively, configure SMTP environment variables:
 
 ```powershell
 $env:SMTP_HOST="smtp.example.com"
@@ -106,7 +117,7 @@ $env:SMTP_FROM="noreply@example.com"
 $env:SMTP_TLS="true"
 ```
 
-Without `SMTP_HOST`, the API returns successful mock message IDs but does not deliver to inboxes.
+Without Mailjet or SMTP credentials, the API returns successful mock message IDs but does not deliver to inboxes.
 
 ### Notes
 
