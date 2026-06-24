@@ -79,6 +79,33 @@ class CampaignSendResponse(BaseModel):
     sent_at: datetime
 
 
+class CampaignInboundEmailResponse(BaseModel):
+    id: str
+    tenant_id: str
+    campaign_id: Optional[str] = None
+    lead_id: Optional[str] = None
+    from_email: Optional[str] = None
+    to_email: Optional[str] = None
+    subject: Optional[str] = None
+    body: Optional[str] = None
+    provider: str = "brevo"
+    event_type: str = "inbound"
+    raw_payload: Dict[str, Any] = {}
+    received_at: datetime
+
+
+class CampaignInboundEmailListResponse(BaseModel):
+    items: List[CampaignInboundEmailResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class CampaignInboundWebhookResponse(BaseModel):
+    received: bool
+    inbound_email: CampaignInboundEmailResponse
+
+
 class CampaignLeadBase(BaseModel):
     campaign_id: str
     lead_id: str

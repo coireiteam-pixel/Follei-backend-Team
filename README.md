@@ -118,6 +118,32 @@ $env:SMTP_TLS="true"
 
 Without Brevo or SMTP credentials, the API returns successful mock message IDs but does not deliver to inboxes.
 
+### Brevo Inbound Email Webhook
+
+Configure Brevo to POST inbound or reply events to:
+
+```text
+https://your-api-host.example.com/api/email/inbound/brevo
+```
+
+For local Swagger testing:
+
+```text
+http://127.0.0.1:8000/api/email/inbound/brevo
+```
+
+The webhook stores inbound messages with `tenant_id`, `campaign_id`, and `lead_id` when those values can be resolved. You can pass them as query parameters in the webhook URL when needed:
+
+```text
+/api/email/inbound/brevo?tenant_id=T001&campaign_id=C001&lead_id=L001
+```
+
+Received messages can be listed with:
+
+```text
+GET /api/email/inbound?tenant_id=T001
+```
+
 ### Notes
 
 - Local Python uses Docker PostgreSQL by default:

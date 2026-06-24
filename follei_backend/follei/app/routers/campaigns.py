@@ -5,6 +5,9 @@ from fastapi import APIRouter, HTTPException, Query, Response, status
 
 from app.schemas.campaign import (
     CampaignCreate,
+    CampaignInboundEmailListResponse,
+    CampaignInboundEmailResponse,
+    CampaignInboundWebhookResponse,
     CampaignListResponse,
     CampaignMetricCreate,
     CampaignMetricResponse,
@@ -18,11 +21,13 @@ from app.services.mcp.email import brevo_send, gmail_send, mailjet_send, outlook
 
 router = APIRouter(prefix="/campaigns", tags=["Campaigns"])
 metrics_router = APIRouter(prefix="/campaign-metrics", tags=["Campaigns"])
+inbound_router = APIRouter(prefix="/email/inbound", tags=["Campaigns"])
 
 CAMPAIGNS: dict[str, CampaignResponse] = {}
 CAMPAIGN_LEADS: dict[str, dict[str, str]] = {}  # campaign_id -> lead_id mapping
 METRICS: dict[str, CampaignMetricResponse] = {}
 CAMPAIGN_METRICS: dict[str, list[str]] = {}  # campaign_id -> metric_ids
+INBOUND_EMAILS: dict[str, CampaignInboundEmailResponse] = {}
 
 
 def _now() -> str:
@@ -34,6 +39,83 @@ def _get_campaign_or_404(campaign_id: str) -> CampaignResponse:
     if campaign is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campaign not found")
     return campaign
+
+
+def _first_text(payload: dict, keys: list[str]) -> str | None:
+    for key in keys:
+        value = payload.get(key)
+        if isinstance(value, str) and value:
+            return value
+        if isinstance(value, dict):
+            nested = value.get("email") or value.get("address") or value.get("Email")
+            if isinstance(nested, str) and nested:
+                return nested
+        if isinstance(value, list) and value:
+            first = value[0]
+            if isinstance(first, str) and first:
+                return first
+            if isinstance(first, dict):
+                nested = first.get("email") or first.get("address") or first.get("Email")
+                if isinstance(nested, str) and nested:
+                    return nested
+    return None
+
+
+def _infer_inbound_context(
+    from_email: str | None,
+    tenant_id: str | None,
+    campaign_id: str | None,
+    lead_id: str | None,
+) -> tuple[str | None, str | None, str | None]:
+    from app.routers.leads import LEADS
+
+    if lead_id and lead_id in LEADS:
+        lead = LEADS[lead_id]
+        tenant_id = tenant_id or lead.tenant_id
+
+    if from_email and not lead_id:
+        normalized = from_email.lower()
+        for candidate_id, lead in LEADS.items():
+            if lead.email and lead.email.lower() == normalized:
+                lead_id = candidate_id
+                tenant_id = tenant_id or lead.tenant_id
+                break
+
+    if lead_id and not campaign_id:
+        for candidate_campaign_id, lead_statuses in CAMPAIGN_LEADS.items():
+            if lead_id in lead_statuses:
+                campaign = CAMPAIGNS.get(candidate_campaign_id)
+                if campaign and (tenant_id is None or campaign.tenant_id == tenant_id):
+                    campaign_id = candidate_campaign_id
+                    tenant_id = tenant_id or campaign.tenant_id
+                    break
+
+    if campaign_id and campaign_id in CAMPAIGNS:
+        tenant_id = tenant_id or CAMPAIGNS[campaign_id].tenant_id
+
+    return tenant_id, campaign_id, lead_id
+
+
+def _record_campaign_metric(
+    campaign_id: str,
+    tenant_id: str,
+    metric_type: str,
+    value: float,
+    metadata: dict | None = None,
+) -> CampaignMetricResponse:
+    metric_id = str(short_id())
+    metric = CampaignMetricResponse(
+        id=metric_id,
+        campaign_id=campaign_id,
+        metric_type=metric_type,
+        value=value,
+        metadata_=metadata or {},
+        tenant_id=tenant_id,
+        recorded_at=_now(),
+    )
+    METRICS[metric_id] = metric
+    CAMPAIGN_METRICS.setdefault(campaign_id, []).append(metric_id)
+    return metric
 
 
 @router.post("", response_model=CampaignResponse, status_code=status.HTTP_201_CREATED)
@@ -218,6 +300,83 @@ def send_campaign(campaign_id: str, payload: CampaignSendRequest) -> CampaignSen
         recipients=recipients,
         sent_at=sent_at,
     )
+
+
+@inbound_router.post("/brevo", response_model=CampaignInboundWebhookResponse)
+def receive_brevo_inbound_email(
+    payload: dict,
+    tenant_id: str | None = None,
+    campaign_id: str | None = None,
+    lead_id: str | None = None,
+) -> CampaignInboundWebhookResponse:
+    from_email = _first_text(payload, ["from", "From", "sender", "Sender", "email", "from_email"])
+    to_email = _first_text(payload, ["to", "To", "recipient", "recipients", "to_email"])
+    subject = _first_text(payload, ["subject", "Subject"])
+    body = _first_text(payload, ["text", "Text", "body", "Body", "html", "Html", "htmlContent", "textContent"])
+    event_type = _first_text(payload, ["event", "eventType", "type"]) or "inbound"
+
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    tenant_id = tenant_id or metadata.get("tenant_id")
+    campaign_id = campaign_id or metadata.get("campaign_id")
+    lead_id = lead_id or metadata.get("lead_id")
+
+    tenant_id, campaign_id, lead_id = _infer_inbound_context(from_email, tenant_id, campaign_id, lead_id)
+    if tenant_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to resolve tenant_id from webhook payload or query parameters",
+        )
+
+    inbound_id = str(short_id())
+    inbound_email = CampaignInboundEmailResponse(
+        id=inbound_id,
+        tenant_id=tenant_id,
+        campaign_id=campaign_id,
+        lead_id=lead_id,
+        from_email=from_email,
+        to_email=to_email,
+        subject=subject,
+        body=body,
+        provider="brevo",
+        event_type=event_type,
+        raw_payload=payload,
+        received_at=_now(),
+    )
+    INBOUND_EMAILS[inbound_id] = inbound_email
+
+    if campaign_id and campaign_id in CAMPAIGNS:
+        _record_campaign_metric(
+            campaign_id=campaign_id,
+            tenant_id=tenant_id,
+            metric_type="replied",
+            value=1,
+            metadata={"provider": "brevo", "inbound_email_id": inbound_id, "event_type": event_type},
+        )
+        if lead_id and campaign_id in CAMPAIGN_LEADS and lead_id in CAMPAIGN_LEADS[campaign_id]:
+            CAMPAIGN_LEADS[campaign_id][lead_id] = "responded"
+
+    return CampaignInboundWebhookResponse(received=True, inbound_email=inbound_email)
+
+
+@inbound_router.get("", response_model=CampaignInboundEmailListResponse)
+def list_inbound_emails(
+    tenant_id: str | None = None,
+    campaign_id: str | None = None,
+    lead_id: str | None = None,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+) -> CampaignInboundEmailListResponse:
+    items = list(INBOUND_EMAILS.values())
+    if tenant_id is not None:
+        items = [item for item in items if item.tenant_id == tenant_id]
+    if campaign_id is not None:
+        items = [item for item in items if item.campaign_id == campaign_id]
+    if lead_id is not None:
+        items = [item for item in items if item.lead_id == lead_id]
+
+    total = len(items)
+    start = (page - 1) * page_size
+    return CampaignInboundEmailListResponse(items=items[start : start + page_size], total=total, page=page, page_size=page_size)
 
 
 @metrics_router.post("", response_model=CampaignMetricResponse, status_code=status.HTTP_201_CREATED)
