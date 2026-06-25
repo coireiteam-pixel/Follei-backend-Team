@@ -111,12 +111,21 @@ def gmail_read(query: str, max_results: int = 10) -> dict:
     return {"messages": [{"id": str(short_id()), "subject": "Follow up", "body": "Sample message"} for _ in range(min(max_results, 3))]}
 
 
-def mailjet_send(to: str, subject: str, body: str) -> dict:
-    return {"message_id": str(short_id()), "to": to, "subject": subject, "sent": True, "mock": True}
-
-
 def outlook_send(to: str, subject: str, body: str) -> dict:
     result = _smtp_send(to=to, subject=subject, body=body)
     if result is not None:
         return result
     return {"message_id": str(short_id()), "to": to, "subject": subject, "sent": True, "mock": True}
+
+
+def build_email_context(query: str, max_results: int = 3) -> str:
+    messages = gmail_read(query=query, max_results=max_results).get("messages", [])
+    if not messages:
+        return "Email MCP context: no matching emails were found."
+
+    lines = ["Email MCP context:"]
+    for index, message in enumerate(messages, start=1):
+        lines.append(
+            f"{index}. id={message.get('id')} subject={message.get('subject')} body={message.get('body')}"
+        )
+    return "\n".join(lines)
