@@ -1,7 +1,6 @@
 fastapi
 python-multipart
 uvicorn[standard]
-python-multipart
 sqlalchemy>=2.0.0
 psycopg2-binary
 pydantic-settings
@@ -15,13 +14,4 @@ passlib[bcrypt]
 bcrypt
 twilio
 anthropic
-# AI and Vector Store dependencies
-langchain
-sentence-transformers
-chromadb
-qdrant-client
-datasets
-pyarrow
-pandas
 requests
-tqdm

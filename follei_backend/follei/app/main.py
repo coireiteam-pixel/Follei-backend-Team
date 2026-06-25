@@ -20,6 +20,7 @@ from app.routers import (
     database_crud,
     documents,
     entities,
+    email_assistant,
     integrations,
     knowledge,
     leads,
@@ -46,6 +47,7 @@ OPENAPI_TAGS = [
     {"name": "Conversations & Messages"},
     {"name": "Leads & Revenue"},
     {"name": "Campaigns"},
+    {"name": "AI Email Assistant"},
     {"name": "Customers & Customer Success"},
     {"name": "Integrations"},
     {"name": "Webhooks & Events"},
@@ -139,6 +141,7 @@ app.include_router(leads.meetings_router, prefix=API_PREFIX)
 app.include_router(campaigns.router, prefix=API_PREFIX)
 app.include_router(campaigns.metrics_router, prefix=API_PREFIX)
 app.include_router(campaigns.inbound_router, prefix=API_PREFIX)
+app.include_router(email_assistant.router, prefix=API_PREFIX)
 app.include_router(customers.router, prefix=API_PREFIX)
 app.include_router(customers.renewals_router, prefix=API_PREFIX)
 app.include_router(integrations.integrations_router, prefix=API_PREFIX)
