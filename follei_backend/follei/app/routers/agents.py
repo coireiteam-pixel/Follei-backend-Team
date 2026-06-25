@@ -1,21 +1,31 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Any
+
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
 
 from app import schema
 from app.database.session import get_db
 from app.models.agents.agent import Agent
 from app.models.tenancy import User
 from app.routers.auth import get_current_user
-from app.services.mcp.email import build_email_context
-from app.services.mistral import MistralAPIError, MistralConfigurationError, chat_completion
 
 router = APIRouter(
     prefix="/agents",
     tags=["AI Agents"]
 )
 
-EMAIL_TOOL_NAMES = {"email", "gmail", "outlook", "gmail_read", "read_email"}
+# Initialize the Anthropic client (using ANTHROPIC_API_KEY from environment)
+anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+anthropic_client = (
+    anthropic.Anthropic(api_key=anthropic_api_key)
+    if anthropic is not None and anthropic_api_key
+    else None
+)
 
 @router.post("", response_model=schema.Agent, status_code=status.HTTP_201_CREATED)
 def create_agent(
@@ -57,7 +67,7 @@ def chat_with_agent(
     db: Session = Depends(get_db)
 ) -> Any:
     """
-    Chat with a specific AI agent using the Mistral API.
+    Chat with a specific AI agent using the Claude API.
     """
     agent = db.query(Agent).filter(
         Agent.id == agent_id,
@@ -66,21 +76,24 @@ def chat_with_agent(
 
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found or unauthorized")
+    
+    if anthropic is None:
+        raise HTTPException(status_code=503, detail="Anthropic package is not installed.")
+
+    if anthropic_client is None:
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY is not configured.")
 
     try:
-        agent_tools = set(agent.tools or [])
-        email_context = (
-            build_email_context(chat_request.message)
-            if agent_tools.intersection(EMAIL_TOOL_NAMES)
-            else None
+        # Use the agent's system prompt and the user's message to interact with Claude
+        response = anthropic_client.messages.create(
+            model="claude-3-5-sonnet-20240620", # You can choose other Claude models here
+            max_tokens=1024,
+            system=agent.system_prompt,
+            messages=[
+                {"role": "user", "content": chat_request.message}
+            ]
         )
-        response = chat_completion(
-            system_prompt=agent.system_prompt,
-            user_message=chat_request.message,
-            context=email_context,
-        )
-        return {"response": response}
-    except MistralConfigurationError as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
-    except MistralAPIError as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+        # Assuming the response structure, extract the text content
+        return {"response": response.content[0].text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error communicating with Claude API: {e}")

@@ -19,7 +19,6 @@ from app.routers import (
     customers,
     database_crud,
     documents,
-    email_assistant,
     entities,
     integrations,
     knowledge,
@@ -58,7 +57,6 @@ OPENAPI_TAGS = [
     {"name": "Products & Pricing"},
     {"name": "Billing"},
     {"name": "Analytics & Observability"},
-    {"name": "AI Email Assistant"},
     {"name": "System"},
 ]
 
@@ -126,7 +124,6 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(api_v1.router)
-app.include_router(email_assistant.router)
 app.include_router(agents.router)
 app.include_router(tenant.router)
 app.include_router(user.router)
