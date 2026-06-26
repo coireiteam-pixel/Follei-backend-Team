@@ -5,9 +5,10 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.tenancy import Tenant
 from app.services.mcp.sms import send_sms
-from app.services.mistral import get_mistral_reply
 
 router = APIRouter(prefix="/sms", tags=["SMS"])
+
+AUTO_REPLY_MESSAGE = "Thanks for connecting. What do you want?"
 
 
 class MistralSmsRequest(BaseModel):
@@ -37,25 +38,13 @@ async def send_mistral_reply_sms(
     if not tenant_phone:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tenant phone missing")
 
-    mistral_reply = await get_mistral_reply(
-        [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant. Reply clearly and briefly for an SMS message.",
-            },
-            {
-                "role": "user",
-                "content": payload.message,
-            },
-        ]
-    )
-    sms_result = send_sms(tenant_phone, mistral_reply)
+    sms_result = send_sms(tenant_phone, AUTO_REPLY_MESSAGE)
 
     return MistralSmsResponse(
         tenant_id=tenant.id,
-        tenant_phone=tenant_phone,
+        tenant_phone=sms_result["to"],
         user_message=payload.message,
-        mistral_reply=mistral_reply,
+        mistral_reply=AUTO_REPLY_MESSAGE,
         sms_status=sms_result["status"],
         sms_sid=sms_result["sid"],
     )

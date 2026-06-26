@@ -6,7 +6,12 @@ from fastapi.testclient import TestClient
 
 from app.core.ids import short_id
 from app.main import app
+<<<<<<< HEAD
 from app.routers import documents, leads, sms
+=======
+from app.routers import documents, email_assistant, leads, sms
+from app.services.mcp import sms as sms_service
+>>>>>>> 9544729 (sms auto reply)
 
 
 client = TestClient(app)
@@ -30,7 +35,11 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
         and path.startswith("/api")
     }
 
+<<<<<<< HEAD
     assert len(methods) == 230
+=======
+    assert len(methods) == 234
+>>>>>>> 9544729 (sms auto reply)
     assert "POST /api/messages/{message_id}/attachments" in methods
     assert "POST /api/conversations/{conversation_id}/buying-signals" in methods
     assert "POST /api/qualification-frameworks" in methods
@@ -378,16 +387,11 @@ def test_sms_mistral_send_uses_tenant_phone(monkeypatch):
     tenant_id = tenant_response.json()["id"]
     sent = {}
 
-    async def fake_mistral_reply(messages: list[dict]) -> str:
-        assert messages[-1]["content"] == "Hi"
-        return "Hello from Mistral"
-
     def fake_send_sms(to_phone: str, message: str) -> dict:
         sent["to_phone"] = to_phone
         sent["message"] = message
-        return {"sid": "SM123", "status": "queued"}
+        return {"sid": "SM123", "status": "queued", "to": "+15551230000"}
 
-    monkeypatch.setattr(sms, "get_mistral_reply", fake_mistral_reply)
     monkeypatch.setattr(sms, "send_sms", fake_send_sms)
 
     response = client.post(
@@ -400,10 +404,10 @@ def test_sms_mistral_send_uses_tenant_phone(monkeypatch):
     assert body["tenant_id"] == tenant_id
     assert body["tenant_phone"] == "+15551230000"
     assert body["user_message"] == "Hi"
-    assert body["mistral_reply"] == "Hello from Mistral"
+    assert body["mistral_reply"] == "Thanks for connecting. What do you want?"
     assert body["sms_status"] == "queued"
     assert body["sms_sid"] == "SM123"
-    assert sent == {"to_phone": "+15551230000", "message": "Hello from Mistral"}
+    assert sent == {"to_phone": "+15551230000", "message": "Thanks for connecting. What do you want?"}
 
 
 def test_sms_mistral_send_requires_existing_tenant_and_phone(monkeypatch):
@@ -427,10 +431,6 @@ def test_sms_mistral_send_requires_existing_tenant_and_phone(monkeypatch):
     )
     tenant_id = tenant_response.json()["id"]
 
-    async def fail_mistral_reply(messages: list[dict]) -> str:
-        raise AssertionError("Mistral should not be called when phone is missing")
-
-    monkeypatch.setattr(sms, "get_mistral_reply", fail_mistral_reply)
     phone_response = client.post(
         "/api/sms/mistral-send",
         json={"tenant_id": tenant_id, "message": "Hi"},
@@ -438,6 +438,66 @@ def test_sms_mistral_send_requires_existing_tenant_and_phone(monkeypatch):
     assert phone_response.status_code == 400
 
 
+<<<<<<< HEAD
+=======
+def test_sms_service_normalizes_india_phone_numbers(monkeypatch):
+    created = {}
+
+    class FakeMessage:
+        sid = "SM123"
+        status = "queued"
+
+    class FakeMessages:
+        def create(self, **kwargs):
+            created.update(kwargs)
+            return FakeMessage()
+
+    class FakeClient:
+        def __init__(self, account_sid, auth_token):
+            assert account_sid == "AC123"
+            assert auth_token == "secret"
+            self.messages = FakeMessages()
+
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "AC123")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "secret")
+    monkeypatch.setenv("TWILIO_FROM_PHONE", "9123456789")
+    monkeypatch.setattr(sms_service, "Client", FakeClient)
+
+    result = sms_service.send_sms("9876543210", "Hello")
+
+    assert result["status"] == "queued"
+    assert created == {"body": "Hello", "from_": "+919123456789", "to": "+919876543210"}
+
+
+def test_ai_email_assistant_mailjet_auto_reply_is_visible_and_dry_runs(monkeypatch):
+    captured_messages = []
+
+    async def fake_mistral_reply(messages: list[dict]) -> str:
+        captured_messages.extend(messages)
+        return "Thanks for reaching out. I will share the details shortly."
+
+    monkeypatch.setattr(email_assistant.router, "get_mistral_reply", fake_mistral_reply)
+
+    response = client.post(
+        "/api/v1/email/mailjet-auto-reply",
+        json={
+            "tenant_id": TENANT_ID,
+            "from_email": "lead@example.com",
+            "to_email": "sales@example.com",
+            "subject": "Need pricing",
+            "body": "Can you send pricing details?",
+            "dry_run": True,
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ai_reply"] == "Thanks for reaching out. I will share the details shortly."
+    assert body["email_result"] == {"sent": False, "dry_run": True}
+    assert captured_messages[-1]["content"].count("Need pricing") == 1
+
+
+>>>>>>> 9544729 (sms auto reply)
 def test_conversation_message_p2_p3_flow_does_not_return_422():
     conversation_response = client.post(
         "/api/conversations",

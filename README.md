@@ -9,7 +9,8 @@ Backend API for the Follei autonomous business operating system.
 
 ## Local Development With Python
 
-The local Python setup uses PostgreSQL by default.
+The local Python setup uses SQLite by default so the backend can run even when
+Docker/PostgreSQL is not installed.
 
 1. Open a terminal and go to the backend folder:
 
@@ -17,38 +18,39 @@ The local Python setup uses PostgreSQL by default.
 cd C:\Users\User\Desktop\Follei15pc\Follei-backend-Team\follei_backend\follei
 ```
 
-2. Start PostgreSQL:
-
-```powershell
-docker compose up -d postgres
-```
-
-3. Set the local database URL when you want Python to connect to the Docker PostgreSQL container:
-
-```powershell
-$env:DATABASE_URL="postgresql://admin:secret@127.0.0.1:55589/follei_db"
-```
-
-If `DATABASE_URL` is not set, the app uses the local Docker PostgreSQL URL:
-`postgresql://admin:secret@127.0.0.1:55589/follei_db`.
-
-4. Run the backend:
+2. Run the backend:
 
 ```powershell
 python -m uvicorn app.main:app --reload
 ```
 
-5. Open Swagger docs:
+3. Open Swagger docs:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-6. Verify health:
+4. Verify health:
 
 ```text
 http://127.0.0.1:8000/health
 ```
+
+### Optional: Use PostgreSQL Locally
+
+Start PostgreSQL:
+
+```powershell
+docker compose up -d postgres
+```
+
+Set the local database URL when you want Python to connect to the Docker PostgreSQL container:
+
+```powershell
+$env:DATABASE_URL="postgresql://admin:secret@127.0.0.1:55589/follei_db"
+```
+
+If `DATABASE_URL` is not set, the app uses local SQLite at `follei_local.db`.
 
 ## Local Development with Docker
 
@@ -146,8 +148,8 @@ GET /api/email/inbound?tenant_id=T001
 
 ### Notes
 
-- Local Python uses Docker PostgreSQL by default:
-  `postgresql://admin:secret@127.0.0.1:55589/follei_db`
+- Local Python uses SQLite by default:
+  `sqlite:///./follei_local.db`
 - Docker backend connects to PostgreSQL using:
   `postgresql://admin:secret@postgres:5432/follei_db`
 - Local PostgreSQL is exposed on:
