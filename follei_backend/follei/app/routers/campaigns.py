@@ -30,10 +30,6 @@ CAMPAIGN_METRICS: dict[str, list[str]] = {}  # campaign_id -> metric_ids
 
 INBOUND_EMAILS: dict[str, CampaignInboundEmailResponse] = {}
 
-CAMPAIGN_LEADS: dict[str, dict[str, str]] = {}
-METRICS: dict[str, CampaignMetricResponse] = {}
-CAMPAIGN_METRICS: dict[str, list[str]] = {}
-
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()

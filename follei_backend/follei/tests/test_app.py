@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.core.ids import short_id
 from app.main import app
-from app.routers import documents, leads, sms
+from app.routers import documents, email_assistant, leads, sms
 
 
 client = TestClient(app)
@@ -30,7 +30,7 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
         and path.startswith("/api")
     }
 
-    assert len(methods) == 231
+    assert len(methods) == 232
     assert "POST /api/messages/{message_id}/attachments" in methods
     assert "POST /api/conversations/{conversation_id}/buying-signals" in methods
     assert "POST /api/qualification-frameworks" in methods
@@ -58,6 +58,7 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
     assert "GET /api/events" in methods
     assert "GET /api/campaigns" in methods
     assert "POST /api/campaigns/{campaign_id}/send" in methods
+    assert "POST /api/v1/email/mailjet-auto-reply" in methods
     assert "GET /api/agents" not in methods
 
 
@@ -71,6 +72,7 @@ def test_all_reference_router_groups_are_visible_in_swagger():
     assert "/users/{user_id}" in openapi_paths
     assert "/api/chunks/{chunk_id}/embeddings" in openapi_paths
     assert "/api/campaigns" in openapi_paths
+    assert "/api/v1/email/mailjet-auto-reply" in openapi_paths
 
 
 def test_openapi_schema_does_not_expose_swagger_placeholder_props():
@@ -95,6 +97,7 @@ def test_swagger_groups_follow_reference_order():
         "Conversations & Messages",
         "Leads & Revenue",
         "Campaigns",
+        "AI Email Assistant",
         "Customers & Customer Success",
         "Integrations",
         "Webhooks & Events",
@@ -433,6 +436,34 @@ def test_sms_mistral_send_requires_existing_tenant_and_phone(monkeypatch):
         json={"tenant_id": tenant_id, "message": "Hi"},
     )
     assert phone_response.status_code == 400
+
+
+def test_ai_email_assistant_mailjet_auto_reply_is_visible_and_dry_runs(monkeypatch):
+    captured_messages = []
+
+    async def fake_mistral_reply(messages: list[dict]) -> str:
+        captured_messages.extend(messages)
+        return "Thanks for reaching out. I will share the details shortly."
+
+    monkeypatch.setattr(email_assistant.router, "get_mistral_reply", fake_mistral_reply)
+
+    response = client.post(
+        "/api/v1/email/mailjet-auto-reply",
+        json={
+            "tenant_id": TENANT_ID,
+            "from_email": "lead@example.com",
+            "to_email": "sales@example.com",
+            "subject": "Need pricing",
+            "body": "Can you send pricing details?",
+            "dry_run": True,
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ai_reply"] == "Thanks for reaching out. I will share the details shortly."
+    assert body["email_result"] == {"sent": False, "dry_run": True}
+    assert captured_messages[-1]["content"].count("Need pricing") == 1
 
 
 def test_conversation_message_p2_p3_flow_does_not_return_422():

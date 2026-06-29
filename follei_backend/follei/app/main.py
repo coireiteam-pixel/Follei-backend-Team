@@ -15,6 +15,7 @@ from app.routers import (
     campaigns,
     conversation,
     customers,
+    email_assistant,
     knowledge,
     leads,
     message,
@@ -31,6 +32,7 @@ OPENAPI_TAGS = [
     {"name": "Conversations & Messages"},
     {"name": "Leads & Revenue"},
     {"name": "Campaigns"},
+    {"name": "AI Email Assistant"},
     {"name": "Customers & Customer Success"},
     {"name": "Tools, MCP & Registry"},
     {"name": "Knowledge & RAG"},
@@ -140,6 +142,7 @@ app.include_router(billing.credits_router, prefix=API_PREFIX)
 app.include_router(campaigns.router, prefix=API_PREFIX)     # Campaigns
 app.include_router(campaigns.metrics_router, prefix=API_PREFIX)
 app.include_router(campaigns.inbound_router, prefix=API_PREFIX)
+app.include_router(email_assistant.router, prefix=API_PREFIX)
 
 
 # Unwanted routers commented:

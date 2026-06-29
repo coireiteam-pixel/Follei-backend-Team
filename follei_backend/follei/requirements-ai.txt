@@ -1,0 +1,11 @@
+# Optional AI, vector store, and dataset tooling.
+# Install this only when you need local vector/RAG/data-generation features:
+#   python -m pip install -r requirements-ai.txt
+langchain
+sentence-transformers
+chromadb
+qdrant-client
+datasets
+pyarrow
+pandas
+tqdm
