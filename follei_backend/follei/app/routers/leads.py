@@ -1,8 +1,10 @@
 import csv
 import io
 import json
+import re
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urlparse
 
 from pydantic import BaseModel
 from app.core.ids import short_id
@@ -63,6 +65,84 @@ MEETINGS: dict[str, MeetingResponse] = {}
 
 LEAD_MESSAGES: dict[str, list[dict]] = {}
 
+EMAIL_PATTERN = re.compile(r"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$", re.IGNORECASE)
+NON_DIGIT_PATTERN = re.compile(r"\D")
+
+LEAD_CSV_FIELD_ALIASES = {
+    "id": {"id", "lead_id", "lead id", "leadid", "record_id", "record id"},
+    "email": {"email", "email_address", "email address", "e-mail", "e mail", "mail"},
+    "phone": {
+        "phone",
+        "phone_number",
+        "phone number",
+        "mobile",
+        "mobile no",
+        "mobile no.",
+        "mobile_number",
+        "mobile number",
+        "contact_number",
+        "contact number",
+        "contact no",
+        "contact no.",
+        "whatsapp",
+    },
+    "full_name": {
+        "full_name",
+        "full name",
+        "name",
+        "contact_name",
+        "contact name",
+        "customer_name",
+        "customer name",
+        "lead_name",
+        "lead name",
+        "person",
+        "owner",
+    },
+    "company": {
+        "company",
+        "company_name",
+        "company name",
+        "organization",
+        "organisation",
+        "account",
+        "business",
+    },
+    "job_title": {"job_title", "job title", "title", "designation", "role", "position"},
+    "industry": {"industry", "sector", "vertical", "department"},
+    "website": {
+        "website",
+        "web_site",
+        "web site",
+        "company_website",
+        "company website",
+        "url",
+        "site",
+    },
+    "source": {"source", "lead_source", "lead source", "channel", "campaign"},
+    "status": {"status", "lead_status", "lead status", "stage"},
+    "priority": {"priority", "lead_priority", "lead priority"},
+    "tags": {"tags", "tag", "labels", "label"},
+    "custom_fields": {"custom_fields", "custom fields", "custom", "extra_fields", "extra fields"},
+    "score": {"score", "lead_score", "lead score", "rating"},
+    "assigned_to": {"assigned_to", "assigned to", "assignee", "owner_id", "owner id", "sales_owner", "sales owner"},
+    "metadata": {"metadata", "meta", "notes", "remarks"},
+    "tenant_id": {"tenant_id", "tenant id", "tenant"},
+    "created_at": {"created_at", "created at", "created_date", "created date"},
+    "updated_at": {"updated_at", "updated at", "updated_date", "updated date"},
+}
+
+LEAD_CSV_ALIAS_LOOKUP = {
+    alias: canonical
+    for canonical, aliases in LEAD_CSV_FIELD_ALIASES.items()
+    for alias in aliases
+}
+
+LEAD_CSV_KNOWN_FIELDS = set(LEAD_CSV_FIELD_ALIASES)
+
+VALID_LEAD_STATUSES = {"new", "contacted", "qualified", "proposal", "converted", "lost"}
+VALID_LEAD_PRIORITIES = {"low", "medium", "high"}
+
 
 class LeadMessageRequest(BaseModel):
     message: str
@@ -117,6 +197,38 @@ async def _read_csv_upload(file: UploadFile) -> list[dict[str, str]]:
     return rows
 
 
+def _normalize_csv_header(header: str) -> str:
+    normalized = re.sub(r"[^a-z0-9]+", " ", header.strip().lower()).strip()
+    compact = normalized.replace(" ", "_")
+    return LEAD_CSV_ALIAS_LOOKUP.get(normalized) or LEAD_CSV_ALIAS_LOOKUP.get(compact) or compact
+
+
+def _normalize_csv_row(row: dict[str, str]) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    source_columns: dict[str, str] = {}
+
+    for raw_key, value in row.items():
+        key = _normalize_csv_header(raw_key)
+        if key in normalized and normalized[key]:
+            source_columns[raw_key] = value
+            continue
+        normalized[key] = value
+        if key not in LEAD_CSV_KNOWN_FIELDS and value:
+            source_columns[raw_key] = value
+
+    if source_columns:
+        normalized["_source_columns"] = json.dumps(source_columns, separators=(",", ":"))
+    return normalized
+
+
+def _first_cell(row: dict[str, str], *fields: str) -> str:
+    for field in fields:
+        value = row.get(field)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
 def _json_cell(row: dict[str, str], field: str, default: Any, expected_type: type) -> Any:
     value = row.get(field, "")
     if not value:
@@ -130,6 +242,25 @@ def _json_cell(row: dict[str, str], field: str, default: Any, expected_type: typ
     return parsed
 
 
+def _metadata_cell(row: dict[str, str]) -> dict[str, Any]:
+    value = row.get("metadata", "")
+    metadata: dict[str, Any] = {}
+    if value:
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            metadata["notes"] = value
+        else:
+            if isinstance(parsed, dict):
+                metadata = parsed
+            else:
+                metadata["metadata"] = parsed
+    source_columns = row.get("_source_columns", "")
+    if source_columns:
+        metadata["source_columns"] = json.loads(source_columns)
+    return metadata
+
+
 def _float_cell(row: dict[str, str], field: str, default: float | None = None) -> float | None:
     value = row.get(field, "")
     if not value:
@@ -138,6 +269,96 @@ def _float_cell(row: dict[str, str], field: str, default: float | None = None) -
         return float(value)
     except ValueError as exc:
         raise ValueError(f"{field} must be a number") from exc
+
+
+def _tags_cell(row: dict[str, str]) -> list[str]:
+    value = row.get("tags", "")
+    if not value:
+        return []
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        parsed = None
+    if isinstance(parsed, list):
+        tags = [str(item).strip().lower() for item in parsed if str(item).strip()]
+    else:
+        tags = [
+            item.strip().lower()
+            for item in re.split(r"[,;|]", value)
+            if item.strip()
+        ]
+    return list(dict.fromkeys(tags))
+
+
+def _score_cell(row: dict[str, str]) -> float | None:
+    score = _float_cell(row, "score")
+    if score is None:
+        return None
+    return round(min(100.0, max(0.0, score)), 2)
+
+
+def _normalize_email_cell(row: dict[str, str]) -> str | None:
+    email = _first_cell(row, "email").lower()
+    if not email:
+        return None
+    if not EMAIL_PATTERN.fullmatch(email):
+        raise ValueError("email must be a valid email address")
+    return email
+
+
+def _normalize_phone_cell(row: dict[str, str]) -> str | None:
+    value = _first_cell(row, "phone")
+    if not value:
+        return None
+    if value.startswith("+") and 10 <= len(NON_DIGIT_PATTERN.sub("", value)) <= 15:
+        return value
+    digits = NON_DIGIT_PATTERN.sub("", value)
+    if not digits:
+        return None
+    if len(digits) == 10:
+        digits = f"1{digits}"
+    if not 10 <= len(digits) <= 15:
+        raise ValueError("phone must contain 10 to 15 digits")
+    return f"+{digits}"
+
+
+def _normalize_website_cell(row: dict[str, str]) -> str | None:
+    website = _first_cell(row, "website")
+    if not website:
+        return None
+    markdown_link = re.fullmatch(r"\[([^\]]+)\]\([^)]+\)", website)
+    if markdown_link:
+        website = markdown_link.group(1).strip()
+    if not website.startswith(("http://", "https://")):
+        website = f"https://{website}"
+    parsed = urlparse(website)
+    if not parsed.netloc:
+        raise ValueError("website must be a valid URL or domain")
+    return website
+
+
+def _normalize_lead_status(row: dict[str, str]) -> str:
+    status_value = _first_cell(row, "status").lower()
+    return status_value if status_value in VALID_LEAD_STATUSES else "new"
+
+
+def _normalize_lead_priority(row: dict[str, str]) -> str:
+    priority = _first_cell(row, "priority").lower()
+    if priority in VALID_LEAD_PRIORITIES:
+        return priority
+    score = _score_cell(row)
+    return "high" if score is not None and score >= 80 else "medium"
+
+
+def _find_existing_lead_id(row: dict[str, str], email: str | None, tenant_id: str) -> str | None:
+    requested_id = _first_cell(row, "id")
+    if requested_id in LEADS:
+        return requested_id
+    if email:
+        for lead_id, lead in LEADS.items():
+            if lead.email and lead.email.lower() == email and lead.tenant_id == tenant_id:
+                return lead_id
+    return requested_id or None
 
 
 def _unique_id(prefix: str, store: dict[str, Any]) -> str:
@@ -195,29 +416,46 @@ async def import_leads_csv(
 
     for row_number, row in enumerate(rows, start=2):
         try:
+            row = _normalize_csv_row(row)
             now = _now()
-            lead_id = row.get("id") or _unique_id("L", LEADS)
+            email = _normalize_email_cell(row)
+            tenant_id = _first_cell(row, "tenant_id") or default_tenant_id
+            lead_id = _find_existing_lead_id(row, email, tenant_id) or _unique_id("L", LEADS)
             existing = LEADS.get(lead_id)
+            tags = _tags_cell(row)
+            custom_fields = _json_cell(row, "custom_fields", {}, dict)
+            metadata = _metadata_cell(row)
+            if existing:
+                if not email:
+                    email = existing.email
+                if not tags:
+                    tags = existing.tags
+                custom_fields = {**existing.custom_fields, **custom_fields}
+                metadata = {**existing.metadata_, **metadata}
             lead = LeadResponse(
                 id=lead_id,
-                email=row.get("email") or None,
-                phone=row.get("phone") or None,
-                full_name=row.get("full_name") or None,
-                company=row.get("company") or None,
-                job_title=row.get("job_title") or None,
-                industry=row.get("industry") or None,
-                website=row.get("website") or None,
-                source=row.get("source") or "csv_upload",
-                status=row.get("status") or "new",
-                priority=row.get("priority") or "medium",
-                tags=_json_cell(row, "tags", [], list),
-                custom_fields=_json_cell(row, "custom_fields", {}, dict),
-                score=_float_cell(row, "score"),
-                assigned_to=row.get("assigned_to") or None,
-                metadata=_json_cell(row, "metadata", {}, dict),
-                tenant_id=row.get("tenant_id") or default_tenant_id,
-                created_at=row.get("created_at") or (existing.created_at if existing else now),
-                updated_at=row.get("updated_at") or now,
+                email=email,
+                phone=_normalize_phone_cell(row) or (existing.phone if existing else None),
+                full_name=_first_cell(row, "full_name") or (existing.full_name if existing else None),
+                company=_first_cell(row, "company") or (existing.company if existing else None),
+                job_title=_first_cell(row, "job_title") or (existing.job_title if existing else None),
+                industry=_first_cell(row, "industry") or (existing.industry if existing else None),
+                website=_normalize_website_cell(row) or (existing.website if existing else None),
+                source=_first_cell(row, "source") or (existing.source if existing else "csv_upload"),
+                status=_normalize_lead_status(row) if _first_cell(row, "status") else (existing.status if existing else "new"),
+                priority=(
+                    _normalize_lead_priority(row)
+                    if _first_cell(row, "priority") or _first_cell(row, "score")
+                    else (existing.priority if existing else "medium")
+                ),
+                tags=tags,
+                custom_fields=custom_fields,
+                score=_score_cell(row) if _first_cell(row, "score") else (existing.score if existing else None),
+                assigned_to=_first_cell(row, "assigned_to") or (existing.assigned_to if existing else None),
+                metadata=metadata,
+                tenant_id=tenant_id,
+                created_at=_first_cell(row, "created_at") or (existing.created_at if existing else now),
+                updated_at=_first_cell(row, "updated_at") or now,
             )
             LEADS[lead_id] = lead
             if existing:

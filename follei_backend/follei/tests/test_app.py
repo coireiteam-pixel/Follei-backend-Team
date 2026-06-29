@@ -630,3 +630,55 @@ def test_lead_and_revenue_csv_uploads_are_returned_by_get_endpoints():
     opportunity = client.get("/api/opportunities/O901").json()
     assert opportunity["lead_id"] == "L901"
     assert opportunity["weighted_revenue"] == 7500
+
+
+def test_lead_csv_import_accepts_different_column_alignments_and_aliases():
+    suffix = short_id().lower()
+    email = f"alias-{suffix}@example.com"
+    first_csv = (
+        "Contact Name,Mobile No,Company Name,Email Address,Designation,Website,Lead Score,Labels,Notes\n"
+        f'Alias Lead,5551234567,Alias Corp,{email},Director,alias.example.com,91,"sales;hot","Imported from vendor A"\n'
+    )
+
+    first_import = client.post(
+        "/api/leads/import-csv",
+        files={"file": ("vendor-a.csv", first_csv, "text/csv")},
+        data={"default_tenant_id": TENANT_ID},
+    )
+
+    assert first_import.status_code == 200
+    assert first_import.json()["imported"] == 1
+
+    list_response = client.get("/api/leads", params={"tenant_id": TENANT_ID, "source": "csv_upload", "page_size": 100})
+    matching_leads = [lead for lead in list_response.json()["items"] if lead["email"] == email]
+    assert len(matching_leads) == 1
+    lead_id = matching_leads[0]["id"]
+
+    imported_lead = client.get(f"/api/leads/{lead_id}").json()
+    assert imported_lead["full_name"] == "Alias Lead"
+    assert imported_lead["phone"] == "+15551234567"
+    assert imported_lead["company"] == "Alias Corp"
+    assert imported_lead["job_title"] == "Director"
+    assert imported_lead["website"] == "https://alias.example.com"
+    assert imported_lead["score"] == 91
+    assert imported_lead["priority"] == "high"
+    assert imported_lead["tags"] == ["sales", "hot"]
+
+    second_csv = (
+        "Status,Email Address,Custom Column\n"
+        f"qualified,{email},Keep this extra value\n"
+    )
+    second_import = client.post(
+        "/api/leads/import-csv",
+        files={"file": ("vendor-b.csv", second_csv, "text/csv")},
+        data={"default_tenant_id": TENANT_ID},
+    )
+
+    assert second_import.status_code == 200
+    assert second_import.json()["updated"] == 1
+
+    updated_lead = client.get(f"/api/leads/{lead_id}").json()
+    assert updated_lead["status"] == "qualified"
+    assert updated_lead["phone"] == "+15551234567"
+    assert updated_lead["company"] == "Alias Corp"
+    assert updated_lead["metadata"]["source_columns"]["Custom Column"] == "Keep this extra value"
