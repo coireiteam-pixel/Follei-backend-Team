@@ -1,12 +1,13 @@
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, Response
+from fastapi import Depends, FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 
 from app.database.init_db import init_db
+from app.crm_integrations.routers import crm, crm_auth, crm_sync, crm_webhooks
 from app.routers import (
     agents,
     auth,
@@ -25,6 +26,7 @@ from app.routers import (
 )
 
 API_PREFIX = "/api"
+AUTH_DEPENDENCIES = [Depends(auth.get_current_user)]
 FAVICON_SVG = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#111827"/><path d="M18 47V17h29v8H28v6h16v8H28v8z" fill="#22c55e"/></svg>"""
 OPENAPI_TAGS = [
     {"name": "Identity & Auth"},
@@ -103,46 +105,57 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def include_authenticated_router(router, *, prefix: str = "") -> None:
+    app.include_router(router, prefix=prefix, dependencies=AUTH_DEPENDENCIES)
+
+
 app.include_router(auth.router, prefix=API_PREFIX)
-app.include_router(authorization.router, prefix=API_PREFIX)
+include_authenticated_router(authorization.router, prefix=API_PREFIX)
 # app.include_router(api_v1.router)
-app.include_router(tenant.router)
+include_authenticated_router(tenant.router)
 # app.include_router(user.router)
 # app.include_router(database_crud.router)
                     # Tenants
 
-app.include_router(conversation.router, prefix=API_PREFIX)  # Conversations
-app.include_router(message.router, prefix=API_PREFIX)       # Conversation messages
+include_authenticated_router(conversation.router, prefix=API_PREFIX)  # Conversations
+include_authenticated_router(message.router, prefix=API_PREFIX)       # Conversation messages
 
-app.include_router(leads.router, prefix=API_PREFIX)         # Leads
-app.include_router(leads.frameworks_router, prefix=API_PREFIX)
-app.include_router(leads.opportunities_router, prefix=API_PREFIX)
-app.include_router(leads.meetings_router, prefix=API_PREFIX)
+include_authenticated_router(leads.router, prefix=API_PREFIX)         # Leads
+include_authenticated_router(leads.frameworks_router, prefix=API_PREFIX)
+include_authenticated_router(leads.opportunities_router, prefix=API_PREFIX)
+include_authenticated_router(leads.meetings_router, prefix=API_PREFIX)
 
-app.include_router(customers.router, prefix=API_PREFIX)     # Customer Success
-app.include_router(customers.renewals_router, prefix=API_PREFIX)
+include_authenticated_router(customers.router, prefix=API_PREFIX)     # Customer Success
+include_authenticated_router(customers.renewals_router, prefix=API_PREFIX)
 
-app.include_router(knowledge.router, prefix=API_PREFIX)     # Knowledge & RAG
-app.include_router(knowledge.faq_router, prefix=API_PREFIX)
-app.include_router(knowledge.policy_router, prefix=API_PREFIX)
-app.include_router(knowledge.procedure_router, prefix=API_PREFIX)
+include_authenticated_router(knowledge.router, prefix=API_PREFIX)     # Knowledge & RAG
+include_authenticated_router(knowledge.faq_router, prefix=API_PREFIX)
+include_authenticated_router(knowledge.policy_router, prefix=API_PREFIX)
+include_authenticated_router(knowledge.procedure_router, prefix=API_PREFIX)
 
-app.include_router(tools.tools_router, prefix=API_PREFIX)   # MCP / Tools
-app.include_router(tools.executions_router, prefix=API_PREFIX)
-app.include_router(tools.logs_router, prefix=API_PREFIX)
+include_authenticated_router(tools.tools_router, prefix=API_PREFIX)   # MCP / Tools
+include_authenticated_router(tools.executions_router, prefix=API_PREFIX)
+include_authenticated_router(tools.logs_router, prefix=API_PREFIX)
 
-app.include_router(observability.analytics_router, prefix=API_PREFIX)  # Analytics
+include_authenticated_router(observability.analytics_router, prefix=API_PREFIX)  # Analytics
 
-app.include_router(billing.plans_router, prefix=API_PREFIX) # Billing
-app.include_router(billing.subscriptions_router, prefix=API_PREFIX)
-app.include_router(billing.invoices_router, prefix=API_PREFIX)
-app.include_router(billing.payments_router, prefix=API_PREFIX)
-app.include_router(billing.credits_router, prefix=API_PREFIX)
+include_authenticated_router(billing.plans_router, prefix=API_PREFIX) # Billing
+include_authenticated_router(billing.subscriptions_router, prefix=API_PREFIX)
+include_authenticated_router(billing.invoices_router, prefix=API_PREFIX)
+include_authenticated_router(billing.payments_router, prefix=API_PREFIX)
+include_authenticated_router(billing.credits_router, prefix=API_PREFIX)
 
-app.include_router(campaigns.router, prefix=API_PREFIX)     # Campaigns
-app.include_router(campaigns.metrics_router, prefix=API_PREFIX)
-app.include_router(campaigns.inbound_router, prefix=API_PREFIX)
-app.include_router(email_assistant.router, prefix=API_PREFIX)
+include_authenticated_router(campaigns.router, prefix=API_PREFIX)     # Campaigns
+include_authenticated_router(campaigns.metrics_router, prefix=API_PREFIX)
+include_authenticated_router(campaigns.inbound_router, prefix=API_PREFIX)
+include_authenticated_router(email_assistant.router, prefix=API_PREFIX)
+
+app.include_router(crm.router)
+app.include_router(crm_auth.router)
+app.include_router(crm_auth.alias_router)
+app.include_router(crm_sync.router)
+app.include_router(crm_webhooks.router)
 
 
 # Unwanted routers commented:
@@ -172,7 +185,7 @@ app.include_router(email_assistant.router, prefix=API_PREFIX)
 # app.include_router(observability.retrieval_router, prefix=API_PREFIX)
 # app.include_router(observability.evaluation_router, prefix=API_PREFIX)
 
-@app.get("/", tags=["System"])
+@app.get("/", tags=["System"], dependencies=AUTH_DEPENDENCIES)
 def root():
     return {
         "message": "Follei API Running",
@@ -186,7 +199,7 @@ def favicon():
     return Response(content=FAVICON_SVG, media_type="image/svg+xml")
 
 
-@app.get("/health", tags=["System"])
+@app.get("/health", tags=["System"], dependencies=AUTH_DEPENDENCIES)
 def health_check():
     return {
         "status": "ok",
