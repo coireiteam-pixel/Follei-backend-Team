@@ -1,0 +1,19 @@
+services:
+  gmail-auto-reply:
+    build: .
+    container_name: gmail-auto-reply
+    restart: unless-stopped
+    environment:
+      - GMAIL_AUTO_REPLY_ENABLED=true
+      - GMAIL_POLL_SECONDS=5
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+      - MISTRAL_MODEL=mistral-small-latest
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL}
+    volumes:
+      # Mount secrets folder for Gmail credentials
+      - ./secrets:/app/secrets
+      # Mount .env file for configuration
+      - ./.env:/app/.env
+    # For authorization, you need to run with --it flag and mount browser
+    # For production, just run the service
+    command: python service.py

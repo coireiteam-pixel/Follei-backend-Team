@@ -1,3 +1,5 @@
+import asyncio
+import os
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -7,6 +9,7 @@ from fastapi.openapi.utils import get_openapi
 
 
 from app.database.init_db import init_db
+from app.features import gmail_auto_reply
 from app.routers import (
     agents,
     auth,
@@ -15,7 +18,14 @@ from app.routers import (
     campaigns,
     conversation,
     customers,
+<<<<<<< HEAD
     email_assistant,
+=======
+    database_crud,
+    documents,
+    entities,
+    integrations,
+>>>>>>> 678f659 (Fix Gmail auto reply speed and response relevance)
     knowledge,
     leads,
     message,
@@ -32,7 +42,7 @@ OPENAPI_TAGS = [
     {"name": "Conversations & Messages"},
     {"name": "Leads & Revenue"},
     {"name": "Campaigns"},
-    {"name": "AI Email Assistant"},
+    {"name": "Gmail Auto Reply"},
     {"name": "Customers & Customer Success"},
     {"name": "Tools, MCP & Registry"},
     {"name": "Knowledge & RAG"},
@@ -45,7 +55,18 @@ OPENAPI_TAGS = [
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    yield
+    gmail_task = None
+    if os.getenv("GMAIL_AUTO_REPLY_ENABLED", "false").lower() == "true":
+        gmail_task = asyncio.create_task(gmail_auto_reply.gmail_auto_reply_worker())
+    try:
+        yield
+    finally:
+        if gmail_task:
+            gmail_task.cancel()
+            try:
+                await gmail_task
+            except asyncio.CancelledError:
+                pass
 
 
 app = FastAPI(
@@ -118,8 +139,16 @@ app.include_router(leads.router, prefix=API_PREFIX)         # Leads
 app.include_router(leads.frameworks_router, prefix=API_PREFIX)
 app.include_router(leads.opportunities_router, prefix=API_PREFIX)
 app.include_router(leads.meetings_router, prefix=API_PREFIX)
+<<<<<<< HEAD
 
 app.include_router(customers.router, prefix=API_PREFIX)     # Customer Success
+=======
+app.include_router(campaigns.router, prefix=API_PREFIX)
+app.include_router(campaigns.metrics_router, prefix=API_PREFIX)
+app.include_router(campaigns.inbound_router, prefix=API_PREFIX)
+app.include_router(gmail_auto_reply.router, prefix=API_PREFIX)
+app.include_router(customers.router, prefix=API_PREFIX)
+>>>>>>> 678f659 (Fix Gmail auto reply speed and response relevance)
 app.include_router(customers.renewals_router, prefix=API_PREFIX)
 
 app.include_router(knowledge.router, prefix=API_PREFIX)     # Knowledge & RAG

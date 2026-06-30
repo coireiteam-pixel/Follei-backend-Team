@@ -2,6 +2,8 @@ __pycache__/
 *.py[cod]
 *.class
 .env
+app/features/gmail_auto_reply/.env
+app/features/gmail_auto_reply/secrets/
 venv/
 env/
 .pytest_cache/
