@@ -6,6 +6,8 @@ from typing import AsyncGenerator, List, Dict
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
 
+from app.config import settings
+
 load_dotenv()
 
 
@@ -17,7 +19,7 @@ PLACEHOLDER_API_KEYS = {
 
 
 def _get_mistral_api_key() -> str:
-    api_key = (os.getenv("MISTRAL_API_KEY") or "").strip()
+    api_key = (settings.mistral_api_key or os.getenv("MISTRAL_API_KEY") or "").strip()
     if api_key in PLACEHOLDER_API_KEYS:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -27,7 +29,7 @@ def _get_mistral_api_key() -> str:
 
 
 def _get_mistral_model() -> str:
-    return (os.getenv("MISTRAL_MODEL") or "mistral-large-latest").strip()
+    return (settings.mistral_model or os.getenv("MISTRAL_MODEL") or "mistral-large-latest").strip()
 
 
 def _mistral_error_detail(response: httpx.Response) -> str:

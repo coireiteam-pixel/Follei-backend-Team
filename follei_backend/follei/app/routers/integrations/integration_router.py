@@ -1,9 +1,17 @@
+import json
 from datetime import datetime, timezone
 from app.core.ids import short_id
 
-from fastapi import APIRouter, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from pydantic import ValidationError
+from sqlalchemy.orm import Session
 
+from app.database.session import get_db
+from app.models.tenancy import Tenant
+from app.repositories.integration_repository import IntegrationRepository
 from app.schemas.integration import (
+    CreateIntegrationRequest,
+    CreateIntegrationResponse,
     InboundWebhookRequest,
     InboundWebhookResponse,
     IntegrationConnectionListResponse,
@@ -16,6 +24,7 @@ from app.schemas.integration import (
     SyncJobListResponse,
     SyncJobResponse,
     SyncRequest,
+    TwilioSmsWebhookRequest,
     UpdateIntegrationConnectionRequest,
     WebhookEventListResponse,
     WebhookEventResponse,
@@ -23,6 +32,8 @@ from app.schemas.integration import (
     WebhookRequest,
     WebhookResponse,
 )
+from app.services.integration_service import IntegrationService
+from app.services.twilio_auto_reply import process_twilio_auto_reply
 
 integrations_router = APIRouter(prefix="/integrations", tags=["Integrations"])
 connections_router = APIRouter(prefix="/integration-connections", tags=["Integrations"])
@@ -38,6 +49,7 @@ SALESFORCE_ID = "alpha123beta456gamma789"
 HUBSPOT_ID = "delta789echo123foxtrot456"
 GMAIL_ID = "golf123hotel456india789"
 WHATSAPP_ID = "juliet789kilo123lima456"
+TWILIO_ID = "twilio_sms"
 
 INTEGRATIONS: dict[str, IntegrationResponse] = {
     SALESFORCE_ID: IntegrationResponse(
@@ -82,8 +94,18 @@ INTEGRATIONS: dict[str, IntegrationResponse] = {
         webhook_support=True,
         actions=["send_message", "send_template"],
     ),
+    TWILIO_ID: IntegrationResponse(
+        id=TWILIO_ID,
+        name="Twilio SMS",
+        category="messaging",
+        auth_type="api_key",
+        status="available",
+        webhook_support=True,
+        actions=["receive_sms", "send_sms", "auto_reply"],
+    ),
 }
 CONNECTIONS: dict[str, IntegrationConnectionResponse] = {}
+CONNECTION_CREDENTIALS: dict[str, dict] = {}
 SYNC_JOBS: dict[str, SyncJobResponse] = {}
 CONNECTION_SYNC_JOBS: dict[str, list[str]] = {}
 WEBHOOKS: dict[str, WebhookResponse] = {}
@@ -103,6 +125,37 @@ def _get_connection_or_404(connection_id: str) -> IntegrationConnectionResponse:
     if connection is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integration connection not found")
     return connection
+
+
+@integrations_router.post(
+    "",
+    response_model=CreateIntegrationResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a tenant integration",
+    description="Creates a tenant-owned Twilio integration used by the SMS auto-response webhook.",
+    responses={
+        403: {"description": "Tenant is inactive"},
+        404: {"description": "Tenant not found"},
+        409: {
+            "description": "Integration name or phone number already exists",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Twilio phone number is already assigned to an integration"}
+                }
+            },
+        },
+        422: {"description": "Invalid provider, status, phone number, or request payload"},
+    },
+)
+def create_integration(
+    payload: CreateIntegrationRequest,
+    db: Session = Depends(get_db),
+) -> CreateIntegrationResponse:
+    integration = IntegrationService(db).create_integration(payload)
+    return CreateIntegrationResponse(
+        integration_id=integration.id,
+        tenant_id=integration.tenant_id,
+    )
 
 
 @integrations_router.get("", response_model=IntegrationListResponse)
@@ -149,6 +202,7 @@ def create_connection(payload: IntegrationConnectionRequest) -> IntegrationConne
         sync_jobs=[],
     )
     CONNECTIONS[connection_id] = connection
+    CONNECTION_CREDENTIALS[connection_id] = {**payload.config, **payload.credentials}
     return IntegrationConnectionSummary(**connection.model_dump(exclude={"integration", "auth_type", "settings", "sync_jobs"}))
 
 
@@ -191,6 +245,7 @@ def update_connection(connection_id: str, payload: UpdateIntegrationConnectionRe
 def delete_connection(connection_id: str) -> Response:
     _get_connection_or_404(connection_id)
     CONNECTIONS.pop(connection_id, None)
+    CONNECTION_CREDENTIALS.pop(connection_id, None)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -269,20 +324,140 @@ def delete_webhook(connection_id: str, webhook_id: str) -> Response:
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@webhooks_receive_router.post("/receive/{integration_id}", response_model=InboundWebhookResponse)
-def receive_webhook(integration_id: str, payload: InboundWebhookRequest) -> InboundWebhookResponse:
-    _get_integration_or_404(integration_id)
+@webhooks_receive_router.post(
+    "/receive/{integration_id}",
+    response_model=InboundWebhookResponse,
+    response_model_exclude_none=True,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "oneOf": [
+                            {"$ref": "#/components/schemas/InboundWebhookRequest"},
+                            {"$ref": "#/components/schemas/TwilioSmsWebhookRequest"},
+                        ]
+                    },
+                    "examples": {
+                        "twilio_sms": {
+                            "summary": "Swagger SMS test",
+                            "value": {
+                                "From": "+919876543210",
+                                "To": "+15672467340",
+                                "Body": "Hi, what services do you provide?",
+                                "MessageSid": "SM_TEST_001",
+                            },
+                        },
+                        "existing_webhook": {
+                            "summary": "Existing generic webhook",
+                            "value": {"event_type": "lead.created", "payload": {"email": "lead@example.com"}},
+                        },
+                    },
+                },
+                "application/x-www-form-urlencoded": {
+                    "schema": {
+                        "type": "object",
+                        "required": ["From", "To", "Body"],
+                        "properties": {
+                            "From": {"type": "string", "example": "+919876543210"},
+                            "To": {"type": "string", "example": "+15672467340"},
+                            "Body": {"type": "string", "example": "What are your pricing plans?"},
+                            "MessageSid": {"type": "string", "example": "SMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"},
+                        },
+                    },
+                },
+            },
+        }
+    },
+)
+async def receive_webhook(
+    integration_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> InboundWebhookResponse:
+    stored_integration = IntegrationRepository(db).get_by_id(integration_id)
+    if integration_id not in INTEGRATIONS and stored_integration is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integration not found")
+    if stored_integration is not None and stored_integration.status != "active":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Integration is inactive")
+
+    content_type = request.headers.get("content-type", "").lower()
+    sms_payload: TwilioSmsWebhookRequest | None = None
+
+    try:
+        if "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+            form = await request.form()
+            raw_payload = {key: str(value) for key, value in form.items()}
+            sms_payload = TwilioSmsWebhookRequest.model_validate(raw_payload)
+            event_type = "twilio_sms"
+            event_payload = raw_payload
+            event_timestamp = sms_payload.timestamp
+        else:
+            raw_payload = await request.json()
+            if isinstance(raw_payload, dict) and "event_type" in raw_payload and "payload" in raw_payload:
+                body = InboundWebhookRequest.model_validate(raw_payload)
+                event_type = body.event_type
+                event_payload = body.payload
+                event_timestamp = body.timestamp
+            else:
+                sms_payload = TwilioSmsWebhookRequest.model_validate(raw_payload)
+                event_type = "twilio_sms"
+                event_payload = raw_payload
+                event_timestamp = sms_payload.timestamp
+    except (json.JSONDecodeError, ValidationError) as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid webhook payload") from exc
+
+    if sms_payload is not None and not all(
+        value.strip() for value in (sms_payload.from_phone, sms_payload.to_phone, sms_payload.body)
+    ):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid webhook payload")
+
     event_id = str(short_id())
     event = WebhookEventResponse(
         id=event_id,
         integration_id=integration_id,
-        event_type=payload.event_type,
-        payload=payload.payload,
+        event_type=event_type,
+        payload=event_payload,
         status="processed",
-        created_at=payload.timestamp or _now(),
+        created_at=event_timestamp or _now(),
     )
     WEBHOOK_EVENTS[event_id] = event
-    return InboundWebhookResponse(received=True, event_id=event_id)
+
+    if sms_payload is None:
+        return InboundWebhookResponse(received=True, event_id=event_id)
+
+    if stored_integration is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant integration not found")
+    tenant = db.get(Tenant, stored_integration.tenant_id)
+    if tenant is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
+    if tenant.status.lower() != "active":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tenant is inactive")
+
+    result = await process_twilio_auto_reply(
+        db=db,
+        integration_id=integration_id,
+        tenant=tenant,
+        event_id=event_id,
+        customer_phone=sms_payload.from_phone.strip(),
+        to_phone=sms_payload.to_phone.strip(),
+        body=sms_payload.body.strip(),
+        message_sid=sms_payload.message_sid,
+        timestamp=sms_payload.timestamp,
+        raw_payload=event_payload,
+    )
+
+    return InboundWebhookResponse(
+        received=True,
+        event_id=event_id,
+        customer_phone=result["customer_phone"],
+        tenant_phone=result["tenant_phone"],
+        customer_message=result["customer_message"],
+        ai_reply=result["ai_reply"],
+        sms_status=result["sms_status"],
+        provider_message_id=result["provider_message_id"],
+    )
 
 
 @webhook_events_router.get("", response_model=WebhookEventListResponse)

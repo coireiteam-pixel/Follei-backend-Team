@@ -1,8 +1,13 @@
 import os
+import sys
 from pathlib import Path
 
 
 TEST_DB_PATH = Path(__file__).resolve().parent / "test_follei.db"
+APP_ROOT = Path(__file__).resolve().parents[1]
+if str(APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(APP_ROOT))
+
 if TEST_DB_PATH.exists():
     TEST_DB_PATH.unlink()
 

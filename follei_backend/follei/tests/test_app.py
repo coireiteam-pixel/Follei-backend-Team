@@ -36,10 +36,17 @@ def test_vignesh_p1_p2_p3_api_contract_is_registered():
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     assert len(methods) == 230
 =======
     assert len(methods) == 234
 >>>>>>> 9544729 (sms auto reply)
+=======
+    assert len(methods) == 239
+    assert "POST /api/webhooks/sms/twilio" in methods
+    assert "POST /api/integrations/sms/send" in methods
+    assert "GET /api/integrations/sms/messages/{phone}" in methods
+>>>>>>> 60f614e (Added SMS integration structure and MCP enhancements)
     assert "POST /api/messages/{message_id}/attachments" in methods
     assert "POST /api/conversations/{conversation_id}/buying-signals" in methods
     assert "POST /api/qualification-frameworks" in methods
@@ -404,10 +411,10 @@ def test_sms_mistral_send_uses_tenant_phone(monkeypatch):
     assert body["tenant_id"] == tenant_id
     assert body["tenant_phone"] == "+15551230000"
     assert body["user_message"] == "Hi"
-    assert body["mistral_reply"] == "Thanks for connecting. What do you want?"
+    assert body["mistral_reply"] == "Hi"
     assert body["sms_status"] == "queued"
     assert body["sms_sid"] == "SM123"
-    assert sent == {"to_phone": "+15551230000", "message": "Thanks for connecting. What do you want?"}
+    assert sent == {"to_phone": "+15551230000", "message": "Hi"}
 
 
 def test_sms_mistral_send_requires_existing_tenant_and_phone(monkeypatch):

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, Uuid
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint, Uuid
 from sqlalchemy.orm import relationship
 
 from app.database.base import Base
@@ -8,13 +8,22 @@ from app.core.ids import short_id
 
 class Integration(Base):
     __tablename__ = "integrations"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name", name="uq_integrations_tenant_name"),
+        UniqueConstraint("phone_number", name="uq_integrations_phone_number"),
+    )
 
     id = Column(String(4), primary_key=True, default=short_id, index=True)
     tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String, nullable=False)
+    provider = Column(String, nullable=False, index=True)
+    description = Column(Text, nullable=True)
     category = Column(String, nullable=False)
     auth_type = Column(String, nullable=False)
     status = Column(String, default="available", nullable=False)
+    phone_number = Column(String, nullable=True)
+    config = Column(JSON, default=dict, nullable=False)
+    ai_config = Column(JSON, default=dict, nullable=False)
     auth_url = Column(String, nullable=True)
     token_url = Column(String, nullable=True)
     scopes = Column(JSON, default=list, nullable=False)

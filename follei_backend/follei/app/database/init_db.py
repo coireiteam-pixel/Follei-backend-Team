@@ -69,6 +69,7 @@ from app.models.domain import (  # noqa: F401
     Subscription,
 )
 from app.models.integrations.integration import Integration, IntegrationConnection  # noqa: F401
+from app.models.integrations.sms import SmsContact, SmsConversation, SmsMessage  # noqa: F401
 from app.models.knowledge.document import (  # noqa: F401
     ChunkCitation,
     ChunkEmbedding,
@@ -108,6 +109,7 @@ def _ensure_identity_columns() -> None:
         if is_postgres
         else "DATETIME"
     )
+    json_spec = "JSONB" if is_postgres else "JSON"
     column_specs = {
         "tenants": {
             "phone": "VARCHAR",
@@ -119,6 +121,15 @@ def _ensure_identity_columns() -> None:
             "updated_at": timestamp_spec,
         },
     }
+    if "integrations" in existing_tables:
+        column_specs["integrations"] = {
+            "provider": "VARCHAR NOT NULL DEFAULT 'legacy'",
+            "description": "TEXT",
+            "phone_number": "VARCHAR",
+            "config": f"{json_spec} NOT NULL DEFAULT '{{}}'",
+            "ai_config": f"{json_spec} NOT NULL DEFAULT '{{}}'",
+            "updated_at": timestamp_spec,
+        }
 
     with engine.begin() as connection:
         for table_name, specs in column_specs.items():
@@ -126,6 +137,19 @@ def _ensure_identity_columns() -> None:
             for column_name, column_spec in specs.items():
                 if column_name not in existing_columns:
                     connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_spec}"))
+        if "integrations" in existing_tables:
+            connection.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS uq_integrations_tenant_name_ci "
+                    "ON integrations (tenant_id, lower(name)) WHERE tenant_id IS NOT NULL"
+                )
+            )
+            connection.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS uq_integrations_phone_number "
+                    "ON integrations (phone_number) WHERE phone_number IS NOT NULL"
+                )
+            )
 
 
 def _apply_complete_domain_schema() -> None:

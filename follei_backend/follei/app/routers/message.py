@@ -11,8 +11,11 @@ from app.schemas.message import (
     MessageResponse,
     ReactionRequest,
     ReactionResponse,
+    SendCustomerMessageRequest,
+    SendCustomerMessageResponse,
     UpdateMessageRequest,
 )
+from app.services.mcp.messaging import process_customer_message
 
 router = APIRouter(prefix="/messages", tags=["Conversations & Messages"])
 
@@ -31,6 +34,12 @@ def _get_message_or_404(message_id: str) -> MessageResponse:
     if message is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
     return message
+
+
+@router.post("/send", response_model=SendCustomerMessageResponse)
+async def send_customer_message(payload: SendCustomerMessageRequest) -> SendCustomerMessageResponse:
+    data = await process_customer_message(**payload.model_dump())
+    return SendCustomerMessageResponse(data=data)
 
 
 @router.get("/{message_id}", response_model=MessageResponse)

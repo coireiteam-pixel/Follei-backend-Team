@@ -218,10 +218,26 @@ CREATE TABLE IF NOT EXISTS conversation_citations (
 
 CREATE TABLE IF NOT EXISTS integrations (
     id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
-    name VARCHAR(160) NOT NULL UNIQUE,
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider VARCHAR(80) NOT NULL,
+    name VARCHAR(160) NOT NULL,
     description TEXT,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    category VARCHAR(80) NOT NULL DEFAULT 'messaging',
+    auth_type VARCHAR(80) NOT NULL DEFAULT 'api_key',
+    status VARCHAR(80) NOT NULL DEFAULT 'active',
+    phone_number VARCHAR(32),
+    config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    ai_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    auth_url TEXT,
+    token_url TEXT,
+    scopes JSONB NOT NULL DEFAULT '[]'::jsonb,
+    webhook_support VARCHAR(20) NOT NULL DEFAULT 'false',
+    actions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (tenant_id, name),
+    UNIQUE (phone_number)
 );
 
 CREATE TABLE IF NOT EXISTS integration_connections (

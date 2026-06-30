@@ -1173,11 +1173,48 @@ CREATE TABLE IF NOT EXISTS prompt_experiments (
 
 CREATE TABLE IF NOT EXISTS integrations (
     id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),
-    name VARCHAR(160) NOT NULL UNIQUE,
+    tenant_id VARCHAR(4) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider VARCHAR(80) NOT NULL,
+    name VARCHAR(160) NOT NULL,
     description TEXT,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    category VARCHAR(80) NOT NULL DEFAULT 'messaging',
+    auth_type VARCHAR(80) NOT NULL DEFAULT 'api_key',
+    status VARCHAR(80) NOT NULL DEFAULT 'active',
+    phone_number VARCHAR(32),
+    config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    ai_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    auth_url TEXT,
+    token_url TEXT,
+    scopes JSONB NOT NULL DEFAULT '[]'::jsonb,
+    webhook_support VARCHAR(20) NOT NULL DEFAULT 'false',
+    actions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (tenant_id, name),
+    UNIQUE (phone_number)
 );
+
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(4) REFERENCES tenants(id) ON DELETE CASCADE;
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS provider VARCHAR(80) NOT NULL DEFAULT 'legacy';
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS category VARCHAR(80) NOT NULL DEFAULT 'messaging';
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS auth_type VARCHAR(80) NOT NULL DEFAULT 'api_key';
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS status VARCHAR(80) NOT NULL DEFAULT 'active';
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS phone_number VARCHAR(32);
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS config JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS ai_config JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS auth_url TEXT;
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS token_url TEXT;
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS scopes JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS webhook_support VARCHAR(20) NOT NULL DEFAULT 'false';
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS actions JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE integrations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE integrations DROP CONSTRAINT IF EXISTS integrations_name_key;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_integrations_tenant_name_ci
+    ON integrations (tenant_id, lower(name)) WHERE tenant_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_integrations_phone_number
+    ON integrations (phone_number) WHERE phone_number IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS integration_connections (
     id VARCHAR(4) PRIMARY KEY DEFAULT lower(substr(md5(random()::text || clock_timestamp()::text), 1, 4)),

@@ -1,4 +1,39 @@
 from app.core.ids import short_id
+from fastapi.concurrency import run_in_threadpool
+
+from app.services.mcp.mistral import generate_mistral_reply
+from app.services.twilio import send_sms
+
+
+async def process_customer_message(
+    *,
+    tenant_id: str,
+    customer_phone: str,
+    customer_name: str | None,
+    message: str,
+    channel: str,
+    conversation_id: str | None,
+) -> dict:
+    """Generate an AI reply and deliver it to the customer through Twilio."""
+
+    # TODO: Add tenant lookup when tenant integration is implemented.
+    # TODO: Add MCP tenant knowledge search when retrieval is implemented.
+    ai_reply = await generate_mistral_reply(message)
+    sms_result = await run_in_threadpool(send_sms, customer_phone, ai_reply)
+
+    # TODO: Save the conversation and both messages when DB persistence is implemented.
+    return {
+        "tenant_id": tenant_id,
+        "conversation_id": conversation_id,
+        "customer_phone": sms_result["to"],
+        "customer_name": customer_name,
+        "customer_message": message,
+        "ai_reply": ai_reply,
+        "channel": channel,
+        "sms_status": sms_result["status"],
+        "sms_provider": "twilio",
+        "provider_message_id": sms_result["sid"],
+    }
 
 
 def whatsapp_send_message(to: str, body: str, template: str | None = None) -> dict:

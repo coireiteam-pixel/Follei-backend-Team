@@ -13,8 +13,13 @@ from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
-from tqdm import tqdm
 from urllib3.util.retry import Retry
+
+try:
+    from tqdm import tqdm
+except ImportError:  # Keep the importer usable without the optional progress UI.
+    def tqdm(iterable, **_kwargs):
+        return iterable
 
 
 LOGGER = logging.getLogger("bulk_import_leads")

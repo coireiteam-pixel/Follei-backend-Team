@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Uuid
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, JSON, String, Uuid
 from sqlalchemy.orm import relationship
 
 from app.database.base import Base
@@ -30,6 +30,18 @@ class Tenant(Base):
         cascade="all, delete-orphan",
     )
     leads = relationship("Lead", back_populates="tenant", cascade="all, delete-orphan")
+
+
+class TenantSettings(Base):
+    """ORM mapping for the existing ``tenant_settings`` table."""
+
+    __tablename__ = "tenant_settings"
+
+    id = Column(String(4), primary_key=True, default=short_id)
+    tenant_id = Column(String(4), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    settings = Column(JSON, default=dict, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
 class User(Base):

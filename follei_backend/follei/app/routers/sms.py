@@ -1,29 +1,12 @@
-from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.models.tenancy import Tenant
-from app.services.mcp.sms import send_sms
+from app.schemas.message import MistralSmsRequest, MistralSmsResponse
+from app.services.twilio import send_sms
 
 router = APIRouter(prefix="/sms", tags=["SMS"])
-
-AUTO_REPLY_MESSAGE = "Thanks for connecting. What do you want?"
-
-
-class MistralSmsRequest(BaseModel):
-    tenant_id: str = Field(examples=["T001"])
-    message: str = Field(examples=["Hi"])
-
-
-class MistralSmsResponse(BaseModel):
-    tenant_id: str
-    tenant_phone: str
-    user_message: str
-    mistral_reply: str
-    sms_status: str
-    sms_sid: str
-
 
 @router.post("/mistral-send", response_model=MistralSmsResponse)
 async def send_mistral_reply_sms(
@@ -38,13 +21,13 @@ async def send_mistral_reply_sms(
     if not tenant_phone:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tenant phone missing")
 
-    sms_result = send_sms(tenant_phone, AUTO_REPLY_MESSAGE)
+    sms_result = send_sms(tenant_phone, payload.message)
 
     return MistralSmsResponse(
         tenant_id=tenant.id,
         tenant_phone=sms_result["to"],
         user_message=payload.message,
-        mistral_reply=AUTO_REPLY_MESSAGE,
+        mistral_reply=payload.message,
         sms_status=sms_result["status"],
         sms_sid=sms_result["sid"],
     )

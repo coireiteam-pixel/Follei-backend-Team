@@ -3,6 +3,49 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
+class MistralSmsRequest(BaseModel):
+    tenant_id: str = Field(examples=["T001"])
+    message: str = Field(examples=["Hi"])
+
+
+class MistralSmsResponse(BaseModel):
+    tenant_id: str
+    tenant_phone: str
+    user_message: str
+    mistral_reply: str
+    sms_status: str
+    sms_sid: str
+
+
+class SendCustomerMessageRequest(BaseModel):
+    tenant_id: str = Field(examples=["t001"])
+    customer_phone: str = Field(examples=["+91000000000"])
+    message: str = Field(examples=["Your Query"])
+    channel: str = Field(default="sms", examples=["sms"])
+    customer_name: str | None = None
+    conversation_id: str | None = None
+
+
+class SentMessageData(BaseModel):
+    tenant_id: str
+    conversation_id: str | None = None
+    customer_phone: str
+    customer_name: str | None = None
+    customer_message: str
+    ai_reply: str
+    channel: str
+    sms_status: str
+    sms_provider: str
+    provider_message_id: str
+
+
+class SendCustomerMessageResponse(BaseModel):
+    success: bool = True
+    code: str = "MESSAGE_SENT"
+    message: str = "AI reply sent to customer successfully."
+    data: SentMessageData
+
+
 class CreateMessageRequest(BaseModel):
     content: str = Field(examples=["Here is the answer based on your knowledge base."])
     role: str = Field(default="user", examples=["assistant"])

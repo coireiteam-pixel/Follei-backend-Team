@@ -2,15 +2,17 @@ import base64
 import hashlib
 import hmac
 import json
-import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+from app.config import settings
+
+
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 HASH_ITERATIONS = 120_000
 
 
