@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request
 from app.crm_integrations.services.webhook_service import WebhookService
 
 
-router = APIRouter(prefix="/api/crm/webhooks", tags=["07 CRM Webhooks"])
+router = APIRouter(prefix="/api/crm/webhooks", tags=["CRM"])
 webhook_service = WebhookService()
 
 

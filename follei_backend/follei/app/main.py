@@ -7,29 +7,28 @@ from fastapi import Depends, FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-
-from app.database.init_db import init_db
-<<<<<<< HEAD
-from app.features import gmail_auto_reply
-=======
 from app.crm_integrations.routers import crm, crm_auth, crm_sync, crm_webhooks
->>>>>>> 73dd35c (Merge CRM integrations into Follei backend)
+from app.database.init_db import init_db
+from app.routers.email_assistant.router import router as email_assistant_router
+try:
+    from app.features import gmail_auto_reply
+except ModuleNotFoundError as exc:
+    if not str(exc.name).startswith("google"):
+        raise
+    gmail_auto_reply = None
 from app.routers import (
     agents,
     auth,
     authorization,
     billing,
     campaigns,
+    chunks,
     conversation,
     customers,
-<<<<<<< HEAD
-    email_assistant,
-=======
     database_crud,
     documents,
     entities,
     integrations,
->>>>>>> 678f659 (Fix Gmail auto reply speed and response relevance)
     knowledge,
     leads,
     message,
@@ -48,8 +47,16 @@ OPENAPI_TAGS = [
     {"name": "Leads & Revenue"},
     {"name": "Campaigns"},
     {"name": "Gmail Auto Reply"},
+    {"name": "CRM"},
+    {"name": "AI Email Assistant"},
     {"name": "Customers & Customer Success"},
+    {"name": "Integrations"},
+    {"name": "Webhooks & Events"},
+    {"name": "SMS Integrations"},
     {"name": "Tools, MCP & Registry"},
+    {"name": "Documents"},
+    {"name": "Chunks"},
+    {"name": "Entities"},
     {"name": "Knowledge & RAG"},
     {"name": "Billing"},
     {"name": "Analytics & Observability"},
@@ -61,7 +68,7 @@ OPENAPI_TAGS = [
 async def lifespan(app: FastAPI):
     init_db()
     gmail_task = None
-    if os.getenv("GMAIL_AUTO_REPLY_ENABLED", "false").lower() == "true":
+    if gmail_auto_reply and os.getenv("GMAIL_AUTO_REPLY_ENABLED", "false").lower() == "true":
         gmail_task = asyncio.create_task(gmail_auto_reply.gmail_auto_reply_worker())
     try:
         yield
@@ -139,80 +146,55 @@ include_authenticated_router(authorization.router, prefix=API_PREFIX)
 # app.include_router(api_v1.router)
 include_authenticated_router(tenant.router)
 # app.include_router(user.router)
-# app.include_router(database_crud.router)
-                    # Tenants
+# include_authenticated_router(database_crud.router)
 
-include_authenticated_router(conversation.router, prefix=API_PREFIX)  # Conversations
-include_authenticated_router(message.router, prefix=API_PREFIX)       # Conversation messages
+include_authenticated_router(conversation.router, prefix=API_PREFIX)
+include_authenticated_router(message.router, prefix=API_PREFIX)
 
-<<<<<<< HEAD
-app.include_router(leads.router, prefix=API_PREFIX)         # Leads
-app.include_router(leads.frameworks_router, prefix=API_PREFIX)
-app.include_router(leads.opportunities_router, prefix=API_PREFIX)
-app.include_router(leads.meetings_router, prefix=API_PREFIX)
-<<<<<<< HEAD
-
-app.include_router(customers.router, prefix=API_PREFIX)     # Customer Success
-=======
-app.include_router(campaigns.router, prefix=API_PREFIX)
-app.include_router(campaigns.metrics_router, prefix=API_PREFIX)
-app.include_router(campaigns.inbound_router, prefix=API_PREFIX)
-app.include_router(gmail_auto_reply.router, prefix=API_PREFIX)
-app.include_router(customers.router, prefix=API_PREFIX)
->>>>>>> 678f659 (Fix Gmail auto reply speed and response relevance)
-app.include_router(customers.renewals_router, prefix=API_PREFIX)
-<<<<<<< HEAD
-
-app.include_router(knowledge.router, prefix=API_PREFIX)     # Knowledge & RAG
-=======
-app.include_router(integrations.integrations_router, prefix=API_PREFIX)
-app.include_router(integrations.connections_router, prefix=API_PREFIX)
-app.include_router(integrations.webhooks_receive_router, prefix=API_PREFIX)
-app.include_router(integrations.webhook_events_router, prefix=API_PREFIX)
-app.include_router(integrations.sms_router.router, prefix=API_PREFIX)
-app.include_router(integrations.sms_webhook_router.router, prefix=API_PREFIX)
-app.include_router(tools.tools_router, prefix=API_PREFIX)
-app.include_router(tools.executions_router, prefix=API_PREFIX)
-app.include_router(tools.logs_router, prefix=API_PREFIX)
-app.include_router(documents.router, prefix=API_PREFIX)
-app.include_router(chunks.router, prefix=API_PREFIX)
-app.include_router(entities.router, prefix=API_PREFIX)
-app.include_router(knowledge.router, prefix=API_PREFIX)
->>>>>>> 60f614e (Added SMS integration structure and MCP enhancements)
-app.include_router(knowledge.faq_router, prefix=API_PREFIX)
-app.include_router(knowledge.policy_router, prefix=API_PREFIX)
-app.include_router(knowledge.procedure_router, prefix=API_PREFIX)
-=======
-include_authenticated_router(leads.router, prefix=API_PREFIX)         # Leads
+include_authenticated_router(leads.router, prefix=API_PREFIX)
 include_authenticated_router(leads.frameworks_router, prefix=API_PREFIX)
 include_authenticated_router(leads.opportunities_router, prefix=API_PREFIX)
 include_authenticated_router(leads.meetings_router, prefix=API_PREFIX)
 
-include_authenticated_router(customers.router, prefix=API_PREFIX)     # Customer Success
+include_authenticated_router(campaigns.router, prefix=API_PREFIX)
+include_authenticated_router(campaigns.metrics_router, prefix=API_PREFIX)
+include_authenticated_router(campaigns.inbound_router, prefix=API_PREFIX)
+
+if gmail_auto_reply:
+    include_authenticated_router(gmail_auto_reply.router, prefix=API_PREFIX)
+
+include_authenticated_router(customers.router, prefix=API_PREFIX)
 include_authenticated_router(customers.renewals_router, prefix=API_PREFIX)
 
-include_authenticated_router(knowledge.router, prefix=API_PREFIX)     # Knowledge & RAG
-include_authenticated_router(knowledge.faq_router, prefix=API_PREFIX)
-include_authenticated_router(knowledge.policy_router, prefix=API_PREFIX)
-include_authenticated_router(knowledge.procedure_router, prefix=API_PREFIX)
->>>>>>> 73dd35c (Merge CRM integrations into Follei backend)
+include_authenticated_router(integrations.integrations_router, prefix=API_PREFIX)
+include_authenticated_router(integrations.connections_router, prefix=API_PREFIX)
+include_authenticated_router(integrations.webhooks_receive_router, prefix=API_PREFIX)
+include_authenticated_router(integrations.webhook_events_router, prefix=API_PREFIX)
+include_authenticated_router(integrations.sms_router.router, prefix=API_PREFIX)
+include_authenticated_router(integrations.sms_webhook_router.router, prefix=API_PREFIX)
 
-include_authenticated_router(tools.tools_router, prefix=API_PREFIX)   # MCP / Tools
+include_authenticated_router(tools.tools_router, prefix=API_PREFIX)
 include_authenticated_router(tools.executions_router, prefix=API_PREFIX)
 include_authenticated_router(tools.logs_router, prefix=API_PREFIX)
 
-include_authenticated_router(observability.analytics_router, prefix=API_PREFIX)  # Analytics
+include_authenticated_router(documents.router, prefix=API_PREFIX)
+include_authenticated_router(chunks.router, prefix=API_PREFIX)
+include_authenticated_router(entities.router, prefix=API_PREFIX)
 
-include_authenticated_router(billing.plans_router, prefix=API_PREFIX) # Billing
+include_authenticated_router(knowledge.router, prefix=API_PREFIX)
+include_authenticated_router(knowledge.faq_router, prefix=API_PREFIX)
+include_authenticated_router(knowledge.policy_router, prefix=API_PREFIX)
+include_authenticated_router(knowledge.procedure_router, prefix=API_PREFIX)
+
+include_authenticated_router(observability.analytics_router, prefix=API_PREFIX)
+
+include_authenticated_router(billing.plans_router, prefix=API_PREFIX)
 include_authenticated_router(billing.subscriptions_router, prefix=API_PREFIX)
 include_authenticated_router(billing.invoices_router, prefix=API_PREFIX)
 include_authenticated_router(billing.payments_router, prefix=API_PREFIX)
 include_authenticated_router(billing.credits_router, prefix=API_PREFIX)
 
-include_authenticated_router(campaigns.router, prefix=API_PREFIX)     # Campaigns
-include_authenticated_router(campaigns.metrics_router, prefix=API_PREFIX)
-include_authenticated_router(campaigns.inbound_router, prefix=API_PREFIX)
-include_authenticated_router(email_assistant.router, prefix=API_PREFIX)
+include_authenticated_router(email_assistant_router, prefix=API_PREFIX)
 
 app.include_router(crm.router)
 app.include_router(crm_auth.router)
@@ -220,33 +202,6 @@ app.include_router(crm_auth.alias_router)
 app.include_router(crm_sync.router)
 app.include_router(crm_webhooks.router)
 
-
-# Unwanted routers commented:
-
-# app.include_router(api_v1.router)
-# app.include_router(user.router)
-# app.include_router(database_crud.router)
-#app.include_router(agents.router)
-
-# app.include_router(sms.router, prefix=API_PREFIX)
-# app.include_router(agents.router)     
-# app.include_router(integrations.integrations_router, prefix=API_PREFIX)
-# app.include_router(integrations.connections_router, prefix=API_PREFIX)
-# app.include_router(integrations.webhooks_receive_router, prefix=API_PREFIX)
-# app.include_router(integrations.webhook_events_router, prefix=API_PREFIX)
-
-# app.include_router(documents.router, prefix=API_PREFIX)
-# app.include_router(chunks.router, prefix=API_PREFIX)
-# app.include_router(entities.router, prefix=API_PREFIX)
-
-# app.include_router(commerce.products_router, prefix=API_PREFIX)
-# app.include_router(commerce.services_router, prefix=API_PREFIX)
-# app.include_router(commerce.pricing_router, prefix=API_PREFIX)
-# app.include_router(commerce.competitors_router, prefix=API_PREFIX)
-
-# app.include_router(observability.events_router, prefix=API_PREFIX)
-# app.include_router(observability.retrieval_router, prefix=API_PREFIX)
-# app.include_router(observability.evaluation_router, prefix=API_PREFIX)
 
 @app.get("/", tags=["System"], dependencies=AUTH_DEPENDENCIES)
 def root():

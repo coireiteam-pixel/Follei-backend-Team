@@ -8,7 +8,7 @@ from app.crm_integrations.security import require_api_token
 from app.crm_integrations.services.sync_service import SyncService
 
 
-router = APIRouter(prefix="/api/crm/sync", tags=["06 CRM Sync"], dependencies=[Depends(require_api_token)])
+router = APIRouter(prefix="/api/crm/sync", tags=["CRM"], dependencies=[Depends(require_api_token)])
 sync_service = SyncService()
 
 

@@ -17,8 +17,8 @@ from app.crm_integrations.services.oauth_service import OAuthService
 from app.crm_integrations.services.token_service import TokenService
 
 
-router = APIRouter(prefix="/api/crm/auth", tags=["05 CRM OAuth"])
-alias_router = APIRouter(prefix="/api/crm", tags=["05 CRM OAuth"])
+router = APIRouter(prefix="/api/crm/auth", tags=["CRM"])
+alias_router = APIRouter(prefix="/api/crm", tags=["CRM"])
 oauth_service = OAuthService()
 token_service = TokenService()
 

@@ -22,7 +22,7 @@ CRM_PROVIDER_REGISTRY: list[CRMCatalogItem] = [
 @router.get(
     "/providers",
     response_model=list[CRMCatalogItem],
-    tags=["03 CRM Providers"],
+    tags=["CRM"],
     summary="List CRM providers",
 )
 def list_crm_providers(db: Session = Depends(get_db)):
@@ -36,7 +36,7 @@ def list_crm_providers(db: Session = Depends(get_db)):
 @router.get(
     "/connections",
     response_model=list[CRMConnectionRead],
-    tags=["04 CRM Connections"],
+    tags=["CRM"],
     summary="List connected CRMs",
 )
 def list_connections(db: Session = Depends(get_db)):
@@ -46,7 +46,7 @@ def list_connections(db: Session = Depends(get_db)):
 @router.get(
     "/connections/{provider}",
     response_model=CRMConnectionRead,
-    tags=["04 CRM Connections"],
+    tags=["CRM"],
     summary="Get one CRM connection",
 )
 def get_connection(provider: str, db: Session = Depends(get_db)):
@@ -92,7 +92,7 @@ def save_connection(payload: CRMConnectionCreate, db: Session, encrypted_refresh
     "/connections",
     response_model=CRMConnectionRead,
     status_code=status.HTTP_201_CREATED,
-    tags=["04 CRM Connections"],
+    tags=["CRM"],
     summary="Create or update CRM connection",
 )
 async def create_or_update_connection(payload: CRMConnectionCreate, db: Session = Depends(get_db)):
@@ -107,7 +107,7 @@ async def create_or_update_connection(payload: CRMConnectionCreate, db: Session 
 
 @router.delete(
     "/connections/{provider}",
-    tags=["04 CRM Connections"],
+    tags=["CRM"],
     summary="Delete CRM connection",
 )
 def delete_connection(provider: str, db: Session = Depends(get_db)):

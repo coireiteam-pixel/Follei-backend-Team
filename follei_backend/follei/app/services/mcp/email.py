@@ -74,6 +74,13 @@ def gmail_send(to: str, subject: str, body: str, attachments: list | None = None
     return {"message_id": str(short_id()), "to": to, "subject": subject, "attachments": attachments or [], "sent": True, "mock": True}
 
 
+def mailjet_send(to: str, subject: str, body: str) -> dict:
+    result = _smtp_send(to=to, subject=subject, body=body)
+    if result is not None:
+        return {**result, "provider": "mailjet"}
+    return {"message_id": str(short_id()), "to": to, "subject": subject, "sent": True, "provider": "mailjet", "mock": True}
+
+
 def gmail_read(query: str, max_results: int = 10) -> dict:
     return {"messages": [{"id": str(short_id()), "subject": "Follow up", "body": "Sample message"} for _ in range(min(max_results, 3))]}
 

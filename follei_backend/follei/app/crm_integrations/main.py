@@ -10,11 +10,7 @@ from app.crm_integrations.routers import auth, crm, crm_auth, crm_sync, crm_webh
 OPENAPI_TAGS = [
     {"name": "01 Authentication", "description": "Get the bearer token used by Swagger Authorize."},
     {"name": "02 System", "description": "Root and health endpoints."},
-    {"name": "03 CRM Providers", "description": "Available CRM providers and connection status."},
-    {"name": "04 CRM Connections", "description": "Create, list, inspect, and delete CRM connections."},
-    {"name": "05 CRM OAuth", "description": "Provider login URL and OAuth callback routes."},
-    {"name": "06 CRM Sync", "description": "Manual sync and sync logs."},
-    {"name": "07 CRM Webhooks", "description": "Provider webhook receiver endpoints."},
+    {"name": "CRM", "description": "CRM providers, connections, OAuth, sync, and webhooks."},
 ]
 
 
